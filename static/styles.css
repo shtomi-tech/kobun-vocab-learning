@@ -130,3 +130,8 @@ button:disabled { cursor: default; opacity: .55; }
   .actions > button { flex: 1 1 160px; }
   .example, .cloze { font-size: 18px; }
 }
+
+@media (max-height: 760px) {
+  .wrap.sessionActive { padding-top: 20px; }
+  .wrap.sessionActive .top { display: none; }
+}

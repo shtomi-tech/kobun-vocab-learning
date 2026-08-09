@@ -197,6 +197,7 @@ const KobunVocabApp = (() => {
 
   function renderHome() {
     session = null;
+    $(".wrap")?.classList.remove("sessionActive");
     $("#sessionPanel").classList.add("hide");
     const home = $("#homePanel");
     home.classList.remove("hide");
@@ -406,6 +407,7 @@ const KobunVocabApp = (() => {
 
   function renderSession() {
     saveResume();
+    $(".wrap")?.classList.add("sessionActive");
     $("#homePanel").classList.add("hide");
     const panel = $("#sessionPanel");
     panel.classList.remove("hide");
@@ -650,6 +652,7 @@ const KobunVocabApp = (() => {
     const score = (isFinal || isMeaningReview) ? session.meaningCorrect : session.contextCorrect;
     const total = (isFinal || isMeaningReview) ? session.meaningOrder.length : session.contextOrder.length;
     const passed = isFinal && score >= passScore();
+    const finalCleared = state.progress.finalCheck?.cleared;
     panel.appendChild(el("section", { class: "doneBanner" },
       el("p", { class: "label" }, "Step Complete"),
       el("div", { class: "score" }, `${score} / ${total}`),
@@ -659,10 +662,11 @@ const KobunVocabApp = (() => {
     const actions = el("div", { class: "actions" });
     if (!isMeaningReview && reviewIds().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startReview }, `間違えた${reviewIds().length}語を復習する →`));
     else if (isMeaningReview && dueMeaningEntries().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startMeaningReview }, `要再確認の${Math.min(dueMeaningEntries().length, MEANING_SESSION_SIZE)}語をもう一度解く →`));
-    else if (!isFinal && allSolved()) {
+    else if (!isFinal && allSolved() && !finalCleared) {
       actions.appendChild(el("p", { class: "hint actionHint" }, `意味${state.set.words.length}問のうち${passScore()}問以上でCLEAR`));
       actions.appendChild(el("button", { class: "cta reviewCta", onclick: startFinal }, "最終チェックへ →"));
     }
+    else if (!isFinal && finalCleared) actions.appendChild(el("p", { class: "hint actionHint" }, "最終チェックは実施済みです。"));
     else if (isFinal && !passed) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startFinal }, "もう一度挑戦する"));
     actions.appendChild(el("button", { class: "ghost", onclick: renderHome }, "一覧へ戻る"));
     panel.appendChild(actions);

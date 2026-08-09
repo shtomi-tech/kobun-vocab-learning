@@ -8,6 +8,10 @@
     "kobun-set-02": {
       "label": "第2セット　ことば・人間関係",
       "dataUrl": "data/set-02.json"
+    },
+    "kobun-set-03": {
+      "label": "第3セット　世・心情・出家",
+      "dataUrl": "data/set-03.json"
     }
   }
 }
