@@ -172,6 +172,11 @@ const KobunVocabApp = (() => {
     return reviewEntryByKey(id)?.word || wordById(id);
   }
 
+  const normalizeMeaning = (value) => value.replace(/[「」『』（）()、。・／\s]/g, "");
+  const hasMeaningOverlap = (word, other) => word.meanings.some((meaning) =>
+    other.meanings.some((candidate) => normalizeMeaning(meaning) === normalizeMeaning(candidate))
+  );
+
   function choiceSet(word, kind) {
     const correct = kind === "meaning" ? meaningText(word) : word.headword;
     const source = kind === "meaning" && session?.mode === "meaningReview"
@@ -180,8 +185,11 @@ const KobunVocabApp = (() => {
     const currentKey = kind === "meaning" && session?.mode === "meaningReview"
       ? session.meaningOrder[session.meaningIndex]
       : word.id;
-    const pool = source
-      .filter((other) => other.key !== currentKey)
+    const candidates = source.filter((other) => other.key !== currentKey);
+    const distinctCandidates = candidates
+      .filter(({ word: other }) => kind !== "meaning" || !hasMeaningOverlap(word, other));
+    const usableCandidates = distinctCandidates.length >= 3 ? distinctCandidates : candidates;
+    const pool = usableCandidates
       .map(({ word: other }) => kind === "meaning" ? meaningText(other) : other.headword)
       .filter((value, index, values) => value !== correct && values.indexOf(value) === index);
     return shuffle([correct, ...shuffle(pool).slice(0, 3)]);
