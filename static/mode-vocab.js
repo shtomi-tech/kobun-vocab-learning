@@ -174,7 +174,11 @@ const KobunVocabApp = (() => {
 
   const normalizeMeaning = (value) => value.replace(/[「」『』（）()、。・／\s]/g, "");
   const hasMeaningOverlap = (word, other) => word.meanings.some((meaning) =>
-    other.meanings.some((candidate) => normalizeMeaning(meaning) === normalizeMeaning(candidate))
+    other.meanings.some((candidate) => {
+      const left = normalizeMeaning(meaning);
+      const right = normalizeMeaning(candidate);
+      return left === right || (Math.min(left.length, right.length) >= 4 && (left.includes(right) || right.includes(left)));
+    })
   );
 
   function choiceSet(word, kind) {
