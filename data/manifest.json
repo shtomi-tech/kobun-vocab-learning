@@ -1,0 +1,13 @@
+{
+  "defaultSetId": "kobun-set-01",
+  "sets": {
+    "kobun-set-01": {
+      "label": "第1セット　基本語彙",
+      "dataUrl": "data/set-01.json"
+    },
+    "kobun-set-02": {
+      "label": "第2セット　ことば・人間関係",
+      "dataUrl": "data/set-02.json"
+    }
+  }
+}
