@@ -172,13 +172,29 @@ const KobunVocabApp = (() => {
     return reviewEntryByKey(id)?.word || wordById(id);
   }
 
-  const normalizeMeaning = (value) => value.replace(/[「」『』（）()、。・／\s]/g, "");
+  const normalizeMeaning = (value) => value.replace(/[「」『』【】（）()、。・／\s]/g, "");
+  const meaningParts = (value) => value.split(/[。／]/).map(normalizeMeaning).filter(Boolean);
+  const meaningFamilies = [
+    /死ぬ|亡くなる|死別|先立たれる|命|いなくなる/,
+    /男女|夫婦|交際|結婚|求婚|言い寄|出会|対面|愛情|恋人|男女の縁|親しく言葉/,
+    /泣|涙|悲し/,
+    /出家|仏道修行|隠遁/,
+    /歩く|徒歩|去る|行く|渡る|通る|移動|出歩く|遠ざかる|進む/,
+    /連れる|伴う|連れ立つ|備える|持っていく/,
+    /じっとしている|座る|ひざまずく|腰をおろす|居ずまい/,
+    /書物|漢籍|漢詩|学問|漢学|学才|学識|芸能|技能/,
+    /天皇|上皇|法皇|中宮|東宮|行幸|御幸|行啓|ご機嫌/,
+    /前世|宿命|運命|約束|縁|契り|愛の誓い/,
+  ];
+  const hasMeaningFamilyOverlap = (word, other) => meaningFamilies.some((family) =>
+    word.meanings.some((meaning) => family.test(meaning)) && other.meanings.some((meaning) => family.test(meaning))
+  );
   const hasMeaningOverlap = (word, other) => word.meanings.some((meaning) =>
-    other.meanings.some((candidate) => {
-      const left = normalizeMeaning(meaning);
-      const right = normalizeMeaning(candidate);
-      return left === right || (Math.min(left.length, right.length) >= 4 && (left.includes(right) || right.includes(left)));
-    })
+    other.meanings.some((candidate) => meaningParts(meaning).some((left) =>
+      meaningParts(candidate).some((right) =>
+        left === right || (Math.min(left.length, right.length) >= 4 && (left.includes(right) || right.includes(left)))
+      )
+    ))
   );
 
   function choiceSet(word, kind) {
@@ -191,12 +207,47 @@ const KobunVocabApp = (() => {
       : word.id;
     const candidates = source.filter((other) => other.key !== currentKey);
     const distinctCandidates = candidates
-      .filter(({ word: other }) => kind !== "meaning" || !hasMeaningOverlap(word, other));
-    const usableCandidates = distinctCandidates.length >= 3 ? distinctCandidates : candidates;
-    const pool = usableCandidates
+      .filter(({ word: other }) => kind !== "meaning" || (!hasMeaningOverlap(word, other) && !hasMeaningFamilyOverlap(word, other)));
+    const selectedCandidates = [];
+    const addCandidates = (items) => {
+      for (const candidate of shuffle(items)) {
+        if (selectedCandidates.every(({ word: other }) => kind !== "meaning" ||
+          (!hasMeaningOverlap(candidate.word, other) && !hasMeaningFamilyOverlap(candidate.word, other)))) {
+          selectedCandidates.push(candidate);
+        }
+        if (selectedCandidates.length === 3) break;
+      }
+    };
+    addCandidates(distinctCandidates);
+    if (kind === "meaning" && selectedCandidates.length < 3 && session?.mode !== "meaningReview") {
+      const currentIds = new Set(source.map(({ word: other }) => other.id));
+      addCandidates(reviewPoolEntries()
+        .filter(({ word: other }) => !currentIds.has(other.id))
+        .map((entry) => ({ key: entry.key, word: entry.word }))
+        .filter(({ word: other }) => !hasMeaningOverlap(word, other) && !hasMeaningFamilyOverlap(word, other)));
+    }
+    const pool = selectedCandidates
       .map(({ word: other }) => kind === "meaning" ? meaningText(other) : other.headword)
       .filter((value, index, values) => value !== correct && values.indexOf(value) === index);
     return shuffle([correct, ...shuffle(pool).slice(0, 3)]);
+  }
+
+  function meaningChoicesAreSafe(word, choices) {
+    const correct = meaningText(word);
+    if (!Array.isArray(choices) || choices.length !== 4 || new Set(choices).size !== 4 || !choices.includes(correct)) return false;
+    const source = reviewPoolEntries().map((entry) => ({ key: entry.key, word: entry.word }));
+    const currentKey = session?.mode === "meaningReview"
+      ? session.meaningOrder[session.meaningIndex]
+      : word.id;
+    const selected = choices.map((choice) => choice === correct
+      ? word
+      : source.find(({ key, word: other }) => key !== currentKey && meaningText(other) === choice)?.word);
+    if (!selected.every(Boolean)) return false;
+    const distractors = selected.filter((item) => item !== word);
+    return distractors.every((item) => !hasMeaningOverlap(word, item) && !hasMeaningFamilyOverlap(word, item)) &&
+      selected.every((item, index) => selected.slice(index + 1).every((other) =>
+        !hasMeaningOverlap(item, other) && !hasMeaningFamilyOverlap(item, other)
+      ));
   }
 
   function renderHome() {
@@ -515,7 +566,9 @@ const KobunVocabApp = (() => {
     const index = kind === "meaning" ? session.meaningIndex : session.contextIndex;
     const word = wordForSession(order[index]);
     const correct = kind === "meaning" ? meaningText(word) : word.headword;
-    if (!session.choices) session.choices = choiceSet(word, kind);
+    if (!session.choices || (kind === "meaning" && !meaningChoicesAreSafe(word, session.choices))) {
+      session.choices = choiceSet(word, kind);
+    }
 
     const box = el("section", { class: "quiz" },
       el("p", { class: "label" }, kind === "meaning" ? "次の語の意味は？" : "空欄に入る語の基本形は？"),
