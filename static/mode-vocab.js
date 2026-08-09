@@ -6,7 +6,7 @@ const KobunVocabApp = (() => {
   const PROGRESS_PREFIX = "kobun_vocab_progress_";
   const PASS_RATE = 0.8;
   const BATCH_SIZE = 4;
-  const MEANING_SESSION_SIZE = 30;
+  const MEANING_SESSION_SIZE = 20;
   const HISTORY_LIMIT = 500;
   const APP_ID = "kobun-vocab-learning";
 
