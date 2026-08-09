@@ -39,6 +39,8 @@ p { margin: 0 0 12px; }
 .cta:hover { background: #32312e; }
 .reviewCta { background: var(--clay); }
 .reviewCta:hover { background: var(--clay-dark); }
+.secondaryCta { border-color: var(--clay); color: var(--clay-dark); }
+.ghost.secondaryCta:hover:not(:disabled) { background: var(--soft); color: var(--clay-dark); }
 .ghost { padding: 10px 16px; border: 1px solid var(--line); background: transparent; color: var(--ink); }
 .ghost:hover:not(:disabled) { background: var(--ink); color: var(--canvas); }
 button:disabled { cursor: default; opacity: .55; }
@@ -81,6 +83,7 @@ button:disabled { cursor: default; opacity: .55; }
 .flashCard section { padding-top: 16px; border-top: 1px solid var(--line); }
 .example, .cloze { font-family: "Yu Mincho", serif; font-size: 20px; line-height: 2; }
 .actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 20px; }
+.actionHint { flex-basis: 100%; margin: 0; }
 .quiz .askWord { margin: 20px 0; font-family: Georgia, "Yu Mincho", serif; font-size: 34px; font-weight: 700; }
 .cloze { padding: 18px; border-radius: 8px; background: var(--canvas); }
 .choices { display: grid; gap: 12px; }

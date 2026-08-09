@@ -10,7 +10,7 @@ const KobunVocabApp = (() => {
   const HISTORY_LIMIT = 500;
   const APP_ID = "kobun-vocab-learning";
 
-  const state = { manifest: null, setId: null, set: null, progress: null };
+  const state = { manifest: null, setId: null, set: null, progress: null, reviewPool: [] };
   let session = null;
   let cloud = null;
 
@@ -37,32 +37,38 @@ const KobunVocabApp = (() => {
     }
     return copy;
   };
-  const progressKey = () => PROGRESS_PREFIX + state.setId;
+  const progressKey = (setId = state.setId) => PROGRESS_PREFIX + setId;
   const passScore = () => Math.ceil(state.set.words.length * PASS_RATE);
   const meaningText = (word) => word.meanings.join("／");
   const wordById = (id) => state.set.words.find((word) => word.id === id);
 
-  function loadProgress() {
+  function loadProgressFor(setId, set) {
     try {
-      const saved = JSON.parse(localStorage.getItem(progressKey()));
+      const saved = JSON.parse(localStorage.getItem(progressKey(setId)));
       if (saved && typeof saved === "object") {
         const progress = { units: {}, finalCheck: {}, ...saved };
-        const dataVersion = state.set.meta.dataVersion || 1;
+        const dataVersion = set.meta.dataVersion || 1;
         if (progress.dataVersion !== dataVersion) {
           progress.dataVersion = dataVersion;
           progress.finalCheck = {};
           delete progress.resume;
-          localStorage.setItem(progressKey(), JSON.stringify(progress));
+          localStorage.setItem(progressKey(setId), JSON.stringify(progress));
         }
         return progress;
       }
     } catch (_) { /* 壊れた記録は上書きせず、今回だけ空状態で表示する。 */ }
-    return { units: {}, finalCheck: {}, dataVersion: state.set.meta.dataVersion || 1 };
+    return { units: {}, finalCheck: {}, dataVersion: set.meta.dataVersion || 1 };
+  }
+
+  function loadProgress() { return loadProgressFor(state.setId, state.set); }
+
+  function saveProgressFor(setId, progress) {
+    try { localStorage.setItem(progressKey(setId), JSON.stringify(progress)); } catch (_) { /* localStorageなしでも学習は続ける */ }
+    if (cloud) cloud.queueSave({ datasetId: setId, progress, meta: { lastDatasetId: state.setId } });
   }
 
   function saveProgress() {
-    try { localStorage.setItem(progressKey(), JSON.stringify(state.progress)); } catch (_) { /* localStorageなしでも学習は続ける */ }
-    if (cloud) cloud.queueSave();
+    saveProgressFor(state.setId, state.progress);
   }
 
   function unit(id) {
@@ -95,20 +101,41 @@ const KobunVocabApp = (() => {
     return state.progress.items[id];
   }
 
-  function appendHistory(event) {
-    if (!Array.isArray(state.progress.history)) state.progress.history = [];
-    state.progress.history.push({ at: new Date().toISOString(), ...event });
-    if (state.progress.history.length > HISTORY_LIMIT) {
-      state.progress.history.splice(0, state.progress.history.length - HISTORY_LIMIT);
+  function reviewPoolEntries() {
+    const sources = (state.reviewPool.length ? state.reviewPool : [{ setId: state.setId, set: state.set, progress: state.progress }])
+      .map((source) => source.setId === state.setId ? { ...source, progress: state.progress } : source);
+    return sources.flatMap(({ setId, set, progress }) => {
+      if (setId === state.setId) {
+        set = state.set;
+        progress = state.progress;
+      }
+      return set.words.map((word) => ({
+        key: `${setId}::${word.id}`,
+        setId,
+        word,
+        progress,
+      }));
+    });
+  }
+
+  function reviewEntryByKey(key) {
+    return reviewPoolEntries().find((entry) => entry.key === key) || null;
+  }
+
+  function appendHistory(event, progress = state.progress) {
+    if (!Array.isArray(progress.history)) progress.history = [];
+    progress.history.push({ at: new Date().toISOString(), ...event });
+    if (progress.history.length > HISTORY_LIMIT) {
+      progress.history.splice(0, progress.history.length - HISTORY_LIMIT);
     }
   }
 
-  function learnedWords() {
-    return state.set.words.filter((word) => unit(word.id).learned);
+  function learnedMeaningEntries() {
+    return reviewPoolEntries().filter(({ word, progress }) => progress.units?.[word.id]?.learned);
   }
 
-  function dueMeaningWords() {
-    return learnedWords().filter((word) => KobunSrs.isDue(state.progress.items?.[word.id]));
+  function dueMeaningEntries() {
+    return learnedMeaningEntries().filter(({ word, progress }) => KobunSrs.isDue(progress.items?.[word.id]));
   }
 
   function setShareStatus(message, tone = "") {
@@ -129,11 +156,33 @@ const KobunVocabApp = (() => {
     }
   }
 
+  async function loadReviewPool() {
+    const entries = await Promise.all(Object.entries(state.manifest.sets).map(async ([setId, entry]) => {
+      if (setId === state.setId) return { setId, set: state.set, progress: state.progress };
+      const set = await fetch(entry.dataUrl, { cache: "no-store" }).then((response) => {
+        if (!response.ok) throw new Error(`set: HTTP ${response.status}`);
+        return response.json();
+      });
+      return { setId, set, progress: loadProgressFor(setId, set) };
+    }));
+    state.reviewPool = entries;
+  }
+
+  function wordForSession(id) {
+    return reviewEntryByKey(id)?.word || wordById(id);
+  }
+
   function choiceSet(word, kind) {
     const correct = kind === "meaning" ? meaningText(word) : word.headword;
-    const pool = state.set.words
-      .filter((other) => other.id !== word.id)
-      .map((other) => kind === "meaning" ? meaningText(other) : other.headword)
+    const source = kind === "meaning" && session?.mode === "meaningReview"
+      ? reviewPoolEntries().map((entry) => ({ key: entry.key, word: entry.word }))
+      : state.set.words.map((other) => ({ key: other.id, word: other }));
+    const currentKey = kind === "meaning" && session?.mode === "meaningReview"
+      ? session.meaningOrder[session.meaningIndex]
+      : word.id;
+    const pool = source
+      .filter((other) => other.key !== currentKey)
+      .map(({ word: other }) => kind === "meaning" ? meaningText(other) : other.headword)
       .filter((value, index, values) => value !== correct && values.indexOf(value) === index);
     return shuffle([correct, ...shuffle(pool).slice(0, 3)]);
   }
@@ -173,7 +222,7 @@ const KobunVocabApp = (() => {
     ));
 
     card.appendChild(el("div", { class: "stats" },
-      stat(learned, total, "学習済み"),
+      stat(learned, total, "文中回答済み"),
       stat(solved, total, "正解確認済み"),
       stat(reviews.length, total, "復習対象"),
       stat(final.bestScore || 0, total, "最終 BEST"),
@@ -189,7 +238,7 @@ const KobunVocabApp = (() => {
     const grid = el("div", { class: "wordList" });
     state.set.words.forEach((word, index) => {
       const u = unit(word.id);
-      const status = u.needsReview ? "要復習" : u.solvedCorrect ? "正解済み" : u.learned ? "学習済み" : "未学習";
+      const status = u.needsReview ? "要復習" : u.solvedCorrect ? "正解済み" : u.learned ? "文中回答済み" : "未学習";
       grid.appendChild(el("div", { class: `wordRow ${u.needsReview ? "review" : u.solvedCorrect ? "done" : ""}` },
         el("span", { class: "wordNo" }, index + 1),
         el("span", { class: "wordName" }, `${word.headword}【${word.kanji}】`),
@@ -206,17 +255,18 @@ const KobunVocabApp = (() => {
   }
 
   function meaningMission() {
-    const learned = learnedWords();
-    const due = dueMeaningWords();
+    const pool = reviewPoolEntries();
+    const learned = learnedMeaningEntries();
+    const due = dueMeaningEntries();
     const counts = Object.fromEntries(KobunSrs.labels.map((label) => [label, 0]));
-    learned.forEach((word) => counts[KobunSrs.label(state.progress.items?.[word.id])]++);
+    learned.forEach(({ word, progress }) => counts[KobunSrs.label(progress.items?.[word.id])]++);
     const section = el("section", { class: "card meaningMission" },
       el("p", { class: "label" }, "間隔復習"),
       el("h2", {}, "意味だけ復習"),
-      el("p", { class: "lead" }, `通常学習済みの語だけを、1回最大${MEANING_SESSION_SIZE}語で復習します。正解すると1・3・7・14日後へ進みます。`),
+      el("p", { class: "lead" }, `全セットの文中問題まで回答した語を、1回最大${MEANING_SESSION_SIZE}語で復習します。正解すると1・3・7・14日後へ進みます。`),
       el("div", { class: "meaningMetrics" },
-        stat(learned.length, state.set.words.length, "対象語"),
-        stat(due.length, learned.length || state.set.words.length, "今すぐ復習"),
+        stat(learned.length, pool.length, "対象語"),
+        stat(due.length, learned.length || pool.length, "今すぐ復習"),
       ),
     );
     if (learned.length) {
@@ -224,9 +274,13 @@ const KobunVocabApp = (() => {
         ...KobunSrs.labels.map((label) => el("div", { class: "intervalCell" }, el("strong", {}, counts[label]), el("span", {}, label))),
       ));
     }
+    if (state.progress.resume) {
+      section.appendChild(el("p", { class: "hint" }, "通常学習の続きがあるため、先に再開するのがおすすめです。"));
+    }
     const button = el("button", { class: "cta reviewCta", disabled: !due.length, onclick: startMeaningReview },
       due.length ? `今回の${Math.min(due.length, MEANING_SESSION_SIZE)}語を復習する` : learned.length ? "今すぐ復習する語はありません" : "通常学習後に利用できます",
     );
+    if (state.progress.resume) button.className = "ghost secondaryCta";
     section.appendChild(button);
     return section;
   }
@@ -235,7 +289,11 @@ const KobunVocabApp = (() => {
     const details = el("details", { class: "card learningHistory" },
       el("summary", {}, "最近の学習履歴"),
     );
-    const events = Array.isArray(state.progress.history) ? [...state.progress.history].reverse().slice(0, 10) : [];
+    const sources = (state.reviewPool.length ? state.reviewPool : [{ setId: state.setId, set: state.set, progress: state.progress }])
+      .map((source) => source.setId === state.setId ? { ...source, progress: state.progress } : source);
+    const events = sources.flatMap(({ setId, progress }) => (Array.isArray(progress.history) ? progress.history : []).map((event) => ({ ...event, datasetId: setId })))
+      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+      .slice(0, 10);
     if (!events.length) {
       details.appendChild(el("p", { class: "hint" }, "まだ学習履歴はありません。"));
       return details;
@@ -248,7 +306,8 @@ const KobunVocabApp = (() => {
     };
     const list = el("ol", { class: "historyList" });
     events.forEach((event) => {
-      const word = wordById(event.wordId);
+      const source = state.reviewPool.find((entry) => entry.setId === event.datasetId);
+      const word = source?.set.words.find((item) => item.id === event.wordId) || wordById(event.wordId);
       const result = event.result === "correct" ? "正解" : event.result === "wrong" ? "不正解" : "確認";
       const date = new Date(event.at);
       list.appendChild(el("li", {},
@@ -311,10 +370,10 @@ const KobunVocabApp = (() => {
   }
 
   function startMeaningReview() {
-    const ids = shuffle(dueMeaningWords())
-      .sort((a, b) => (state.progress.items?.[b.id]?.wrongCount || 0) - (state.progress.items?.[a.id]?.wrongCount || 0))
+    const ids = shuffle(dueMeaningEntries())
+      .sort((a, b) => (b.progress.items?.[b.word.id]?.wrongCount || 0) - (a.progress.items?.[a.word.id]?.wrongCount || 0))
       .slice(0, MEANING_SESSION_SIZE)
-      .map((word) => word.id);
+      .map((entry) => entry.key);
     if (!ids.length) return renderHome();
     session = {
       mode: "meaningReview", stage: "meaning", meaningOrder: ids, meaningIndex: 0,
@@ -344,14 +403,15 @@ const KobunVocabApp = (() => {
     panel.classList.remove("hide");
     panel.innerHTML = "";
 
-    panel.appendChild(el("div", { class: "sessionHead" },
+    const sessionHead = el("div", { class: "sessionHead" },
       el("div", {},
        el("p", { class: "label" }, sessionLabel()),
        el("h2", {}, stageTitle()),
-       el("p", { class: "hint" }, session.stage === "done" ? "この学習の途中記録は完了しました" : cloud?.isEnabled() ? "現在地はクラウドとこの端末に保存済み" : "現在地はこの端末に保存済み"),
+       el("p", { class: "hint" }, session.stage === "done" ? "次の学習を選べます。" : cloud?.isEnabled() ? "現在地はクラウドとこの端末に保存済み" : "現在地はこの端末に保存済み"),
       ),
-      el("button", { class: "ghost", onclick: () => { saveResume(); renderHome(); } }, "一覧へ戻る"),
-    ));
+    );
+    if (session.stage !== "done") sessionHead.appendChild(el("button", { class: "ghost", onclick: () => { saveResume(); renderHome(); } }, "一覧へ戻る"));
+    panel.appendChild(sessionHead);
     panel.appendChild(stepBar());
 
     if (session.stage === "flash") renderFlash(panel);
@@ -370,7 +430,7 @@ const KobunVocabApp = (() => {
     }
     if (session.stage === "context") return `文中問題 ${session.contextIndex + 1} / ${session.contextOrder.length}`;
     if (session.stage === "wrongReview") return `誤答確認 ${session.reviewedIds.length} / ${session.wrongMeaningIds.length}`;
-    return "Step Complete";
+    return "学習結果";
   }
 
   function stageTitle() {
@@ -439,7 +499,7 @@ const KobunVocabApp = (() => {
   function renderQuiz(panel, kind) {
     const order = kind === "meaning" ? session.meaningOrder : session.contextOrder;
     const index = kind === "meaning" ? session.meaningIndex : session.contextIndex;
-    const word = wordById(order[index]);
+    const word = wordForSession(order[index]);
     const correct = kind === "meaning" ? meaningText(word) : word.headword;
     if (!session.choices) session.choices = choiceSet(word, kind);
 
@@ -489,10 +549,13 @@ const KobunVocabApp = (() => {
       if (isCorrect) session.meaningCorrect++;
       else if (!session.wrongMeaningIds.includes(id)) session.wrongMeaningIds.push(id);
       if (session.mode === "meaningReview") {
-        state.progress.items = state.progress.items || {};
-        state.progress.items[id] = KobunSrs.record(itemState(id), isCorrect);
-        appendHistory({ kind: "meaning", wordId: id, result: isCorrect ? "correct" : "wrong" });
-        saveProgress();
+        const entry = reviewEntryByKey(id);
+        const progress = entry?.progress || state.progress;
+        const wordId = entry?.word.id || id;
+        progress.items = progress.items || {};
+        progress.items[wordId] = KobunSrs.record(progress.items[wordId], isCorrect);
+        appendHistory({ kind: "meaning", wordId, result: isCorrect ? "correct" : "wrong" }, progress);
+        saveProgressFor(entry?.setId || state.setId, progress);
       } else if (session.mode === "final") {
         appendHistory({ kind: "final", wordId: id, result: isCorrect ? "correct" : "wrong" });
       }
@@ -534,15 +597,16 @@ const KobunVocabApp = (() => {
     panel.appendChild(el("p", { class: "lead" }, "間違えた語を読み直し、確認した語にチェックを付けてください。"));
     const list = el("div", { class: "reviewList" });
     session.wrongMeaningIds.forEach((id) => {
-      const word = wordById(id);
+      const entry = reviewEntryByKey(id);
+      const word = wordForSession(id);
       const checked = session.reviewedIds.includes(id);
       const card = wordCard(word);
       card.classList.add("reviewCard");
       card.appendChild(el("button", { class: "ghost", disabled: checked, onclick: () => {
         if (!session.reviewedIds.includes(id)) {
           session.reviewedIds.push(id);
-          appendHistory({ kind: "wrong-review", wordId: id, result: "viewed" });
-          saveProgress();
+          appendHistory({ kind: "wrong-review", wordId: entry?.word.id || id, result: "viewed" }, entry?.progress || state.progress);
+          saveProgressFor(entry?.setId || state.setId, entry?.progress || state.progress);
         }
         renderSession();
       } }, checked ? "確認済み" : "確認した"));
@@ -586,8 +650,11 @@ const KobunVocabApp = (() => {
     ));
     const actions = el("div", { class: "actions" });
     if (!isMeaningReview && reviewIds().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startReview }, `間違えた${reviewIds().length}語を復習する →`));
-    else if (isMeaningReview && dueMeaningWords().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startMeaningReview }, `要再確認の${Math.min(dueMeaningWords().length, MEANING_SESSION_SIZE)}語をもう一度解く →`));
-    else if (!isFinal && allSolved()) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startFinal }, "最終チェックへ →"));
+    else if (isMeaningReview && dueMeaningEntries().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startMeaningReview }, `要再確認の${Math.min(dueMeaningEntries().length, MEANING_SESSION_SIZE)}語をもう一度解く →`));
+    else if (!isFinal && allSolved()) {
+      actions.appendChild(el("p", { class: "hint actionHint" }, `意味${state.set.words.length}問のうち${passScore()}問以上でCLEAR`));
+      actions.appendChild(el("button", { class: "cta reviewCta", onclick: startFinal }, "最終チェックへ →"));
+    }
     else if (isFinal && !passed) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startFinal }, "もう一度挑戦する"));
     actions.appendChild(el("button", { class: "ghost", onclick: renderHome }, "一覧へ戻る"));
     panel.appendChild(actions);
@@ -609,6 +676,7 @@ const KobunVocabApp = (() => {
     try {
       session = null;
       await loadSet(setId);
+      await loadReviewPool();
       if (cloud) cloud.queueSave();
       renderHome();
     } catch (error) {
@@ -637,6 +705,7 @@ const KobunVocabApp = (() => {
       await cloud.init();
       const savedSetId = localStorage.getItem(SET_KEY);
       await loadSet(state.manifest.sets[savedSetId] ? savedSetId : state.manifest.defaultSetId);
+      await loadReviewPool();
       renderHome();
     } catch (error) {
       $("#homePanel").appendChild(el("div", { class: "error" }, "データを読み込めませんでした。ローカルサーバー経由で開いてください。"));
