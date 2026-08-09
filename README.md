@@ -39,6 +39,7 @@ py -3 -m http.server 8062 --bind 127.0.0.1
 - `data/set-01.json`: 第1セット「基本語彙」12語
 - `data/set-02.json`: 第2セット「ことば・人間関係」12語
 - `data/set-03.json`: 第3セット「世・心情・出家」12語
+- `data/set-04.json`: 第4セット「死・宿命・皇室敬語」12語
 
 新しいセットは、同じ形式のJSONを追加し、manifestへ登録します。
 
