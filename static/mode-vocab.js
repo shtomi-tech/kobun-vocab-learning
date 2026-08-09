@@ -454,7 +454,7 @@ const KobunVocabApp = (() => {
     const labels = { flash: `1 覚える${block}`, meaning: session.mode === "final" ? "最終チェック" : session.mode === "meaningReview" ? "意味だけ復習" : `2 確かめる${block}`, wrongReview: "必要なら復習", context: "3 解く" };
     const current = steps.indexOf(session.stage);
     return el("div", { class: "stepBar", "aria-label": "学習ステップ" }, ...steps.map((step, index) =>
-      el("span", { class: `step ${step === session.stage ? "active" : index < current || session.stage === "done" ? "cleared" : ""}` }, labels[step])
+      el("span", { class: `step ${step === session.stage ? "active" : index < current || session.stage === "done" ? "cleared" : ""}`, "aria-current": step === session.stage ? "step" : null }, labels[step])
     ));
   }
 

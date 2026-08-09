@@ -9,13 +9,19 @@
   --clay-dark: #8a4732;
   --ok: #16803a;
   --ng: #b42318;
+  --container-max: 920px;
+  --page-gutter: 32px;
+  --card-padding: 24px;
+  --grid-gap: 12px;
+  --step-gap: 8px;
+  --text-measure: 44rem;
 }
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--canvas); color: var(--ink); font-family: "Segoe UI", "Yu Gothic UI", Meiryo, sans-serif; line-height: 1.7; }
 button { font: inherit; }
 button:focus-visible, select:focus-visible { outline: 3px solid var(--clay); outline-offset: 3px; }
-.wrap { width: min(920px, calc(100% - 32px)); margin: 0 auto; padding: 40px 0 64px; }
+.wrap { width: min(var(--container-max), calc(100% - var(--page-gutter))); margin: 0 auto; padding: 40px 0 64px; }
 .top { margin-bottom: 32px; }
 .shareStatus { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
 .shareStatus:empty { display: none; }
@@ -24,6 +30,7 @@ button:focus-visible, select:focus-visible { outline: 3px solid var(--clay); out
 h1, h2 { margin: 0; font-family: Georgia, "Yu Mincho", serif; line-height: 1.25; }
 h1 { font-size: clamp(32px, 6vw, 52px); }
 h2 { font-size: clamp(25px, 4vw, 34px); }
+h2 + .lead { margin-top: 6px; }
 h3 { margin: 0 0 6px; font-size: 14px; }
 p { margin: 0 0 12px; }
 .eyebrow, .label { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
@@ -32,7 +39,7 @@ p { margin: 0 0 12px; }
 .setSelect { min-height: 48px; padding: 10px 38px 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--canvas); color: var(--ink); font: inherit; cursor: pointer; }
 .hint { color: var(--muted); font-size: 14px; }
 .hide { display: none !important; }
-.card, .flashCard, .quiz { margin-bottom: 24px; padding: 24px; border-radius: 12px; background: var(--card); }
+.card, .flashCard, .quiz { margin-bottom: 24px; padding: var(--card-padding); border-radius: 12px; background: var(--card); }
 .recommend { margin: 24px 0; padding: 20px; border-radius: 10px; background: var(--soft); }
 .cta, .ghost, .choice { min-height: 48px; border-radius: 8px; cursor: pointer; }
 .cta { padding: 12px 20px; border: 0; background: var(--ink); color: var(--canvas); font-weight: 700; }
@@ -44,9 +51,9 @@ p { margin: 0 0 12px; }
 .ghost { padding: 10px 16px; border: 1px solid var(--line); background: transparent; color: var(--ink); }
 .ghost:hover:not(:disabled) { background: var(--ink); color: var(--canvas); }
 button:disabled { cursor: default; opacity: .55; }
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--grid-gap); }
 .meaningMission { border-left: 4px solid var(--clay); }
-.meaningMetrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0; }
+.meaningMetrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--grid-gap); margin: 20px 0; }
 .intervalGrid { display: grid; grid-template-columns: repeat(6, 1fr); margin: 0 0 20px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .intervalCell { padding: 10px 6px; border-left: 1px solid var(--line); background: var(--canvas); text-align: center; }
 .intervalCell:first-child { border-left: 0; }
@@ -73,18 +80,19 @@ button:disabled { cursor: default; opacity: .55; }
 .utility summary { cursor: pointer; }
 .utility button { margin-top: 16px; }
 .sessionHead { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
-.stepBar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin-bottom: 24px; }
+.stepBar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--step-gap); margin-bottom: 24px; }
 .step { min-height: 44px; display: grid; place-items: center; padding: 8px; border-radius: 8px; background: var(--card); color: var(--muted); font-size: 13px; text-align: center; }
 .step.active { background: var(--ink); color: var(--canvas); font-weight: 700; }
 .step.cleared::before { content: "✓ "; color: var(--ok); }
 .flashTitle { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin-bottom: 20px; }
-.headword { font-family: Georgia, "Yu Mincho", serif; font-size: 38px; font-weight: 700; }
+.headword { font-family: Georgia, "Yu Mincho", serif; font-size: 38px; font-weight: 700; line-height: 1.25; }
 .kanji { color: var(--muted); font-size: 20px; }
 .flashCard section { padding-top: 16px; border-top: 1px solid var(--line); }
+.lead, .flashCard section p:not(.example), .feedback p { max-width: var(--text-measure); }
 .example, .cloze { font-family: "Yu Mincho", serif; font-size: 20px; line-height: 2; }
 .actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 20px; }
 .actionHint { flex-basis: 100%; margin: 0; }
-.quiz .askWord { margin: 20px 0; font-family: Georgia, "Yu Mincho", serif; font-size: 34px; font-weight: 700; }
+.quiz .askWord { margin: 20px 0; font-family: Georgia, "Yu Mincho", serif; font-size: 34px; font-weight: 700; line-height: 1.25; }
 .cloze { padding: 18px; border-radius: 8px; background: var(--canvas); }
 .choices { display: grid; gap: 12px; }
 .choice { display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 10px; width: 100%; padding: 12px; border: 1px solid var(--line); background: var(--canvas); color: var(--ink); text-align: left; }
@@ -104,12 +112,13 @@ button:disabled { cursor: default; opacity: .55; }
 .reviewCard { margin: 0; border-left: 4px solid var(--clay); }
 .doneBanner { padding: 28px; border-radius: 12px; background: var(--ink); color: var(--canvas); }
 .doneBanner .label { color: rgba(250,249,245,.7); }
-.score { margin: 10px 0; font-family: Georgia, serif; font-size: 48px; }
+.score { margin: 10px 0; font-family: Georgia, serif; font-size: 48px; line-height: 1.25; }
 .error { padding: 20px; border-left: 4px solid var(--ng); background: var(--card); }
 
 @media (max-width: 640px) {
-  .wrap { width: min(100% - 20px, 920px); padding-top: 24px; }
-  .card, .flashCard, .quiz { padding: 18px; }
+  :root { --page-gutter: 20px; --card-padding: 18px; }
+  .wrap { padding-top: 24px; }
+  .card, .flashCard, .quiz { padding: var(--card-padding); }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .intervalGrid { grid-template-columns: repeat(3, 1fr); }
   .intervalCell:nth-child(4) { border-left: 0; border-top: 1px solid var(--line); }
