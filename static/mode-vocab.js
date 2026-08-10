@@ -185,6 +185,8 @@ const KobunVocabApp = (() => {
     /書物|漢籍|漢詩|学問|漢学|学才|学識|芸能|技能/,
     /天皇|上皇|法皇|中宮|東宮|行幸|御幸|行啓|ご機嫌/,
     /前世|宿命|運命|約束|縁|契り|愛の誓い/,
+    /茫然|前後不覚|正気を失|どうしてよいかわから|道理をわきまえない/,
+    /言うまでもない|もちろん|不十分|言い尽くせない|ありきたり|表現できない|なんとも/,
   ];
   const hasMeaningFamilyOverlap = (word, other) => meaningFamilies.some((family) =>
     word.meanings.some((meaning) => family.test(meaning)) && other.meanings.some((meaning) => family.test(meaning))

@@ -16,6 +16,10 @@
     "kobun-set-04": {
       "label": "第4セット　死・宿命・皇室敬語",
       "dataUrl": "data/set-04.json"
+    },
+    "kobun-set-05": {
+      "label": "第5セット　敬語・茫然・強調表現",
+      "dataUrl": "data/set-05.json"
     }
   }
 }
