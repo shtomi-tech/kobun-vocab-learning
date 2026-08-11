@@ -42,7 +42,7 @@ jobs:
         run: |
           mkdir -p _site/static _site/data
           cp index.html .nojekyll _site/
-          cp static/*.js static/*.css static/config.json _site/static/
+          cp static/*.js static/*.css static/*.svg static/config.json _site/static/
           cp data/*.json _site/data/
       - uses: actions/upload-pages-artifact@v3
         with:

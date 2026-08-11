@@ -263,6 +263,7 @@ const KobunVocabApp = (() => {
     $("#sessionPanel").classList.add("hide");
     const home = $("#homePanel");
     home.classList.remove("hide");
+    home.removeAttribute("aria-busy");
     home.innerHTML = "";
 
     const total = state.set.words.length;
@@ -287,20 +288,19 @@ const KobunVocabApp = (() => {
     else primary = ["このセットをもう一周する", startLearn, "暗記カードからもう一度確認します。"];
 
     card.appendChild(el("div", { class: "recommend" },
-      el("p", { class: "label" }, "▶ まずはここから"),
+      el("p", { class: "label" }, "まずはここから"),
       el("button", { class: "cta", onclick: primary[1] }, primary[0]),
       el("p", { class: "hint" }, primary[2]),
     ));
 
     card.appendChild(el("div", { class: "stats" },
       stat(learned, total, "文中回答済み"),
-      stat(solved, total, "正解確認済み"),
       stat(reviews.length, total, "復習対象"),
-      stat(final.bestScore || 0, total, "最終 BEST"),
+      stat(solved, total, "正解確認済み", { secondary: true }),
+      stat(final.bestScore || 0, total, "最終 BEST", { secondary: true }),
     ));
     home.appendChild(card);
     home.appendChild(meaningMission());
-    home.appendChild(recentHistory());
 
     const list = el("section", { class: "card" },
       el("p", { class: "label" }, "単語一覧"),
@@ -318,6 +318,8 @@ const KobunVocabApp = (() => {
     });
     list.appendChild(grid);
     home.appendChild(list);
+
+    home.appendChild(recentHistory());
 
     home.appendChild(el("details", { class: "card utility" },
       el("summary", {}, "その他"),
@@ -344,6 +346,8 @@ const KobunVocabApp = (() => {
       section.appendChild(el("div", { class: "intervalGrid", "aria-label": "意味復習の間隔別内訳" },
         ...KobunSrs.labels.map((label) => el("div", { class: "intervalCell" }, el("strong", {}, counts[label]), el("span", {}, label))),
       ));
+    } else {
+      section.appendChild(el("p", { class: "hint" }, "まだ意味だけ復習の対象語がありません。通常学習で文中問題まで解くと対象に加わります。"));
     }
     if (state.progress.resume) {
       section.appendChild(el("p", { class: "hint" }, "通常学習の続きがあるため、先に再開するのがおすすめです。"));
@@ -399,8 +403,8 @@ const KobunVocabApp = (() => {
     return el("label", { class: "setPicker" }, el("span", {}, "学習セット"), select);
   }
 
-  function stat(value, total, label) {
-    return el("div", { class: "stat" },
+  function stat(value, total, label, opts = {}) {
+    return el("div", { class: `stat${opts.secondary ? " stat--secondary" : ""}` },
       el("strong", {}, value, el("small", {}, ` / ${total}`)),
       el("span", {}, label),
     );
@@ -479,7 +483,7 @@ const KobunVocabApp = (() => {
       el("div", {},
        el("p", { class: "label" }, sessionLabel()),
        el("h2", {}, stageTitle()),
-       el("p", { class: "hint" }, session.stage === "done" ? "次の学習を選べます。" : cloud?.isEnabled() ? "現在地はクラウドとこの端末に保存済み" : "現在地はこの端末に保存済み"),
+       el("p", { class: "hint savedState" }, session.stage === "done" ? "次の学習を選べます。" : cloud?.isEnabled() ? "現在地はクラウドとこの端末に保存済み" : "現在地はこの端末に保存済み"),
       ),
     );
     if (session.stage !== "done") sessionHead.appendChild(el("button", { class: "ghost", onclick: () => { saveResume(); renderHome(); } }, "一覧へ戻る"));
@@ -580,8 +584,8 @@ const KobunVocabApp = (() => {
     const box = el("section", { class: "quiz" },
       el("p", { class: "label" }, kind === "meaning" ? "次の語の意味は？" : "空欄に入る語の基本形は？"),
       kind === "meaning"
-        ? el("p", { class: "askWord" }, `${word.headword}【${word.kanji}】`)
-        : el("p", { class: "cloze" }, word.cloze),
+        ? el("p", { class: "askWord", tabindex: "-1" }, `${word.headword}【${word.kanji}】`)
+        : el("p", { class: "cloze", tabindex: "-1" }, word.cloze),
       kind === "context" ? el("p", { class: "questionTranslation" }, `現代語訳：${word.translation}`) : null,
     );
     const choices = el("div", { class: "choices" });
@@ -602,7 +606,7 @@ const KobunVocabApp = (() => {
 
     if (session.answered) {
       const isCorrect = session.picked === correct;
-      box.appendChild(el("div", { class: `feedback ${isCorrect ? "ok" : "ng"}` },
+      box.appendChild(el("div", { class: `feedback ${isCorrect ? "ok" : "ng"}`, role: "status", "aria-live": "polite", "aria-atomic": "true", tabindex: "-1" },
         el("h3", {}, isCorrect ? "○ 正解" : "× 不正解"),
         el("p", {}, `${word.headword}【${word.kanji}】：${meaningText(word)}`),
       ));
@@ -645,6 +649,7 @@ const KobunVocabApp = (() => {
       saveProgress();
     }
     renderSession();
+    $(".feedback")?.focus({ preventScroll: true });
   }
 
   function nextQuiz(kind) {
@@ -665,25 +670,34 @@ const KobunVocabApp = (() => {
     else if (kind === "meaning") session.stage = (session.mode === "final" || session.mode === "meaningReview") ? "done" : "context";
     else session.stage = "done";
     renderSession();
+    ($(".askWord") || $(".cloze"))?.focus({ preventScroll: true });
   }
 
   function renderWrongReview(panel) {
     panel.appendChild(el("p", { class: "lead" }, "間違えた語を読み直し、確認した語にチェックを付けてください。"));
     const list = el("div", { class: "reviewList" });
-    session.wrongMeaningIds.forEach((id) => {
+    session.wrongMeaningIds.forEach((id, index) => {
       const entry = reviewEntryByKey(id);
       const word = wordForSession(id);
       const checked = session.reviewedIds.includes(id);
+      if (checked) {
+        list.appendChild(el("div", { class: "wordRow done" },
+          el("span", { class: "wordNo" }, index + 1),
+          el("span", { class: "wordName" }, `${word.headword}【${word.kanji}】`),
+          el("span", { class: "wordStatus" }, "✓ 確認済み"),
+        ));
+        return;
+      }
       const card = wordCard(word);
       card.classList.add("reviewCard");
-      card.appendChild(el("button", { class: "ghost", disabled: checked, onclick: () => {
+      card.appendChild(el("button", { class: "ghost", onclick: () => {
         if (!session.reviewedIds.includes(id)) {
           session.reviewedIds.push(id);
           appendHistory({ kind: "wrong-review", wordId: entry?.word.id || id, result: "viewed" }, entry?.progress || state.progress);
           saveProgressFor(entry?.setId || state.setId, entry?.progress || state.progress);
         }
         renderSession();
-      } }, checked ? "確認済み" : "確認した"));
+      } }, "確認した"));
       list.appendChild(card);
     });
     panel.appendChild(list);
@@ -717,8 +731,8 @@ const KobunVocabApp = (() => {
     const total = (isFinal || isMeaningReview) ? session.meaningOrder.length : session.contextOrder.length;
     const passed = isFinal && score >= passScore();
     const finalCleared = state.progress.finalCheck?.cleared;
-    panel.appendChild(el("section", { class: "doneBanner" },
-      el("p", { class: "label" }, "Step Complete"),
+    panel.appendChild(el("section", { class: `doneBanner${passed ? " doneBanner--success" : ""}` },
+      el("p", { class: "label" }, "学習結果"),
       el("div", { class: "score" }, `${score} / ${total}`),
       el("h2", {}, isFinal ? (passed ? `${state.set.meta.title} CLEAR` : "最終チェック完了") : isMeaningReview ? "意味だけ復習が完了しました" : (session.mode === "review" ? "誤答復習が完了しました" : "通常学習が完了しました")),
       el("p", {}, isFinal ? `${passScore()}/${state.set.words.length}問以上でCLEAR` : isMeaningReview ? "正解した語は次の復習日へ、誤答した語は要再確認へ戻りました。" : (reviewIds().length ? `復習対象があと${reviewIds().length}語あります。` : "全語の文中問題に正解しました。")),
@@ -738,13 +752,15 @@ const KobunVocabApp = (() => {
 
   async function loadSet(setId) {
     const entry = state.manifest.sets[setId];
-    state.setId = setId;
-    state.set = await fetch(entry.dataUrl, { cache: "no-store" }).then((response) => {
+    const set = await fetch(entry.dataUrl, { cache: "no-store" }).then((response) => {
       if (!response.ok) throw new Error(`set: HTTP ${response.status}`);
       return response.json();
     });
+    const progress = loadProgressFor(setId, set);
+    state.setId = setId;
+    state.set = set;
+    state.progress = progress;
     localStorage.setItem(SET_KEY, setId);
-    state.progress = loadProgress();
   }
 
   async function switchSet(setId) {
@@ -754,10 +770,11 @@ const KobunVocabApp = (() => {
       await loadSet(setId);
       await loadReviewPool();
       if (cloud) cloud.queueSave();
+      setShareStatus("");
       renderHome();
     } catch (error) {
       console.error(error);
-      alert("セットを読み込めませんでした。");
+      setShareStatus("セットを読み込めませんでした。もう一度お試しください。", "ng");
       renderHome();
     }
   }
@@ -784,7 +801,16 @@ const KobunVocabApp = (() => {
       await loadReviewPool();
       renderHome();
     } catch (error) {
-      $("#homePanel").appendChild(el("div", { class: "error" }, "データを読み込めませんでした。ローカルサーバー経由で開いてください。"));
+      const home = $("#homePanel");
+      home.removeAttribute("aria-busy");
+      home.innerHTML = "";
+      const errorBox = el("div", { class: "error", role: "alert", tabindex: "-1" },
+        el("p", {}, "データを読み込めませんでした。"),
+        el("p", { class: "hint" }, "ローカルサーバー経由で開いているか確認してから、再読み込みしてください。"),
+        el("button", { class: "ghost", onclick: () => location.reload() }, "再読み込み"),
+      );
+      home.appendChild(errorBox);
+      errorBox.focus();
       console.error(error);
     }
   }

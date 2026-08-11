@@ -4,17 +4,103 @@
 
 `eiken-practice` 大問1と同じく、暖色の紙面、濃い墨色、焦茶の要注意アクションで構成する。装飾よりも「いま何をしているか」と「次に何をするか」を優先する。
 
-## 色と文字
+## Design Read
 
-- 背景: `#faf9f5`
-- カード: `#efe9de`
-- 本文・主要ボタン: `#141413`
-- 補助文字: `#615c54`
-- 要復習: `#a9583e`
-- 正解: `#16803a`
-- 不正解: `#b42318`
-- 見出し: Georgia, "Yu Mincho", serif
-- 本文: "Segoe UI", "Yu Gothic UI", Meiryo, sans-serif
+短時間で反復するマルチステップ古文教材。学習者は「セット選択 → 暗記 → 意味確認 → 文中問題 → 完了 → 復習」を日常的に繰り返す。派手な初見の印象より、毎回同じ場所に同じ規則で情報がある予測可能性を優先する。
+
+## Redesign mode: `Redesign - Preserve`
+
+- 学習フロー、文言の意味、データ形式、保存キー、URL構造は変更しない。
+- 暖色背景、墨色、焦茶アクセント、明朝見出しをブランド資産として維持する（古文教材の編集的文脈）。
+- ランディングページ的な派手なヒーロー、GSAP、非対称レイアウト、画像追加は採用しない。監査・階層・色・形状・状態・アクセシビリティ・事前チェックのみ適用する。
+
+## Three Dials
+
+| Dial | 値 | 理由 |
+| --- | ---: | --- |
+| `DESIGN_VARIANCE` | 4 | 学習中の予測可能性は守りつつ、ホーム画面の単調なカード反復だけ解消する |
+| `MOTION_INTENSITY` | 3 | 押下・正誤・画面遷移の理解を助ける160-220msの短いフィードバックのみ |
+| `VISUAL_DENSITY` | 5 | 情報量は維持し、主操作と補助情報の優先度を明確にする |
+
+## 色（役割トークン）
+
+実装は `static/styles.css` の `--color-*` を正本とし、既存の `--canvas` 等は互換エイリアスとして残す。
+
+| 役割トークン | 値 | 用途 |
+| --- | --- | --- |
+| `--color-canvas` | `#faf9f5` | ページ背景 |
+| `--color-surface-primary` | `#efe9de` | カード・暗記カード・問題面 |
+| `--color-surface-subtle` | `#f5f0e8` | 主CTA面、間隔復習の内訳セル背景 |
+| `--color-ink-primary` | `#141413` | 本文・見出し・主要ボタン地色 |
+| `--color-ink-secondary` | `#615c54` | 補助文字・ラベル・ヒント |
+| `--color-border` | `#ddd5c8` | 罫線・区切り（装飾用、非text 3:1は不要な区切り線専用） |
+| `--color-control-border` | `#8a8478` | select・ghost button・選択肢など操作要素の通常時境界（canvas上約3.53:1、card上約3.07:1） |
+| `--color-accent` | `#a9583e` | 要復習・間隔復習の強調 |
+| `--color-accent-strong` | `#8a4732` | accentのhover/active |
+| `--color-success` | `#136b31` | 正解のみ（`--color-surface-primary`背景で4.5:1以上を確保） |
+| `--color-danger` | `#b42318` | 不正解・エラーのみ |
+
+暖色紙面と明朝見出しは「古文教材の編集的文脈」を表す意図的な選択であり、汎用プロダクトのニュートラルグレーへは寄せない。成功色・失敗色は正誤フィードバックとエラー表示以外に流用しない。
+
+## タイポグラフィ尺度
+
+| 名称 | サイズ | 書体 | 用途 |
+| --- | --- | --- | --- |
+| display | 48px | Georgia serif | 完了画面のスコア |
+| page title | clamp(32px, 6vw, 52px) | Georgia/Yu Mincho | `h1` |
+| section title | clamp(25px, 4vw, 34px) | Georgia/Yu Mincho | `h2` |
+| question title | clamp(26px, 5vw, 38px) | Georgia/Yu Mincho | 見出し語・文中問題の問い |
+| body | 16px / line-height 1.7 | Segoe UI系 | 本文・選択肢・例文の訳 |
+| helper | 13-14px | Segoe UI系 | ヒント・補助文・保存状態 |
+| label | 12px, 700, uppercase | Segoe UI系 | セクションラベルのみ（日本語ラベルは非uppercase） |
+| numeric | `font-variant-numeric: tabular-nums` | — | 統計値・スコア・進捗番号 |
+
+`h3`（意味／例文／例文の訳の小見出し）は14px固定をやめ、bodyより明確に強い18-20pxへ引き上げる。日本語ラベルには過度な`letter-spacing`を付けない。
+
+## 形状ルール
+
+- コンテナ（`.card`, `.flashCard`, `.quiz`, `.doneBanner` など）: `border-radius: 12px`
+- 操作要素（ボタン、select、選択肢、intervalGrid等の面）: `border-radius: 8px`
+- 番号のみ円形（`.wordNo`, `.choiceNo`）: `border-radius: 999px`
+- `.recommend`や`.intervalGrid`など旧10px/8pxの半端な値は上記3段階へ統一する。
+- 例外: ホームの「最近の学習履歴」「その他」は主導線から一段下げるため`border-radius: 0`（罫線区切りのみ）とする。
+
+## Motion（Intensity 3）
+
+- hover: 180ms, `background-color`/`border-color`/`color`の`transition`
+- press（`:active`）: 120ms, `transform: scale(.98)` 相当の短い沈み込みのみ
+- feedback reveal（正誤表示、`.feedback`）: 200ms, `opacity` + 8px程度の`translateY`
+- `prefers-reduced-motion: reduce` では上記すべての`transition`/`animation`を`0ms`にし、即時表示にする。
+- 使用プロパティは `transform`・`opacity`・色変化のみ。レイアウトを揺らす`width`/`height`/`margin`のアニメーションは行わない。
+
+## 状態マトリクス
+
+| 画面/要素 | loading | empty | error | 正解 | 不正解 | 完了 |
+| --- | --- | --- | --- | --- | --- | --- |
+| ホーム初回読込 | 静的skeleton（カード形状の枠のみ） | — | インライン`.error`＋再試行案内 | — | — | — |
+| セット切替 | ボタン`disabled`＋処理中表示 | — | `shareStatus`にインラインエラー（`alert()`不使用） | — | — | — |
+| 意味だけ復習 | — | 「今すぐ復習する語はありません」を`.hint`で表示 | — | — | — | — |
+| 学習履歴 | — | 「まだ学習履歴はありません。」 | — | — | — | — |
+| 単語一覧 | — | 該当なし（常時全語表示） | — | — | — | — |
+| 意味/文中問題 | — | — | — | 選択肢に○＋緑罫線＋`.feedback.ok` | 選択したものに×＋赤罫線、正答も同時表示＋`.feedback.ng` | — |
+| セッション完了 | — | 復習0件は「全語の文中問題に正解しました。」 | — | — | — | ライトテーマ内の強調面（反転なし） |
+
+## Pre-Flight（このアプリに適用する項目）
+
+- Design Readとdial値が本ファイルに明記されている。
+- `Redesign - Preserve`としてIA・学習フロー・保存キーを維持している。
+- ライトテーマを全画面で維持し、完了画面だけ反転しない。
+- 焦茶アクセントを一貫して使い、正解・不正解色は意味色としてのみ使う。
+- radius体系がコンテナ12px、操作8px、番号円形に限定される。
+- CTAのコントラストがAAを満たし、デスクトップで文言が折り返さない。
+- カードは階層が必要な場所だけに使い、ホームで同じカード表現を反復しない。
+- 動きは階層・押下・正誤・状態遷移の説明可能な目的に限定する。
+- `prefers-reduced-motion`を実装する。
+- loading・empty・error・正解・不正解・完了状態が揃う。
+- 320px以上で明示的にcollapseし、横スクロールがない。
+- 新しい依存関係、GSAP、Motion、アイコンライブラリを追加していない。
+- 表示文言にem dashと装飾目的のstatus dotを追加していない。
+- LCP 2.5秒未満、CLS 0.1未満、INP 200ms未満を阻害する重い素材や処理を追加していない。
 
 ## 学習フロー
 

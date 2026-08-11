@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="古文単語 学習アプリ">
+  <rect width="64" height="64" rx="14" fill="#faf9f5"/>
+  <text x="32" y="41" text-anchor="middle" font-family="Georgia, 'Yu Mincho', serif" font-size="34" font-weight="700" fill="#141413">古</text>
+  <rect x="20" y="48" width="24" height="4" rx="2" fill="#a9583e"/>
+</svg>

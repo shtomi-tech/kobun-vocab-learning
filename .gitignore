@@ -1,3 +1,4 @@
 static/config.json
 _site/
 .hermes/
+.claude/

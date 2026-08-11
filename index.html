@@ -3,24 +3,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="古文単語を「覚える → 意味を確かめる → 文中で解く」の順に反復学習できる無料アプリ。">
+  <meta name="theme-color" content="#faf9f5">
   <title>古文単語 学習アプリ</title>
-  <link rel="stylesheet" href="static/styles.css?v=0.5.0">
+  <link rel="icon" href="static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="static/styles.css?v=0.7.0">
 </head>
 <body>
+  <a class="skipLink" href="#main">学習内容へ移動</a>
   <div class="wrap">
     <header class="top">
-      <p class="eyebrow">Kobun Vocabulary Practice</p>
       <h1>古文単語 学習アプリ</h1>
       <p class="shareStatus" id="shareStatus" role="status" aria-live="polite"></p>
     </header>
-    <main>
-      <div id="homePanel"></div>
+    <main id="main">
+      <div id="homePanel" aria-busy="true">
+        <div class="skeleton" aria-hidden="true">
+          <div class="skeletonLine" style="width:35%"></div>
+          <div class="skeletonLine skeletonLine--title"></div>
+          <div class="skeletonLine" style="width:85%"></div>
+          <div class="skeletonLine skeletonLine--cta"></div>
+        </div>
+        <p class="visuallyHidden">学習データを読み込んでいます。</p>
+      </div>
       <div id="sessionPanel" class="hide"></div>
     </main>
   </div>
   <script src="static/srs.js?v=0.4.0"></script>
   <script src="static/cloud.js?v=0.4.0"></script>
-  <script src="static/mode-vocab.js?v=0.6.0"></script>
+  <script src="static/mode-vocab.js?v=0.7.0"></script>
   <script src="static/app.js?v=0.2.0"></script>
 </body>
 </html>
