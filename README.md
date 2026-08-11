@@ -48,6 +48,8 @@ py -3 -m http.server 8062 --bind 127.0.0.1
 
 ## 匿名利用・生徒別同期
 
-通常のURLではローカル保存だけで動作します。`?s=<生徒ID>&t=<アクセストークン>`付きURLでは、`static/config.json`にSupabase設定がある場合だけ、共通の`app_students` / `app_progress`へ同期します。アプリIDは`kobun-vocab-learning`です。
+通常のURLではローカル保存だけで動作します。`?s=<生徒ID>&t=<アクセストークン>`付きURLでは、`static/config.json`にSupabase設定がある場合だけ、共通の`app_students` / `app_progress`へ同期します。アプリIDは`kobun-vocab-learning`です。共有URLで使うと、同じ端末でも生徒IDごとにローカルの一時キャッシュを分離します。
+
+生徒の登録と生徒別URLの発行は、アプリ管理ポータルの生徒共有パネルから行います。GitHub Pages公開版では、ActionsのSecretsからSupabase設定を生成します。
 
 設定例は`static/config.example.json`です。設定がない場合も匿名利用には影響しません。

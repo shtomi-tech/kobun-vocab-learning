@@ -2,8 +2,13 @@
 
 const KobunVocabApp = (() => {
   const MANIFEST_URL = "data/manifest.json";
-  const SET_KEY = "kobun_vocab_dataset";
-  const PROGRESS_PREFIX = "kobun_vocab_progress_";
+  const sharedStudentId = (() => {
+    const params = new URLSearchParams(location.search);
+    return (params.get("s") || params.get("student") || "").trim();
+  })();
+  const storageScope = sharedStudentId ? `_${encodeURIComponent(sharedStudentId)}` : "";
+  const SET_KEY = `kobun_vocab_dataset${storageScope}`;
+  const PROGRESS_PREFIX = `kobun_vocab_progress${storageScope}_`;
   const PASS_RATE = 0.8;
   const BATCH_SIZE = 4;
   const MEANING_SESSION_SIZE = 20;

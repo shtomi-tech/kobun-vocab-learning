@@ -10,6 +10,12 @@ const KobunCloud = (() => {
     }
   }
 
+  function hasUsableConfig(value) {
+    const url = String(value?.supabaseUrl || "");
+    const key = String(value?.supabaseAnonKey || "");
+    return Boolean(url && key) && !/example\.supabase\.co|YOUR_PROJECT_ID/i.test(url) && !/^dummy$|^YOUR_/i.test(key);
+  }
+
   function sharedParams() {
     const params = new URLSearchParams(location.search);
     return {
@@ -45,7 +51,7 @@ const KobunCloud = (() => {
       session.studentId = shared.studentId;
       session.token = shared.token;
       config = await loadConfig("static/config.json");
-      if (!config.supabaseUrl || !config.supabaseAnonKey) {
+      if (!hasUsableConfig(config)) {
         onStatus("生徒別URLですが、クラウド設定が未完了です。", "ng");
         return session;
       }
