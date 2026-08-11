@@ -189,7 +189,9 @@ const KobunVocabApp = (() => {
     /言うまでもない|もちろん|不十分|言い尽くせない|ありきたり|表現できない|なんとも/,
     /異様|奇怪|度を超えてよくない|異常|普通ではない|普段とは異な|並々ではない/,
     /有名|評判|名声|名前/,
-    /たいした|これといった|それほど|まったく|少しも|決して|けっして/,
+    /たいした|これといった|それほど|まったく|少しも|決して|けっして|滅多に|ほとんど/,
+    /まさか|よもや/,
+    /するな|してはいけない/,
   ];
   const hasMeaningFamilyOverlap = (word, other) => meaningFamilies.some((family) =>
     word.meanings.some((meaning) => family.test(meaning)) && other.meanings.some((meaning) => family.test(meaning))

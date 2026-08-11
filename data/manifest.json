@@ -24,6 +24,10 @@
     "kobun-set-06": {
       "label": "第6セット　評価・通常・否定表現",
       "dataUrl": "data/set-06.json"
+    },
+    "kobun-set-07": {
+      "label": "第7セット　否定・禁止・副詞表現",
+      "dataUrl": "data/set-07.json"
     }
   }
 }

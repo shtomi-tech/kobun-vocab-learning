@@ -36,6 +36,7 @@ jobs:
           node scripts/check-data.mjs
           node scripts/check-srs.cjs
           node scripts/check-set-06.mjs
+          node scripts/check-set-07.mjs
       - uses: actions/configure-pages@v5
       - name: Prepare static files
         run: |
