@@ -32,8 +32,10 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       - name: Check data and SRS
         run: |
+          node --check static/mode-vocab.js
           node scripts/check-data.mjs
           node scripts/check-srs.cjs
+          node scripts/check-set-06.mjs
       - uses: actions/configure-pages@v5
       - name: Prepare static files
         run: |

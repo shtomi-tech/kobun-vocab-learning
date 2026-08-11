@@ -187,6 +187,9 @@ const KobunVocabApp = (() => {
     /前世|宿命|運命|約束|縁|契り|愛の誓い/,
     /茫然|前後不覚|正気を失|どうしてよいかわから|道理をわきまえない/,
     /言うまでもない|もちろん|不十分|言い尽くせない|ありきたり|表現できない|なんとも/,
+    /異様|奇怪|度を超えてよくない|異常|普通ではない|普段とは異な|並々ではない/,
+    /有名|評判|名声|名前/,
+    /たいした|これといった|それほど|まったく|少しも|決して|けっして/,
   ];
   const hasMeaningFamilyOverlap = (word, other) => meaningFamilies.some((family) =>
     word.meanings.some((meaning) => family.test(meaning)) && other.meanings.some((meaning) => family.test(meaning))

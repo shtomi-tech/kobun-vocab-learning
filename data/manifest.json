@@ -20,6 +20,10 @@
     "kobun-set-05": {
       "label": "第5セット　敬語・茫然・強調表現",
       "dataUrl": "data/set-05.json"
+    },
+    "kobun-set-06": {
+      "label": "第6セット　評価・通常・否定表現",
+      "dataUrl": "data/set-06.json"
     }
   }
 }
