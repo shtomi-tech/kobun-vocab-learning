@@ -67,11 +67,25 @@
 
 ## Motion（Intensity 3）
 
-- hover: 180ms, `background-color`/`border-color`/`color`の`transition`
-- press（`:active`）: 120ms, `transform: scale(.98)` 相当の短い沈み込みのみ
-- feedback reveal（正誤表示、`.feedback`）: 200ms, `opacity` + 8px程度の`translateY`
-- `prefers-reduced-motion: reduce` では上記すべての`transition`/`animation`を`0ms`にし、即時表示にする。
-- 使用プロパティは `transform`・`opacity`・色変化のみ。レイアウトを揺らす`width`/`height`/`margin`のアニメーションは行わない。
+役割トークンは `static/styles.css` の `--motion-*` / `--ease-*` を正本とし、個別画面へ数値を直書きしない。既存`--transition-*`は互換エイリアスとして残す。
+
+| トークン | 値 | 用途 |
+| --- | --- | --- |
+| `--motion-press` | 80ms | ボタン・選択肢の押下沈み込み（マウス/タッチ/キーボード共通） |
+| `--motion-release` | 180ms | 押下復帰、hover、画面・カードのクロスフェード |
+| `--motion-feedback` | 200ms | 正誤表示（`.feedback`、選択肢の○/×）のreveal |
+| `--motion-progress` | 280ms | 問題・残数の更新 |
+| `--motion-completion` | 420ms | 4語ブロック完了のステップsettle、初回CLEARのスコアsettle |
+| `--ease-standard` | `ease` | 通常の状態遷移 |
+| `--ease-spring-soft` | `cubic-bezier(.34, 1.2, .64, 1)` | 完了・達成のsettleのみに限定して使う |
+
+### 原則
+
+- 1操作1主役: 1つの操作につき、押下・正誤・進捗のうち動かすのは1要素だけにする。
+- 完了待ち禁止: モーションの再生完了を待たないと次の解答・次画面へ進めない実装を禁止する。アニメーション中でも操作は即座に反映する。
+- 状態の意味を動きだけに依存させない: 正誤・保存状態・完了は文言や記号でも判別できるようにし、モーションは補強に留める。
+- `prefers-reduced-motion: reduce` では、durationを0msにするだけでなく、shake・count-up・クロスフェードなど視覚的な動き自体を実行しない。状態は即時に最終表示にする。
+- 使用プロパティは `transform`（`scale`/`translate`単独プロパティ含む）・`opacity`・色変化のみ。レイアウトを揺らす`width`/`height`/`margin`のアニメーションは行わない。
 
 ## 状態マトリクス
 
@@ -82,8 +96,11 @@
 | 意味だけ復習 | — | 「今すぐ復習する語はありません」を`.hint`で表示 | — | — | — | — |
 | 学習履歴 | — | 「まだ学習履歴はありません。」 | — | — | — | — |
 | 単語一覧 | — | 該当なし（常時全語表示） | — | — | — | — |
-| 意味/文中問題 | — | — | — | 選択肢に○＋緑罫線＋`.feedback.ok` | 選択したものに×＋赤罫線、正答も同時表示＋`.feedback.ng` | — |
+| 意味/文中問題 | — | — | — | 選択肢に○＋緑罫線＋`.feedback.ok`、○記号のみ短くsettle | 選択したものに×＋赤罫線、正答も同時表示＋`.feedback.ng`、選択肢のみ2〜3px一往復shake | — |
 | セッション完了 | — | 復習0件は「全語の文中問題に正解しました。」 | — | — | — | ライトテーマ内の強調面（反転なし） |
+| 保存状態（`shareStatus`） | 保存中はローダー記号＋「保存中…」 | — | 保存失敗は静的な`!`記号＋インラインエラー文言 | — | — | 保存済みは`✓`記号、初回表示のみsettle・以降は静的 |
+| 4語ブロック完了（`stepBar`） | — | — | — | — | — | 完了ステップに`✓`＋`aria-label`、遷移した回だけ該当ステップがsettle |
+| 初回CLEAR（最終チェック） | — | — | — | — | — | スコアは即時表示のうえ一度だけsettle、CLEARバッジを一度だけ表示。2回目以降・リロード後の再表示では演出なし |
 
 ## Pre-Flight（このアプリに適用する項目）
 

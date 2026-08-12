@@ -47,6 +47,15 @@
   --transition-press: 120ms ease;
   --transition-reveal: 200ms ease;
 
+  /* Motion（役割トークン、DESIGN.md参照） */
+  --motion-press: 80ms;
+  --motion-release: 180ms;
+  --motion-feedback: 200ms;
+  --motion-progress: 280ms;
+  --motion-completion: 420ms;
+  --ease-standard: ease;
+  --ease-spring-soft: cubic-bezier(.34, 1.2, .64, 1);
+
   --focus-ring: 3px solid var(--clay);
   --focus-ring-offset: 3px;
 
@@ -63,10 +72,16 @@ button:focus-visible, select:focus-visible { outline: var(--focus-ring); outline
 .askWord:focus, .cloze:focus, .feedback:focus { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 .wrap { width: min(var(--container-max), calc(100% - var(--page-gutter))); margin: 0 auto; padding: 40px 0 64px; }
 .top { margin-bottom: 32px; }
-.shareStatus { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+.shareStatus { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; color: var(--muted); font-size: 13px; }
 .shareStatus:empty { display: none; }
-.shareStatus.ok { color: var(--ok); }
-.shareStatus.ng { color: var(--ng); }
+.shareStatus[data-state="saved"] { color: var(--ok); }
+.shareStatus[data-state="error"] { color: var(--ng); }
+.shareStatusIcon { flex: none; display: inline-flex; width: 14px; height: 14px; align-items: center; justify-content: center; font-weight: 700; line-height: 1; }
+.shareStatus[data-state="syncing"] .shareStatusIcon { width: 10px; height: 10px; border-radius: var(--radius-pill); border: 2px solid var(--color-border); border-top-color: var(--muted); animation: statusSpin .8s linear infinite; }
+.shareStatus[data-state="saved"] .shareStatusIcon::before { content: "✓"; color: var(--ok); }
+.shareStatus[data-state="saved"] .shareStatusIcon.is-settling { animation: answerSuccess var(--motion-feedback) var(--ease-spring-soft); }
+.shareStatus[data-state="error"] .shareStatusIcon::before { content: "!"; color: var(--ng); }
+@keyframes statusSpin { to { transform: rotate(360deg); } }
 h1, h2 { margin: 0; font-family: Georgia, "Yu Mincho", serif; line-height: 1.25; text-wrap: balance; }
 h1 { font-size: clamp(32px, 6vw, 52px); }
 h2 { font-size: clamp(25px, 4vw, 34px); }
@@ -84,6 +99,32 @@ p { margin: 0 0 12px; text-wrap: pretty; }
 @media (prefers-contrast: more) {
   :root { --line: #8a8478; }
   button:focus-visible, select:focus-visible { outline-width: 4px; }
+}
+
+/* Motion状態クラス（DESIGN.md「Motion」参照。1操作1主役、完了待ち禁止） */
+.is-pressing { scale: .98; }
+.is-entering { animation: contentEnter var(--motion-release) var(--ease-standard); }
+.is-settling { animation: progressSettle var(--motion-completion) var(--ease-spring-soft); }
+.is-shaking { animation: answerError var(--motion-feedback) var(--ease-standard); }
+.choice.is-settling { animation: none; }
+.choice.correct.is-settling::after { animation: answerSuccess var(--motion-feedback) var(--ease-spring-soft); }
+@keyframes contentEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes progressSettle {
+  from { scale: .97; }
+  to { scale: 1; }
+}
+@keyframes answerError {
+  0%, 100% { translate: 0; }
+  25% { translate: -3px; }
+  75% { translate: 3px; }
+}
+@keyframes answerSuccess {
+  0% { scale: .5; opacity: 0; }
+  60% { scale: 1.15; }
+  100% { scale: 1; opacity: 1; }
 }
 .setPicker { display: grid; gap: 6px; max-width: 420px; margin-bottom: 20px; color: var(--muted); font-size: 13px; font-weight: 700; }
 .setSelect { min-height: 48px; padding: 10px 38px 10px 12px; border: 1px solid var(--color-control-border); border-radius: var(--radius-control); background: var(--canvas); color: var(--ink); font: inherit; cursor: pointer; transition: border-color var(--transition-hover); }
@@ -142,6 +183,9 @@ button:disabled { cursor: default; opacity: .55; }
 .step.active { background: var(--ink); color: var(--canvas); font-weight: 700; border-bottom-color: var(--ink); }
 .step.cleared { border-bottom-color: var(--ok); }
 .step.cleared::before { content: "✓ "; color: var(--ok); }
+.hideMeaningToggle { margin-bottom: 12px; font-size: 13px; }
+.hideMeaningToggle.is-active { border-color: var(--clay); color: var(--clay-dark); }
+.revealMeaning { margin-bottom: 8px; }
 .flashTitle { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin-bottom: 20px; }
 .headword { font-family: Georgia, "Yu Mincho", serif; font-size: 38px; font-weight: 700; line-height: 1.25; }
 .kanji { color: var(--muted); font-size: 20px; }
@@ -183,6 +227,7 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .doneBanner--success { border-top-color: var(--ok); }
 .doneBanner--success .score { color: var(--ok); }
 .score { margin: 10px 0; font-family: Georgia, serif; font-size: 48px; line-height: 1.25; }
+.clearBadge { margin: 0 0 12px; color: var(--ok); font-weight: 700; }
 .error { padding: 20px; border-left: 4px solid var(--ng); border-radius: var(--radius-control); background: var(--card); }
 .error:focus { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 .error p:last-of-type { margin-bottom: 16px; }
