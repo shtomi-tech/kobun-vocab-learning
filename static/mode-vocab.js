@@ -658,7 +658,9 @@ const KobunVocabApp = (() => {
       saveProgress();
     }
     renderSession();
-    $(".feedback")?.focus({ preventScroll: true });
+    const feedback = $(".feedback");
+    feedback?.focus({ preventScroll: true });
+    feedback?.scrollIntoView({ block: "nearest" });
   }
 
   function nextQuiz(kind) {
