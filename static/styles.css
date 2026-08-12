@@ -49,6 +49,8 @@
 
   --focus-ring: 3px solid var(--clay);
   --focus-ring-offset: 3px;
+
+  --quiz-next-action-height: 96px;
 }
 
 * { box-sizing: border-box; }
@@ -172,7 +174,9 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .feedback.ok h3 { color: var(--ok); }
 .feedback.ng h3 { color: var(--ng); }
 .questionTranslation { margin: -4px 0 18px; padding: 14px 16px; border-left: 4px solid var(--clay); border-radius: var(--radius-control); background: var(--soft); }
-.next { display: block; margin: 16px 0 0 auto; }
+.next { display: block; }
+.quiz--answered { margin-bottom: var(--quiz-next-action-height); }
+.quizNextAction { position: fixed; left: 50%; bottom: 0; z-index: 20; display: flex; justify-content: flex-end; width: min(var(--container-max), calc(100% - var(--page-gutter))); padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--card); transform: translateX(-50%); }
 .reviewList { display: grid; gap: 16px; }
 .reviewCard { margin: 0; border-left: 4px solid var(--clay); }
 .doneBanner { padding: 28px; border: 1px solid var(--line); border-top: 4px solid var(--ink); border-radius: var(--radius-container); background: var(--card); }
@@ -202,6 +206,10 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
   .wordStatus { grid-column: 2; }
   .actions > button { flex: 1 1 160px; }
   .example, .cloze { font-size: 18px; }
+  .quiz--answered { margin-bottom: 0; }
+  .quizNextAction { position: static; left: auto; bottom: auto; transform: none; z-index: auto; width: auto; margin: 16px 0 0; padding: 0; border-top: 0; background: none; }
+  .next { width: 100%; }
+  .kbdHint { display: none; }
 }
 
 @media (max-height: 760px) {

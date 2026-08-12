@@ -586,7 +586,7 @@ const KobunVocabApp = (() => {
       session.choices = choiceSet(word, kind);
     }
 
-    const box = el("section", { class: "quiz" },
+    const box = el("section", { class: `quiz${session.answered ? " quiz--answered" : ""}` },
       el("p", { class: "label" }, kind === "meaning" ? "次の語の意味は？" : "空欄に入る語の基本形は？"),
       kind === "meaning"
         ? el("p", { class: "askWord", tabindex: "-1" }, `${word.headword}【${word.kanji}】`)
@@ -608,6 +608,7 @@ const KobunVocabApp = (() => {
       choices.appendChild(button);
     });
     box.appendChild(choices);
+    if (!session.answered) box.appendChild(el("p", { class: "hint kbdHint" }, "キーボード: 1〜4で回答"));
 
     if (session.answered) {
       const isCorrect = session.picked === correct;
@@ -615,7 +616,10 @@ const KobunVocabApp = (() => {
         el("h3", {}, isCorrect ? "○ 正解" : "× 不正解"),
         el("p", {}, `${word.headword}【${word.kanji}】：${meaningText(word)}`),
       ));
-      box.appendChild(el("button", { class: "cta next", onclick: () => nextQuiz(kind) }, index === order.length - 1 ? "次へ →" : "次の問題 →"));
+      box.appendChild(el("p", { class: "hint kbdHint" }, "Enterで次の問題へ"));
+      box.appendChild(el("div", { class: "quizNextAction" },
+        el("button", { class: "cta next", onclick: () => nextQuiz(kind) }, index === order.length - 1 ? "次へ →" : "次の問題 →"),
+      ));
     }
     panel.appendChild(box);
   }
@@ -676,6 +680,30 @@ const KobunVocabApp = (() => {
     else session.stage = "done";
     renderSession();
     ($(".askWord") || $(".cloze"))?.focus({ preventScroll: true });
+  }
+
+  function handleQuizKeydown(event) {
+    if (!session) return;
+    if (session.stage !== "meaning" && session.stage !== "context") return;
+    if (event.repeat || event.isComposing || event.keyCode === 229) return;
+    if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+    if (event.target instanceof Element && event.target.closest("input, textarea, select, button, a, [contenteditable]")) return;
+    const sessionPanel = $("#sessionPanel");
+    if (!sessionPanel || sessionPanel.classList.contains("hide")) return;
+
+    if (!session.answered) {
+      const index = { "1": 0, "2": 1, "3": 2, "4": 3 }[event.key];
+      if (index == null) return;
+      const choice = document.querySelectorAll(".quiz .choice:not(:disabled)")[index];
+      if (!choice) return;
+      event.preventDefault();
+      choice.click();
+    } else if (event.key === "Enter") {
+      const next = $(".quiz .next");
+      if (!next || next.disabled) return;
+      event.preventDefault();
+      next.click();
+    }
   }
 
   function renderWrongReview(panel) {
@@ -785,6 +813,7 @@ const KobunVocabApp = (() => {
   }
 
   async function mount() {
+    document.addEventListener("keydown", handleQuizKeydown);
     try {
       state.manifest = await fetch(MANIFEST_URL, { cache: "no-store" }).then((response) => {
         if (!response.ok) throw new Error(`manifest: HTTP ${response.status}`);
