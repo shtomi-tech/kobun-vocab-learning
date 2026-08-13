@@ -214,6 +214,8 @@ const KobunVocabApp = (() => {
     /たいした|これといった|それほど|まったく|少しも|決して|けっして|滅多に|ほとんど/,
     /まさか|よもや/,
     /するな|してはいけない/,
+    /いらっしゃる|おいでになる|おありになる|ていらっしゃる|でいらっしゃる/,
+    /お与えになる|くださる|下賜/,
   ];
   const hasMeaningFamilyOverlap = (word, other) => meaningFamilies.some((family) =>
     word.meanings.some((meaning) => family.test(meaning)) && other.meanings.some((meaning) => family.test(meaning))
@@ -620,19 +622,25 @@ const KobunVocabApp = (() => {
 
   function wordCard(word, { hideMeaningEnabled = false, revealed = false, onReveal } = {}) {
     const meaningId = `flashMeaning-${word.id}`;
+    const notesId = `flashNotes-${word.id}`;
     const translationId = `flashTranslation-${word.id}`;
     const showRevealButton = hideMeaningEnabled && !revealed;
     const justRevealed = hideMeaningEnabled && revealed;
+    const controlledIds = [meaningId, ...(word.notes?.length ? [notesId] : []), translationId].join(" ");
     return el("article", { class: "flashCard" },
       el("div", { class: "flashTitle" },
         el("span", { class: "headword" }, word.headword),
         el("span", { class: "kanji" }, `【${word.kanji}】`),
       ),
       showRevealButton
-        ? el("button", { class: "cta revealMeaning", type: "button", "aria-expanded": "false", "aria-controls": `${meaningId} ${translationId}`, onclick: onReveal }, "意味を見る")
-        : el("section", { id: hideMeaningEnabled ? meaningId : null, class: justRevealed ? "is-entering" : null }, el("h3", {}, "意味"), ...word.meanings.map((meaning) => el("p", {}, meaning))),
+        ? el("button", { class: "cta revealMeaning", type: "button", "aria-expanded": "false", "aria-controls": controlledIds, onclick: onReveal }, "意味を見る")
+        : null,
+      el("section", { id: hideMeaningEnabled ? meaningId : null, hidden: showRevealButton, class: justRevealed ? "is-entering" : null }, el("h3", {}, "意味"), ...word.meanings.map((meaning) => el("p", {}, meaning))),
+      word.notes?.length
+        ? el("section", { id: hideMeaningEnabled ? notesId : null, hidden: showRevealButton, class: `flashNotes${justRevealed ? " is-entering" : ""}` }, el("h3", {}, "解説・補足"), el("ul", {}, ...word.notes.map((note) => el("li", {}, note))))
+        : null,
       el("section", {}, el("h3", {}, `例文　『${word.source}』`), el("p", { class: "example" }, word.example)),
-      el("section", { id: hideMeaningEnabled ? translationId : null, class: justRevealed ? "is-entering" : null }, el("h3", {}, "例文の訳"), el("p", {}, word.translation)),
+      el("section", { id: hideMeaningEnabled ? translationId : null, hidden: showRevealButton, class: justRevealed ? "is-entering" : null }, el("h3", {}, "例文の訳"), el("p", {}, word.translation)),
     );
   }
 

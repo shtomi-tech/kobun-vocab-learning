@@ -212,6 +212,8 @@ button:disabled { cursor: default; opacity: .55; }
 .headword { font-family: Georgia, "Yu Mincho", serif; font-size: 38px; font-weight: 700; line-height: 1.25; }
 .kanji { color: var(--muted); font-size: 20px; }
 .flashCard section { padding-top: 16px; border-top: 1px solid var(--line); }
+.flashNotes ul { margin: 0; padding-left: 1.4em; max-width: var(--text-measure); }
+.flashNotes li + li { margin-top: 6px; }
 .flashCard section:last-of-type { padding-top: 8px; border-top: 0; }
 .flashCard section:last-of-type h3 { font-size: 13px; color: var(--muted); }
 .flashCard section:last-of-type p { color: var(--muted); }

@@ -16,6 +16,7 @@ for (const [setId, entry] of Object.entries(manifest.sets)) {
       if (!word[key] || (Array.isArray(word[key]) && !word[key].length)) throw new Error(`${setId}: ${word.id || "unknown"} missing ${key}`);
     }
     if (!word.meanings.every((meaning) => typeof meaning === "string" && meaning.length > 0)) throw new Error(`${setId}: ${word.id} has an empty meaning`);
+    if (word.notes && (!Array.isArray(word.notes) || !word.notes.length || !word.notes.every((note) => typeof note === "string" && note.length > 0))) throw new Error(`${setId}: ${word.id} has invalid notes`);
     if ((word.cloze.match(/（　）/g) ?? []).length !== 1) throw new Error(`${setId}: ${word.id} cloze must have exactly one blank`);
     if (word.example.endsWith(`（${word.source}）`)) throw new Error(`${setId}: ${word.id} source is duplicated in example`);
     if (ids.has(word.id)) throw new Error(`${setId}: duplicate id ${word.id}`);
