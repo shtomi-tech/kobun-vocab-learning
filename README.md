@@ -48,7 +48,7 @@ py -3 -m http.server 8062 --bind 127.0.0.1
 - `data/set-07.json`: 第7セット「否定・禁止・副詞表現」12語
 - `data/set-08.json`: 第8セット「副詞・尊敬表現」12語
 
-新しいセットは、同じ形式のJSONを追加し、manifestへ登録します。各語には `example`、`translation`、`source`、`cloze` を必ず収録します。任意の `notes` は、空でない解説・補足の文字列配列です。
+新しいセットは、同じ形式のJSONを追加し、manifestへ登録します。各語には `example`、`translation`、`source`、`cloze` に加え、`notes`（空でない解説・補足の文字列配列。1件以上必須）を必ず収録します。
 
 ## 匿名利用・生徒別同期
 

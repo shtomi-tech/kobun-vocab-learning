@@ -19,6 +19,7 @@ assert.deepEqual(
 for (const word of data.words) {
   assert.equal((word.cloze.match(/（　）/g) ?? []).length, 1, `${word.id}: cloze must have one blank`);
   assert.ok(word.meanings.length >= 1, `${word.id}: meanings are required`);
+  assert.ok(word.notes?.length >= 1 && word.notes.every((note) => typeof note === "string" && note.trim().length > 0), `${word.id}: notes are required`);
   assert.ok(word.example && word.translation && word.source, `${word.id}: example fields are required`);
   assert.ok(!word.example.endsWith(`（${word.source}）`), `${word.id}: source is duplicated in example`);
 }
@@ -101,4 +102,4 @@ for (const word of data.words) {
   assert.ok(hasThreeSafeCandidates(word), `${word.id}: fewer than three safe distractor words`);
 }
 
-console.log("OK: set-06 data and meaning-family guards");
+console.log("OK: set-06 data, notes, and meaning-family guards");

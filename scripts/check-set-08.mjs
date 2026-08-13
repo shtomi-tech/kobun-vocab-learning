@@ -37,7 +37,7 @@ for (const word of data.words) {
     assert.ok(typeof word[key] === "string" && word[key].length > 0, `${word.id}: ${key} is required`);
   }
   assert.ok(word.meanings.length >= 1 && word.meanings.every((meaning) => typeof meaning === "string" && meaning.length > 0), `${word.id}: meanings are required`);
-  assert.ok(word.notes?.length >= 1 && word.notes.every((note) => typeof note === "string" && note.length > 0), `${word.id}: notes are required`);
+  assert.ok(word.notes?.length >= 1 && word.notes.every((note) => typeof note === "string" && note.trim().length > 0), `${word.id}: notes are required`);
   assert.equal((word.cloze.match(/（　）/g) ?? []).length, 1, `${word.id}: cloze must have one blank`);
   assert.equal(normalize(word.cloze.replace("（　）", expectedForms.get(word.id))), normalize(word.example), `${word.id}: cloze does not restore the example`);
   assert.ok(!word.example.endsWith(`（${word.source}）`), `${word.id}: source is duplicated in example`);
