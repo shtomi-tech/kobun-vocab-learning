@@ -434,9 +434,15 @@ const KobunVocabApp = (() => {
     const currentSummary = KobunSetProgress.summarize(current.set, current.progress);
     const details = el("details", { class: "setPicker" },
       el("summary", { class: "setPickerSummary" },
-        el("span", { class: "setPickerLabel" }, "学習セット"),
-        el("strong", {}, current.entry.label),
-        el("span", { class: "setPickerSummaryMeta" }, `${currentSummary.label}・文中回答済み ${currentSummary.learnedCount} / ${currentSummary.total}語`),
+        el("span", { class: "setPickerInfo" },
+          el("span", { class: "setPickerLabel" }, "学習セット"),
+          el("strong", {}, current.entry.label),
+          el("span", { class: "setPickerSummaryMeta" }, `${currentSummary.label}・文中回答済み ${currentSummary.learnedCount} / ${currentSummary.total}語`),
+        ),
+        el("span", { class: "setPickerAction" },
+          "変更する",
+          el("span", { class: "setPickerCaret", "aria-hidden": "true" }, "▾"),
+        ),
       ),
     );
     const list = el("div", { class: "setList", "aria-label": "学習セット一覧" });
