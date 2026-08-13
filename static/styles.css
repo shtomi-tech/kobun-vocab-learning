@@ -126,9 +126,27 @@ p { margin: 0 0 12px; text-wrap: pretty; }
   60% { scale: 1.15; }
   100% { scale: 1; opacity: 1; }
 }
-.setPicker { display: grid; gap: 6px; max-width: 420px; margin-bottom: 20px; color: var(--muted); font-size: 13px; font-weight: 700; }
-.setSelect { min-height: 48px; padding: 10px 38px 10px 12px; border: 1px solid var(--color-control-border); border-radius: var(--radius-control); background: var(--canvas); color: var(--ink); font: inherit; cursor: pointer; transition: border-color var(--transition-hover); }
-.setSelect:hover { border-color: var(--ink); }
+.setPicker { margin-bottom: 20px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--canvas); }
+.setPickerSummary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-height: 48px; padding: 12px 16px; list-style: none; color: var(--ink); font-size: 14px; cursor: pointer; transition: background-color var(--transition-hover); }
+.setPickerSummary::-webkit-details-marker { display: none; }
+.setPickerSummary:hover { background: var(--soft); }
+.setPickerLabel { color: var(--muted); font-size: 12px; font-weight: 700; }
+.setPickerSummaryMeta { color: var(--muted); font-size: 13px; }
+.setPicker[open] .setPickerSummary { border-bottom: 1px solid var(--line); }
+.setList { gap: 8px; padding: 12px; }
+.setPicker[open] > .setList { display: grid; }
+.setOption { display: grid; gap: 4px; min-height: 44px; padding: 12px; border: 1px solid var(--color-control-border); border-radius: var(--radius-control); background: var(--canvas); color: var(--ink); text-align: left; cursor: pointer; transition: border-color var(--transition-hover), background-color var(--transition-hover); }
+.setOption:hover:not(:disabled) { border-color: var(--ink); background: var(--soft); }
+.setOption:disabled { cursor: default; opacity: .6; }
+.setOption[aria-current="true"] { border-width: 2px; border-color: var(--ink); background: var(--soft); }
+.setOptionTop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; }
+.setOptionName { font-weight: 700; }
+.setOptionState { flex: none; padding: 2px 10px; border: 1px solid var(--color-control-border); border-radius: var(--radius-pill); color: var(--muted); font-size: 12px; font-weight: 700; }
+.setOptionState--review { border-color: var(--clay); color: var(--clay-dark); }
+.setOptionState--cleared { border-color: var(--ok); color: var(--ok); }
+.setOptionCurrent { color: var(--ink); font-size: 12px; font-weight: 700; }
+.setOptionCurrent::before { content: "✓ "; }
+.setOptionMeta { color: var(--muted); font-size: 13px; }
 .hint { color: var(--muted); font-size: 14px; }
 .hide { display: none !important; }
 .card, .flashCard, .quiz { margin-bottom: 24px; padding: var(--card-padding); border-radius: var(--radius-container); background: var(--card); }
@@ -143,7 +161,7 @@ p { margin: 0 0 12px; text-wrap: pretty; }
 .ghost { padding: 10px 16px; border: 1px solid var(--color-control-border); background: transparent; color: var(--ink); }
 .ghost:hover:not(:disabled) { background: var(--ink); color: var(--canvas); }
 .ghost:disabled { opacity: 1; border-color: var(--color-control-border); color: var(--muted); }
-.cta:active:not(:disabled), .ghost:active:not(:disabled), .choice:active:not(:disabled), .setSelect:active { transform: scale(.98); }
+.cta:active:not(:disabled), .ghost:active:not(:disabled), .choice:active:not(:disabled), .setOption:active:not(:disabled) { transform: scale(.98); }
 button:disabled { cursor: default; opacity: .55; }
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--grid-gap); }
 .meaningMission { border-left: 4px solid var(--clay); }
@@ -256,6 +274,9 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
   .next { width: 100%; }
   .kbdHint { display: none; }
   .feedback { scroll-margin-bottom: 0; }
+  .setPickerSummary { padding: 12px; }
+  .setList { padding: 8px; }
+  .setOptionTop { flex-direction: column; align-items: flex-start; gap: 4px; }
 }
 
 @media (max-height: 760px) {

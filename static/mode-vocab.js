@@ -288,8 +288,9 @@ const KobunVocabApp = (() => {
     home.removeAttribute("aria-busy");
     home.innerHTML = "";
 
+    const summary = KobunSetProgress.summarize(state.set, state.progress);
     const total = state.set.words.length;
-    const learned = state.set.words.filter((word) => unit(word.id).learned).length;
+    const learned = summary.learnedCount;
     const solved = state.set.words.filter((word) => unit(word.id).solvedCorrect).length;
     const reviews = reviewIds();
     const final = state.progress.finalCheck || {};
@@ -319,9 +320,9 @@ const KobunVocabApp = (() => {
 
     card.appendChild(el("div", { class: "stats" },
       stat(learned, total, "文中回答済み"),
-      stat(reviews.length, total, "復習対象"),
+      stat(summary.reviewCount, total, "復習対象"),
       stat(solved, total, "正解確認済み", { secondary: true }),
-      stat(final.bestScore || 0, total, "最終 BEST", { secondary: true }),
+      stat(summary.bestScore, total, "最終 BEST", { secondary: true }),
     ));
     home.appendChild(card);
     home.appendChild(meaningMission());
@@ -418,13 +419,46 @@ const KobunVocabApp = (() => {
     return details;
   }
 
+  function setSources() {
+    const poolBySetId = new Map(state.reviewPool.map((source) => [source.setId, source]));
+    return Object.entries(state.manifest.sets).map(([setId, entry]) => {
+      if (setId === state.setId) return { setId, entry, set: state.set, progress: state.progress };
+      const source = poolBySetId.get(setId);
+      return { setId, entry, set: source?.set || null, progress: source?.progress || null };
+    });
+  }
+
   function setPicker() {
-    const select = el("select", { class: "setSelect", "aria-label": "学習セットを選ぶ" });
-    for (const [id, entry] of Object.entries(state.manifest.sets)) {
-      select.appendChild(el("option", { value: id, selected: id === state.setId }, entry.label));
-    }
-    select.addEventListener("change", () => switchSet(select.value));
-    return el("label", { class: "setPicker" }, el("span", {}, "学習セット"), select);
+    const sources = setSources();
+    const current = sources.find((source) => source.setId === state.setId);
+    const currentSummary = KobunSetProgress.summarize(current.set, current.progress);
+    const details = el("details", { class: "setPicker" },
+      el("summary", { class: "setPickerSummary" },
+        el("span", { class: "setPickerLabel" }, "学習セット"),
+        el("strong", {}, current.entry.label),
+        el("span", { class: "setPickerSummaryMeta" }, `${currentSummary.label}・文中回答済み ${currentSummary.learnedCount} / ${currentSummary.total}語`),
+      ),
+    );
+    const list = el("div", { class: "setList", "aria-label": "学習セット一覧" });
+    sources.forEach(({ setId, entry, set, progress }) => {
+      const isCurrent = setId === state.setId;
+      const summary = set ? KobunSetProgress.summarize(set, progress) : null;
+      list.appendChild(el("button", {
+        class: "setOption",
+        type: "button",
+        "aria-current": isCurrent ? "true" : null,
+        onclick: () => { if (isCurrent) return; switchSet(setId, details); },
+      },
+        el("span", { class: "setOptionTop" },
+          el("span", { class: "setOptionName" }, entry.label),
+          el("span", { class: `setOptionState setOptionState--${summary ? summary.key : "untouched"}` }, summary ? summary.label : "未着手"),
+        ),
+        isCurrent ? el("span", { class: "setOptionCurrent" }, "選択中") : null,
+        el("span", { class: "setOptionMeta" }, summary ? `文中回答済み ${summary.learnedCount} / ${summary.total}語・${summary.detail}` : "—"),
+      ));
+    });
+    details.appendChild(list);
+    return details;
   }
 
   function stat(value, total, label, opts = {}) {
@@ -862,8 +896,13 @@ const KobunVocabApp = (() => {
     localStorage.setItem(SET_KEY, setId);
   }
 
-  async function switchSet(setId) {
+  async function switchSet(setId, picker) {
     if (!state.manifest.sets[setId] || setId === state.setId) return;
+    if (picker) {
+      picker.setAttribute("aria-busy", "true");
+      picker.querySelectorAll(".setOption").forEach((button) => { button.disabled = true; });
+    }
+    setShareStatus("セットを読み込んでいます…", "syncing");
     try {
       session = null;
       await loadSet(setId);
