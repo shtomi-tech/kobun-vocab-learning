@@ -32,6 +32,10 @@
     "kobun-set-08": {
       "label": "第8セット　副詞・尊敬表現",
       "dataUrl": "data/set-08.json"
+    },
+    "kobun-set-09": {
+      "label": "第9セット　尊敬・謙譲表現",
+      "dataUrl": "data/set-09.json"
     }
   }
 }
