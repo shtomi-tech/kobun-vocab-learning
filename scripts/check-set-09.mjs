@@ -45,6 +45,8 @@ for (const word of data.words) {
 
 const wordsById = new Map(data.words.map((word) => [word.id, word]));
 assert.deepEqual(wordsById.get("kv09-097").meanings, ["おっしゃる。"]);
+assert.equal(wordsById.get("kv09-101").example, "これを帝御覧じて、いとど帰り給はむ空もなく思さる。");
+assert.equal(wordsById.get("kv09-101").translation, "これを帝が御覧になって、ますます帰ろうという気持ちもなくお思いになる。");
 assert.deepEqual(wordsById.get("kv09-102").meanings, ["お聞きになる。", "召しあがる。"]);
 assert.deepEqual(wordsById.get("kv09-105").meanings, ["知っていらっしゃる。", "お治めになる。"]);
 assert.deepEqual(wordsById.get("kv09-106").meanings, ["お呼びになる。", "召しあがる。", "お召しになる。"]);
