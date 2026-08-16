@@ -281,6 +281,43 @@ const KobunVocabApp = (() => {
       ));
   }
 
+  function blockActionLabel(block, hasResume) {
+    if (block.isCurrent) return "続きから";
+    if (hasResume) return "再開してから";
+    return block.key === "unlearned" ? "始める" : "復習する";
+  }
+
+  function learningBlockMap() {
+    const blocks = KobunSetProgress.summarizeBlocks(state.set, state.progress, BATCH_SIZE);
+    const hasResume = Boolean(state.progress.resume);
+    const total = state.set.words.length;
+    const section = el("section", { class: "card learningBlockMap" },
+      el("p", { class: "label" }, "学習ブロック"),
+      el("h2", {}, `全${total}語を${BATCH_SIZE}語ずつ${blocks.length}ブロックで進める`),
+    );
+    const grid = el("div", { class: "blockGrid" });
+    blocks.forEach((block) => {
+      const disabled = hasResume && !block.isCurrent;
+      const actionLabel = blockActionLabel(block, hasResume);
+      grid.appendChild(el("button", {
+        class: `blockCard blockCard--${block.key}`,
+        type: "button",
+        disabled,
+        onclick: disabled ? null : () => { if (block.isCurrent) restoreSession(); else startLearn(block.index); },
+      },
+        el("span", { class: "blockCardNumber" }, String(block.index + 1).padStart(2, "0")),
+        el("span", { class: "blockCardBody" },
+          el("span", { class: "blockCardTitle" }, `第${block.index + 1}ブロック・${block.total}語`),
+          el("span", { class: "blockCardWords" }, block.words.map((word) => word.headword).join(" / ")),
+          el("span", { class: `blockCardState blockCardState--${block.key}` }, block.label),
+        ),
+        el("span", { class: "blockCardArrow" }, `${actionLabel} →`),
+      ));
+    });
+    section.appendChild(grid);
+    return section;
+  }
+
   function renderHome() {
     session = null;
     $(".wrap")?.classList.remove("sessionActive");
@@ -316,7 +353,7 @@ const KobunVocabApp = (() => {
 
     card.appendChild(el("div", { class: "recommend" },
       el("p", { class: "label" }, "まずはここから"),
-      el("button", { class: "cta", onclick: primary[1] }, primary[0]),
+      el("button", { class: "cta", onclick: () => primary[1]() }, primary[0]),
       el("p", { class: "hint" }, primary[2]),
     ));
 
@@ -327,6 +364,7 @@ const KobunVocabApp = (() => {
       stat(summary.bestScore, total, "最終 BEST", { secondary: true }),
     ));
     home.appendChild(card);
+    home.appendChild(learningBlockMap());
     home.appendChild(meaningMission());
 
     const list = el("section", { class: "card" },
@@ -358,6 +396,14 @@ const KobunVocabApp = (() => {
     const pool = reviewPoolEntries();
     const learned = learnedMeaningEntries();
     const due = dueMeaningEntries();
+    if (!learned.length) {
+      return el("section", { class: "card meaningMission meaningMission--empty" },
+        el("p", { class: "label" }, "間隔復習"),
+        el("h2", {}, "意味だけ復習"),
+        el("p", { class: "hint" }, "通常学習で文中問題まで解いた語が対象になります。"),
+        el("p", { class: "meaningMissionEmptyCount" }, `対象 0 / ${pool.length}語`),
+      );
+    }
     const counts = Object.fromEntries(KobunSrs.labels.map((label) => [label, 0]));
     learned.forEach(({ word, progress }) => counts[KobunSrs.label(progress.items?.[word.id])]++);
     const section = el("section", { class: "card meaningMission" },
@@ -369,18 +415,14 @@ const KobunVocabApp = (() => {
         stat(due.length, learned.length || pool.length, "今すぐ復習"),
       ),
     );
-    if (learned.length) {
-      section.appendChild(el("div", { class: "intervalGrid", "aria-label": "意味復習の間隔別内訳" },
-        ...KobunSrs.labels.map((label) => el("div", { class: "intervalCell" }, el("strong", {}, counts[label]), el("span", {}, label))),
-      ));
-    } else {
-      section.appendChild(el("p", { class: "hint" }, "まだ意味だけ復習の対象語がありません。通常学習で文中問題まで解くと対象に加わります。"));
-    }
+    section.appendChild(el("div", { class: "intervalGrid", "aria-label": "意味復習の間隔別内訳" },
+      ...KobunSrs.labels.map((label) => el("div", { class: "intervalCell" }, el("strong", {}, counts[label]), el("span", {}, label))),
+    ));
     if (state.progress.resume) {
       section.appendChild(el("p", { class: "hint" }, "通常学習の続きがあるため、先に再開するのがおすすめです。"));
     }
     const button = el("button", { class: "cta reviewCta", disabled: !due.length, onclick: startMeaningReview },
-      due.length ? `今回の${Math.min(due.length, MEANING_SESSION_SIZE)}語を復習する` : learned.length ? "今すぐ復習する語はありません" : "通常学習後に利用できます",
+      due.length ? `今回の${Math.min(due.length, MEANING_SESSION_SIZE)}語を復習する` : "今すぐ復習する語はありません",
     );
     if (state.progress.resume) button.className = "ghost secondaryCta";
     section.appendChild(button);
@@ -430,16 +472,33 @@ const KobunVocabApp = (() => {
     });
   }
 
+  function nextSetId(currentSetId) {
+    const ids = Object.keys(state.manifest.sets);
+    const index = ids.indexOf(currentSetId);
+    if (index < 0 || index >= ids.length - 1) return null;
+    return ids[index + 1];
+  }
+
+  function showAllSetsHome() {
+    renderHome();
+    const picker = $(".setPicker");
+    if (picker) picker.open = true;
+  }
+
   function setPicker() {
     const sources = setSources();
     const current = sources.find((source) => source.setId === state.setId);
     const currentSummary = KobunSetProgress.summarize(current.set, current.progress);
+    const aggregateSummary = KobunSetProgress.aggregate(sources.map(({ set, progress }) => ({ set, progress })));
+    const overallParts = [`全${aggregateSummary.totalSets}セット・CLEAR ${aggregateSummary.clearedSets}・学習中 ${aggregateSummary.inProgressSets}`];
+    if (aggregateSummary.reviewSets > 0) overallParts.push(`要復習 ${aggregateSummary.reviewSets}`);
     const details = el("details", { class: "setPicker" },
       el("summary", { class: "setPickerSummary" },
         el("span", { class: "setPickerInfo" },
           el("span", { class: "setPickerLabel" }, "学習セット"),
           el("strong", {}, current.entry.label),
           el("span", { class: "setPickerSummaryMeta" }, `${currentSummary.label}・文中回答済み ${currentSummary.learnedCount} / ${currentSummary.total}語`),
+          el("span", { class: "setPickerOverallMeta" }, overallParts.join("・")),
         ),
         el("span", { class: "setPickerAction" },
           "変更する",
@@ -448,21 +507,31 @@ const KobunVocabApp = (() => {
       ),
     );
     const list = el("div", { class: "setList", "aria-label": "学習セット一覧" });
-    sources.forEach(({ setId, entry, set, progress }) => {
+    sources.forEach(({ setId, entry, set, progress }, index) => {
       const isCurrent = setId === state.setId;
       const summary = set ? KobunSetProgress.summarize(set, progress) : null;
+      const total = summary?.total || 0;
+      const learned = summary?.learnedCount || 0;
+      const percent = total > 0 ? Math.round((learned / total) * 100) : 0;
       list.appendChild(el("button", {
-        class: "setOption",
+        class: `setOption${isCurrent ? " setOption--current" : ""}`,
         type: "button",
         "aria-current": isCurrent ? "true" : null,
         onclick: () => { if (isCurrent) return; switchSet(setId, details); },
       },
-        el("span", { class: "setOptionTop" },
-          el("span", { class: "setOptionName" }, entry.label),
-          el("span", { class: `setOptionState setOptionState--${summary ? summary.key : "untouched"}` }, summary ? summary.label : "未着手"),
+        el("span", { class: "setUnitNumber" }, String(index + 1).padStart(2, "0")),
+        el("span", { class: "setUnitBody" },
+          el("span", { class: "setOptionTop" },
+            el("span", { class: "setOptionName" }, entry.label),
+            el("span", { class: `setOptionState setOptionState--${summary ? summary.key : "untouched"}` }, summary ? summary.label : "未着手"),
+          ),
+          isCurrent ? el("span", { class: "setOptionCurrent" }, "選択中") : null,
+          el("span", { class: "setOptionMeta" }, summary ? `文中回答済み ${summary.learnedCount} / ${summary.total}語・${summary.detail}` : "—"),
+          el("span", { class: "setOptionProgress", "aria-hidden": "true" },
+            el("span", { class: "setOptionProgressFill", style: `width:${percent}%` }),
+          ),
         ),
-        isCurrent ? el("span", { class: "setOptionCurrent" }, "選択中") : null,
-        el("span", { class: "setOptionMeta" }, summary ? `文中回答済み ${summary.learnedCount} / ${summary.total}語・${summary.detail}` : "—"),
+        el("span", { class: "setUnitArrow", "aria-hidden": "true" }, "→"),
       ));
     });
     details.appendChild(list);
@@ -488,14 +557,20 @@ const KobunVocabApp = (() => {
     renderHome();
   }
 
-  function startLearn() {
+  function startLearn(batchIndexOverride = null) {
     const ids = state.set.words.map((word) => word.id);
-    const firstUnlearned = ids.findIndex((id) => !unit(id).learned);
-    const batchIndex = firstUnlearned < 0 ? 0 : Math.floor(firstUnlearned / BATCH_SIZE);
+    const batchCount = Math.ceil(ids.length / BATCH_SIZE);
+    let batchIndex;
+    if (batchIndexOverride == null) {
+      const firstUnlearned = ids.findIndex((id) => !unit(id).learned);
+      batchIndex = firstUnlearned < 0 ? 0 : Math.floor(firstUnlearned / BATCH_SIZE);
+    } else {
+      batchIndex = Math.min(Math.max(batchIndexOverride, 0), Math.max(batchCount - 1, 0));
+    }
     const batchIds = ids.slice(batchIndex * BATCH_SIZE, (batchIndex + 1) * BATCH_SIZE);
     session = {
       mode: "learn", stage: "flash", order: ids, index: 0,
-      batchIndex, batchCount: Math.ceil(ids.length / BATCH_SIZE),
+      batchIndex, batchCount,
       meaningOrder: shuffle(batchIds), meaningIndex: 0, meaningCorrect: 0,
       contextOrder: shuffle(ids), contextIndex: 0, contextCorrect: 0,
       wrongMeaningIds: [], reviewedIds: [], answered: false, choices: null,
@@ -544,6 +619,34 @@ const KobunVocabApp = (() => {
     renderSession();
   }
 
+  function stepShortLabel() {
+    if (session.stage === "flash") return "覚える";
+    if (session.stage === "meaning") return session.mode === "meaningReview" ? "意味だけ復習" : session.mode === "final" ? "最終チェック" : "確かめる";
+    if (session.stage === "wrongReview") return "必要なら復習";
+    if (session.stage === "context") return "解く";
+    return "完了";
+  }
+
+  function currentCountLabel() {
+    if (session.stage === "flash") return `${session.index + 1} / ${currentBatchIds().length}`;
+    if (session.stage === "meaning") return `${session.meaningIndex + 1} / ${session.meaningOrder.length}`;
+    if (session.stage === "context") return `${session.contextIndex + 1} / ${session.contextOrder.length}`;
+    if (session.stage === "wrongReview") return `${session.reviewedIds.length} / ${session.wrongMeaningIds.length}`;
+    return "";
+  }
+
+  function sessionProgressBar() {
+    const parts = [];
+    if (session.mode === "learn") parts.push(`第${session.batchIndex + 1}/${session.batchCount}ブロック`);
+    parts.push(stepShortLabel());
+    const count = currentCountLabel();
+    if (count) parts.push(count);
+    return el("div", { class: "sessionProgressBar" },
+      el("button", { class: "ghost", type: "button", onclick: () => { saveResume(); renderHome(); } }, "一覧へ"),
+      el("span", { class: "sessionProgressText" }, parts.join("・")),
+    );
+  }
+
   function renderSession() {
     saveResume();
     $(".wrap")?.classList.add("sessionActive");
@@ -562,6 +665,7 @@ const KobunVocabApp = (() => {
     if (session.stage !== "done") sessionHead.appendChild(el("button", { class: "ghost", onclick: () => { saveResume(); renderHome(); } }, "一覧へ戻る"));
     panel.appendChild(sessionHead);
     panel.appendChild(stepBar());
+    if (session.stage !== "done") panel.appendChild(sessionProgressBar());
 
     if (session.stage === "flash") renderFlash(panel);
     else if (session.stage === "meaning") renderQuiz(panel, "meaning");
@@ -893,6 +997,16 @@ const KobunVocabApp = (() => {
     }
     else if (!isFinal && finalCleared) actions.appendChild(el("p", { class: "hint actionHint" }, "最終チェックは実施済みです。"));
     else if (isFinal && !passed) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startFinal }, "もう一度挑戦する"));
+    else if (isFinal && passed) {
+      const nextId = nextSetId(state.setId);
+      if (nextId) {
+        const nextIndex = Object.keys(state.manifest.sets).indexOf(nextId) + 1;
+        actions.appendChild(el("button", { class: "cta reviewCta", onclick: () => switchSet(nextId) }, `第${nextIndex}セットへ進む →`));
+      } else {
+        const totalSets = Object.keys(state.manifest.sets).length;
+        actions.appendChild(el("button", { class: "cta reviewCta", onclick: showAllSetsHome }, `全${totalSets}セットの学習状況を見る`));
+      }
+    }
     actions.appendChild(el("button", { class: "ghost", onclick: renderHome }, "一覧へ戻る"));
     panel.appendChild(actions);
   }

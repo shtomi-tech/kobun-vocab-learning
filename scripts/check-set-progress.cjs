@@ -127,4 +127,135 @@ function words(n) {
   assert.equal(summary.detail, "要復習 1語");
 }
 
+// aggregate 1. 8件すべて未着手
+{
+  const sources = Array.from({ length: 8 }, () => ({ set: { words: words(3) }, progress: { units: {}, finalCheck: {} } }));
+  const result = KobunSetProgress.aggregate(sources);
+  assert.deepEqual(result, { totalSets: 8, clearedSets: 0, inProgressSets: 0, reviewSets: 0 });
+}
+
+// aggregate 2. CLEARと要復習が混在
+{
+  const sources = [
+    { set: { words: words(3) }, progress: { units: { w1: { learned: true }, w2: { learned: true }, w3: { learned: true } }, finalCheck: { cleared: true, bestScore: 3 } } },
+    { set: { words: words(3) }, progress: { units: { w1: { learned: true, needsReview: true } }, finalCheck: {} } },
+    { set: { words: words(3) }, progress: { units: {}, finalCheck: {} } },
+  ];
+  const result = KobunSetProgress.aggregate(sources);
+  assert.deepEqual(result, { totalSets: 3, clearedSets: 1, inProgressSets: 0, reviewSets: 1 });
+}
+
+// aggregate 3. resumeだけある学習中
+{
+  const sources = [
+    { set: { words: words(4) }, progress: { units: {}, finalCheck: {}, resume: { mode: "learn" } } },
+    { set: { words: words(4) }, progress: { units: {}, finalCheck: {} } },
+  ];
+  const result = KobunSetProgress.aggregate(sources);
+  assert.deepEqual(result, { totalSets: 2, clearedSets: 0, inProgressSets: 1, reviewSets: 0 });
+}
+
+// aggregate 4. set未ロードのsourceは未着手として扱う
+{
+  const sources = [
+    { set: null, progress: null },
+    { set: { words: words(3) }, progress: { units: { w1: { learned: true }, w2: { learned: true }, w3: { learned: true } }, finalCheck: { cleared: true } } },
+  ];
+  const result = KobunSetProgress.aggregate(sources);
+  assert.deepEqual(result, { totalSets: 2, clearedSets: 1, inProgressSets: 0, reviewSets: 0 });
+}
+
+// summarizeBlocks 1. 12語・全未着手なら3ブロックすべてunlearned
+{
+  const set = { words: words(12) };
+  const blocks = KobunSetProgress.summarizeBlocks(set, { units: {}, finalCheck: {} });
+  assert.equal(blocks.length, 3);
+  blocks.forEach((block, index) => {
+    assert.equal(block.index, index);
+    assert.equal(block.total, 4);
+    assert.equal(block.key, "unlearned");
+    assert.equal(block.isCurrent, false);
+  });
+}
+
+// summarizeBlocks 2. resumeが第2ブロックのflashなら、前ブロックは意味確認済み・現在ブロックはcurrent・後続は未学習
+{
+  const set = { words: words(12) };
+  const progress = { units: {}, finalCheck: {}, resume: { mode: "learn", batchIndex: 1, stage: "flash" } };
+  const blocks = KobunSetProgress.summarizeBlocks(set, progress);
+  assert.equal(blocks[0].key, "meaning-checked");
+  assert.equal(blocks[1].key, "current");
+  assert.equal(blocks[1].isCurrent, true);
+  assert.equal(blocks[2].key, "unlearned");
+}
+
+// summarizeBlocks 3. resumeがcontext段階(最終ブロックindexのまま)なら全ブロックが意味確認済み
+{
+  const set = { words: words(12) };
+  const progress = { units: {}, finalCheck: {}, resume: { mode: "learn", batchIndex: 2, stage: "context" } };
+  const blocks = KobunSetProgress.summarizeBlocks(set, progress);
+  blocks.forEach((block) => {
+    assert.equal(block.key, "meaning-checked");
+    assert.equal(block.isCurrent, false);
+  });
+}
+
+// summarizeBlocks 4. needsReviewがあれば他条件より優先してreview表示
+{
+  const set = { words: words(4) };
+  const progress = {
+    units: { w1: { learned: true, solvedCorrect: true }, w2: { learned: true, needsReview: true } },
+    finalCheck: {},
+    resume: { mode: "learn", batchIndex: 0, stage: "flash" },
+  };
+  const blocks = KobunSetProgress.summarizeBlocks(set, progress);
+  assert.equal(blocks[0].key, "review");
+  assert.equal(blocks[0].reviewCount, 1);
+}
+
+// summarizeBlocks 5. 4語すべてsolvedCorrectなら完了
+{
+  const set = { words: words(4) };
+  const progress = {
+    units: Object.fromEntries(words(4).map((w) => [w.id, { learned: true, solvedCorrect: true }])),
+    finalCheck: {},
+  };
+  const blocks = KobunSetProgress.summarizeBlocks(set, progress);
+  assert.equal(blocks[0].key, "done");
+  assert.equal(blocks[0].correctCount, 4);
+}
+
+// summarizeBlocks 6. 10語は4/4/2ブロックに分割される
+{
+  const set = { words: words(10) };
+  const blocks = KobunSetProgress.summarizeBlocks(set, { units: {}, finalCheck: {} });
+  assert.equal(blocks.length, 3);
+  assert.deepEqual(blocks.map((b) => b.total), [4, 4, 2]);
+}
+
+// summarizeBlocks 7. 0語ならブロックなし
+{
+  const set = { words: words(0) };
+  const blocks = KobunSetProgress.summarizeBlocks(set, { units: {}, finalCheck: {} });
+  assert.deepEqual(blocks, []);
+}
+
+// summarizeBlocks 8. 範囲外のbatchIndexは無視して未学習扱いにする
+{
+  const set = { words: words(4) };
+  const progress = { units: {}, finalCheck: {}, resume: { mode: "learn", batchIndex: 99, stage: "flash" } };
+  const blocks = KobunSetProgress.summarizeBlocks(set, progress);
+  assert.equal(blocks[0].key, "unlearned");
+  assert.equal(blocks[0].isCurrent, false);
+}
+
+// summarizeBlocks 9. mode: learn以外のresumeはブロック位置判定に使わない
+{
+  const set = { words: words(4) };
+  const progress = { units: {}, finalCheck: {}, resume: { mode: "final", batchIndex: 0, stage: "meaning" } };
+  const blocks = KobunSetProgress.summarizeBlocks(set, progress);
+  assert.equal(blocks[0].key, "unlearned");
+  assert.equal(blocks[0].isCurrent, false);
+}
+
 console.log("OK: 学習セット状態の集計");

@@ -160,6 +160,17 @@
 - セット切替中は一覧に`aria-busy="true"`、全`setOption`を`disabled`にし、`shareStatus`へ「セットを読み込んでいます…」を表示して二重操作を防ぐ。
 - 失敗時は`shareStatus`にインラインエラーを表示し、`alert()`は使わない。ホームは操作可能な状態へ戻す。
 - モバイル（640px以下）でも名前・状態・件数・補足を省略せず、横スクロールを発生させない。
+- 展開後の各行は`.setUnitNumber`（manifest順の`01`〜、表示専用の連番）を先頭に置き、番号・本文・矢印の3領域で構成する。
+- 一覧は641px以上で2列（`repeat(2, minmax(0, 1fr))`）、640px以下で1列にする。
+- 各行に`learnedCount / total`の視覚的な進捗fill（`.setOptionProgress`）を添えるが、状態文言は既存の`.setOptionMeta`が伝えるためfill自体は`aria-hidden="true"`にする。0除算時は0%とする。
+- 閉じた`<summary>`には現在セットの情報に加え、`KobunSetProgress.aggregate()`による全体件数（`全Nセット・CLEAR n・学習中 n`、要復習セットがある場合のみ`要復習 n`を追記）を表示する。集計のための新しい保存値は追加しない。
+
+### 学習ブロックマップ
+
+- 現在セットの語は、学習開始前からデータ順のまま`static/mode-vocab.js`の`BATCH_SIZE`（4語）単位でブロックカード化し、ホームの主カード直下に表示する。
+- 状態の判定源は`KobunSetProgress.summarizeBlocks(set, progress, batchSize)`のみとし、優先順位は「要復習 > 完了 > 現在のブロック > 意味確認済み > 文中回答済み > 未学習」の6種類に固定する。`progress.resume`が存在しない中間状態は推測せず、語単位の`learned` / `needsReview` / `solvedCorrect`だけを表示する。
+- ブロック内の4語（見出し語）は常時DOM上に表示し、折りたたみへ隠さない。語順・ブロック分割はデータ順を維持し、既存の「単語一覧」（全語フラット表示）とは独立して併存させる。
+- `resume`があり、かつそのブロックが現在地でない場合はカードを`disabled`にし、既存の学習位置を上書きしないようにする。現在のブロックのみ「続きから」として再開できる。
 
 ### 4択問題の操作
 
