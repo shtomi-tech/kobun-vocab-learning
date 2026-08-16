@@ -216,6 +216,8 @@ const KobunVocabApp = (() => {
     /するな|してはいけない/,
     /いらっしゃる|おいでになる|おありになる|ていらっしゃる|でいらっしゃる/,
     /お与えになる|くださる|下賜/,
+    /申しあげる/,
+    /なさる|お〜になる|お召しになる|お乗りになる/,
   ];
   const hasMeaningFamilyOverlap = (word, other) => meaningFamilies.some((family) =>
     word.meanings.some((meaning) => family.test(meaning)) && other.meanings.some((meaning) => family.test(meaning))
