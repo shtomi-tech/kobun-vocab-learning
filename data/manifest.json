@@ -40,6 +40,10 @@
     "kobun-set-10": {
       "label": "第10セット　謙譲表現・敬語の識別",
       "dataUrl": "data/set-10.json"
+    },
+    "kobun-set-11": {
+      "label": "第11セット　皇室・貴族語彙",
+      "dataUrl": "data/set-11.json"
     }
   }
 }
