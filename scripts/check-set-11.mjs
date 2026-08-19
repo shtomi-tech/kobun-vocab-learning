@@ -17,7 +17,7 @@ assert.deepEqual(
 );
 
 const expectedForms = new Map([
-  ["kv11-121", "まゐれる"],
+  ["kv11-121", "まゐれ"],
   ["kv11-122", "侍り"],
   ["kv11-123", "候ひ"],
   ["kv11-124", "上"],
