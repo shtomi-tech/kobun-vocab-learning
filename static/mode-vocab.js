@@ -829,6 +829,7 @@ const KobunVocabApp = (() => {
       box.appendChild(el("div", { class: `feedback ${isCorrect ? "ok" : "ng"}`, role: "status", "aria-live": "polite", "aria-atomic": "true", tabindex: "-1" },
         el("h3", {}, isCorrect ? "○ 正解" : "× 不正解"),
         el("p", {}, `${word.headword}【${word.kanji}】：${meaningText(word)}`),
+        kind === "context" ? el("p", { class: "example" }, word.example) : null,
       ));
       box.appendChild(el("p", { class: "hint kbdHint" }, "Enterで次の問題へ"));
       box.appendChild(el("div", { class: "quizNextAction" },
