@@ -51,6 +51,7 @@ py -3 -m http.server 8062 --bind 127.0.0.1
 - `data/set-10.json`: 第10セット「謙譲表現・敬語の識別」12語
 - `data/set-11.json`: 第11セット「皇室・貴族語彙」12語
 - `data/set-12.json`: 第12セット「人間関係・人称表現」12語
+- `data/set-13.json`: 第13セット「指示代名詞・時間表現」12語
 
 新しいセットは、同じ形式のJSONを追加し、manifestへ登録します。各語には `example`、`translation`、`source`、`cloze` に加え、`notes`（空でない解説・補足の文字列配列。1件以上必須）を必ず収録します。
 

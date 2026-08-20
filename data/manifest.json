@@ -48,6 +48,10 @@
     "kobun-set-12": {
       "label": "第12セット　人間関係・人称表現",
       "dataUrl": "data/set-12.json"
+    },
+    "kobun-set-13": {
+      "label": "第13セット　指示代名詞・時間表現",
+      "dataUrl": "data/set-13.json"
     }
   }
 }
