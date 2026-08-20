@@ -339,13 +339,20 @@ const KobunVocabApp = (() => {
     const final = state.progress.finalCheck || {};
     const resume = state.progress.resume;
     const isFirstReveal = !homeIntroduced;
+    const isFirstVisit = learned === 0;
     homeIntroduced = true;
 
+    if (isFirstVisit) {
+      home.appendChild(el("section", { class: "card hero" },
+        el("p", { class: "label" }, "学習の流れ"),
+        el("h2", {}, "古文単語を「覚えてから解く」"),
+        el("p", { class: "hint" }, `${total}語を4語ずつ、覚える → 意味を確かめる、の順に進めてから文中問題を解きます。`),
+      ));
+    }
+
     const card = el("section", { class: `card${isFirstReveal ? " is-entering" : ""}` },
-      setPicker(),
       el("p", { class: "label" }, final.cleared ? "達成状況" : "今回の学習"),
       el("h2", {}, state.set.meta.title),
-      el("p", { class: "lead" }, `${total}語を4語ずつ、覚える → 意味を確かめる、の順に進めてから文中問題を解きます。`),
     );
 
     let primary;
@@ -368,9 +375,10 @@ const KobunVocabApp = (() => {
       stat(summary.bestScore, total, "最終 BEST", { secondary: true }),
     ));
     home.appendChild(card);
-    home.appendChild(learningBlockMap());
     home.appendChild(vocabGoalCard());
     home.appendChild(meaningMission());
+    home.appendChild(el("section", { class: "card" }, setPicker()));
+    home.appendChild(learningBlockMap());
 
     const list = el("section", { class: "card" },
       el("p", { class: "label" }, "単語一覧"),
@@ -540,7 +548,10 @@ const KobunVocabApp = (() => {
   function showAllSetsHome() {
     renderHome();
     const picker = $(".setPicker");
-    if (picker) picker.open = true;
+    if (picker) {
+      picker.open = true;
+      picker.scrollIntoView({ block: "start" });
+    }
   }
 
   function setPicker() {

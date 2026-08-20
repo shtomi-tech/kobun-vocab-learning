@@ -127,6 +127,7 @@ p { margin: 0 0 12px; text-wrap: pretty; }
   100% { scale: 1; opacity: 1; }
 }
 .setPicker { margin-bottom: 20px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--canvas); }
+.card > .setPicker { margin-bottom: 0; }
 .setPickerSummary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; min-height: 48px; padding: 12px 16px; list-style: none; color: var(--ink); font-size: 14px; cursor: pointer; transition: background-color var(--transition-hover); }
 .setPickerSummary::-webkit-details-marker { display: none; }
 .setPickerSummary:hover { background: var(--soft); }
@@ -161,6 +162,9 @@ p { margin: 0 0 12px; text-wrap: pretty; }
 .hint { color: var(--muted); font-size: 14px; }
 .hide { display: none !important; }
 .card, .flashCard, .quiz { margin-bottom: 24px; padding: var(--card-padding); border-radius: var(--radius-container); background: var(--card); }
+/* 初回訪問時のみ表示する導入カード。eiken-q1-practiceの.heroと同じ反転表現に揃える。 */
+.card.hero { background: var(--ink); color: var(--canvas); }
+.card.hero .label, .card.hero .hint { color: rgba(250, 249, 246, .72); }
 .recommend { margin: 24px 0; padding: 20px; border-left: 4px solid var(--clay); border-radius: var(--radius-control); background: var(--canvas); }
 .cta, .ghost, .choice { min-height: 48px; border-radius: var(--radius-control); cursor: pointer; transition: background-color var(--transition-hover), border-color var(--transition-hover), color var(--transition-hover), transform var(--transition-press); }
 .cta { padding: 12px 20px; border: 0; background: var(--ink); color: var(--canvas); font-weight: 700; }

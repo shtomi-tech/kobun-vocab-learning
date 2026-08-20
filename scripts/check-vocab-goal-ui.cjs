@@ -24,10 +24,10 @@ assert.match(body, /clamp\(12px,/, "ハリネズミの位置は左右12pxで止�
 
 const renderHome = js.slice(js.indexOf("  function renderHome() {"));
 assert.match(renderHome, /home\.appendChild\(vocabGoalCard\(\)\)/, "語彙目標カードはホーム直下へ追加する必要がある");
-// 学習ブロックマップは主カード直下という DESIGN.md の規定を崩さない
+// 語彙目標カードは学習ブロックマップより前に置く
 assert.ok(
-  renderHome.indexOf("home.appendChild(learningBlockMap())") < renderHome.indexOf("home.appendChild(vocabGoalCard())"),
-  "語彙目標カードは学習ブロックマップより後ろに置く必要がある",
+  renderHome.indexOf("home.appendChild(vocabGoalCard())") < renderHome.indexOf("home.appendChild(learningBlockMap())"),
+  "語彙目標カードは学習ブロックマップより前に置く必要がある",
 );
 
 for (const cls of [".vgHead", ".vgTrack", ".vgFill", ".vgHedgehog", ".vgTick"]) {
