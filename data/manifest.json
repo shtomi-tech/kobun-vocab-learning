@@ -44,6 +44,10 @@
     "kobun-set-11": {
       "label": "第11セット　皇室・貴族語彙",
       "dataUrl": "data/set-11.json"
+    },
+    "kobun-set-12": {
+      "label": "第12セット　人間関係・人称表現",
+      "dataUrl": "data/set-12.json"
     }
   }
 }
