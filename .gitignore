@@ -2,3 +2,6 @@ static/config.json
 _site/
 .hermes/
 .claude/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+graft/
