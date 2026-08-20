@@ -320,3 +320,64 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
   .wrap.sessionActive { padding-top: 20px; }
   .wrap.sessionActive .top { display: none; }
 }
+
+
+/* ---- 語彙目標カード（全セット横断の到達語数を目標600語に対して示す） ---- */
+.vgHead { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; }
+.vgHead h2 { margin: 4px 0 0; }
+.vgCount { margin: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
+.vgCount strong { color: var(--ink); font-size: 32px; line-height: 1; }
+.vgBar { margin-top: 28px; }
+.vgTrack { position: relative; height: 10px; border-radius: var(--radius-pill); background: var(--line); }
+.vgFill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--clay);
+  transition: width var(--motion-progress) var(--ease-spring-soft);
+}
+
+/* 歩くハリネズミ（右向き＝ゴール方向。box-shadowの2pxドット絵で、外部画像を持たない） */
+.vgHedgehog {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  width: 24px;
+  height: 14px;
+  margin: 0 0 6px -12px;
+  transition: left var(--motion-progress) var(--ease-spring-soft);
+}
+/* 自身の2px箱は左上マス（空きマス）に当たるため描かせず、ドットはすべてbox-shadowで打つ */
+.vgHedgehogSprite {
+  display: block;
+  width: 2px;
+  height: 2px;
+  background: transparent;
+  color: var(--ink);
+  box-shadow:
+    2px 0px 0 0, 6px 0px 0 0, 10px 0px 0 0, 14px 0px 0 0,
+    0px 2px 0 0, 2px 2px 0 0, 4px 2px 0 0, 6px 2px 0 0, 8px 2px 0 0, 10px 2px 0 0, 12px 2px 0 0, 14px 2px 0 0, 16px 2px 0 0,
+    0px 4px 0 0, 2px 4px 0 0, 4px 4px 0 0, 6px 4px 0 0, 8px 4px 0 0, 10px 4px 0 0, 12px 4px 0 0, 14px 4px 0 0, 16px 4px 0 0, 18px 4px 0 0,
+    0px 6px 0 0, 2px 6px 0 0, 4px 6px 0 0, 6px 6px 0 0, 8px 6px 0 0, 10px 6px 0 0, 12px 6px 0 0, 14px 6px 0 0, 18px 6px 0 0, 20px 6px 0 0,
+    0px 8px 0 0, 2px 8px 0 0, 4px 8px 0 0, 6px 8px 0 0, 8px 8px 0 0, 10px 8px 0 0, 12px 8px 0 0, 14px 8px 0 0, 16px 8px 0 0, 18px 8px 0 0, 20px 8px 0 0, 22px 8px 0 0,
+    2px 10px 0 0, 4px 10px 0 0, 6px 10px 0 0, 8px 10px 0 0, 10px 10px 0 0, 12px 10px 0 0, 14px 10px 0 0, 16px 10px 0 0, 18px 10px 0 0,
+    2px 12px 0 0, 6px 12px 0 0, 12px 12px 0 0, 16px 12px 0 0;
+}
+.vgHedgehog[data-walking="1"] .vgHedgehogSprite { animation: kHedgehogWalk 520ms steps(2, jump-none) infinite; }
+@keyframes kHedgehogWalk {
+  from { transform: translateY(-2px); }
+  to { transform: translateY(0); }
+}
+
+.vgTicks { position: relative; height: 18px; margin-top: 10px; }
+.vgTick { position: absolute; top: 0; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; transform: translateX(-50%); }
+.vgTick--start { left: 0; transform: none; }
+.vgTick--end { right: 0; left: auto; transform: none; }
+.vgMessage { margin: 4px 0 6px; font-family: Georgia, "Yu Mincho", serif; font-size: 19px; }
+
+@media (max-width: 640px) {
+  .vgCount strong { font-size: 26px; }
+  .vgMessage { font-size: 17px; }
+}

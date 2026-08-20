@@ -41,6 +41,7 @@ jobs:
           node scripts/check-set-09.mjs
           node scripts/check-set-10.mjs
           node scripts/check-set-11.mjs
+          node scripts/check-vocab-goal-ui.cjs
       - uses: actions/configure-pages@v5
       - name: Prepare static files
         run: |

@@ -14,6 +14,8 @@ const KobunVocabApp = (() => {
   const MEANING_SESSION_SIZE = 20;
   const HISTORY_LIMIT = 500;
   const APP_ID = "kobun-vocab-learning";
+  // 古文単語の学習目標。全セット横断で「文中回答済み」になった語を積み上げる。
+  const VOCAB_GOAL_TOTAL = 600;
 
   const state = { manifest: null, setId: null, set: null, progress: null, reviewPool: [] };
   let session = null;
@@ -367,6 +369,7 @@ const KobunVocabApp = (() => {
     ));
     home.appendChild(card);
     home.appendChild(learningBlockMap());
+    home.appendChild(vocabGoalCard());
     home.appendChild(meaningMission());
 
     const list = el("section", { class: "card" },
@@ -392,6 +395,59 @@ const KobunVocabApp = (() => {
       el("summary", {}, "その他"),
       el("button", { class: "ghost", onclick: resetProgress }, "このセットの進捗をリセット"),
     ));
+  }
+
+  // 語彙目標カード。セット単位ではなく全セット横断の到達語数を、目標600語に対して1本のバーで示す。
+  function vocabGoalCard() {
+    const learned = Math.min(learnedMeaningEntries().length, VOCAB_GOAL_TOTAL);
+    const recorded = reviewPoolEntries().length;
+    const pct = (value) => `${(value / VOCAB_GOAL_TOTAL) * 100}%`;
+    const num = (value) => value.toLocaleString("ja-JP");
+    const message = learned === 0 ? `まずは1語から。${num(VOCAB_GOAL_TOTAL)}語への第一歩。`
+      : learned < VOCAB_GOAL_TOTAL * 0.25 ? "一歩めが出ました。それがいちばん大変。"
+      : learned < VOCAB_GOAL_TOTAL * 0.5 ? "歩き出しました。この調子。"
+      : learned < VOCAB_GOAL_TOTAL * 0.75 ? "半分をこえました。"
+      : learned < VOCAB_GOAL_TOTAL ? "ゴールが見えてきました。"
+      : `${num(VOCAB_GOAL_TOTAL)}語を歩ききりました。`;
+
+    const walker = el("div", { class: "vgHedgehog", "aria-hidden": "true", "data-walking": learned > 0 ? "1" : "" },
+      el("span", { class: "vgHedgehogSprite" }));
+    // ハリネズミは中央基準で置くため、0語・満了時に端からはみ出さないよう左右を12pxで止める。
+    walker.style.left = `clamp(12px, ${pct(learned)}, calc(100% - 12px))`;
+
+    const fill = el("div", { class: "vgFill" });
+    fill.style.width = learned > 0 ? `max(3px, ${pct(learned)})` : "0";
+
+    const track = el("div", {
+      class: "vgTrack",
+      role: "progressbar",
+      "aria-valuemin": "0",
+      "aria-valuemax": String(VOCAB_GOAL_TOTAL),
+      "aria-valuenow": String(learned),
+      "aria-valuetext": `目標${num(VOCAB_GOAL_TOTAL)}語のうち、文中問題まで進んだ語は${num(learned)}語です。`,
+    }, fill, walker);
+
+    const ticks = el("div", { class: "vgTicks" });
+    [0, 200, 400, VOCAB_GOAL_TOTAL].forEach((value, index, all) => {
+      const tick = el("span", { class: `vgTick${index === 0 ? " vgTick--start" : index === all.length - 1 ? " vgTick--end" : ""}` }, num(value));
+      if (index > 0 && index < all.length - 1) tick.style.left = pct(value);
+      ticks.appendChild(tick);
+    });
+
+    return el("section", { class: "card vocabGoal", "aria-labelledby": "vocabGoalTitle" },
+      el("div", { class: "vgHead" },
+        el("div", {},
+          el("p", { class: "label" }, "語彙の目標"),
+          el("h2", { id: "vocabGoalTitle" }, `古文単語 ${num(VOCAB_GOAL_TOTAL)}語`),
+        ),
+        el("p", { class: "vgCount" },
+          el("strong", {}, num(learned)),
+          el("span", {}, ` 語 / ${num(VOCAB_GOAL_TOTAL)}語`)),
+      ),
+      el("div", { class: "vgBar" }, track, ticks),
+      el("p", { class: "vgMessage" }, message),
+      el("p", { class: "hint" }, `全セットを通して文中問題まで進んだ語を数えています。このアプリの収録は現在${num(recorded)}語です。`),
+    );
   }
 
   function meaningMission() {
