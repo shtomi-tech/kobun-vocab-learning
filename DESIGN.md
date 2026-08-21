@@ -11,7 +11,7 @@
 ## Redesign mode: `Redesign - Preserve`
 
 - 学習フロー、文言の意味、データ形式、保存キー、URL構造は変更しない。
-- 暖色背景、墨色、焦茶アクセント、明朝見出しをブランド資産として維持する（古文教材の編集的文脈）。
+- 暖色背景、墨色、焦茶アクセント、serif見出し（日本語fallbackを含む）をブランド資産として維持する（古文教材の編集的文脈）。h1はeiken共通のInk地バッジへ揃える。
 - ランディングページ的な派手なヒーロー、GSAP、非対称レイアウト、画像追加は採用しない。監査・階層・色・形状・状態・アクセシビリティ・事前チェックのみ適用する。
 
 ## Three Dials
@@ -33,29 +33,31 @@
 | `--color-surface-subtle` | `#f5f0e8` | 主CTA面、間隔復習の内訳セル背景 |
 | `--color-ink-primary` | `#141413` | 本文・見出し・主要ボタン地色 |
 | `--color-ink-secondary` | `#615c54` | 補助文字・ラベル・ヒント |
-| `--color-border` | `#ddd5c8` | 罫線・区切り（装飾用、非text 3:1は不要な区切り線専用） |
+| `--color-border` | `#e6dfd8` | 罫線・区切り（装飾用、非text 3:1は不要な区切り線専用） |
 | `--color-control-border` | `#8a8478` | select・ghost button・選択肢など操作要素の通常時境界（canvas上約3.53:1、card上約3.07:1） |
 | `--color-accent` | `#a9583e` | 要復習・間隔復習の強調 |
 | `--color-accent-strong` | `#8a4732` | accentのhover/active |
-| `--color-success` | `#136b31` | 正解のみ（`--color-surface-primary`背景で4.5:1以上を確保） |
+| `--color-success` | `#16803a` | 正解の罫線・記号 |
+| `--color-success-text` | `#126b30` | 暖色面上の正解見出し文字 |
+| `--color-warn` | `#a16207` | 将来の部分一致用。現時点では未使用 |
 | `--color-danger` | `#b42318` | 不正解・エラーのみ |
 
-暖色紙面と明朝見出しは「古文教材の編集的文脈」を表す意図的な選択であり、汎用プロダクトのニュートラルグレーへは寄せない。成功色・失敗色は正誤フィードバックとエラー表示以外に流用しない。
+暖色紙面とserif見出しは「古文教材の編集的文脈」を表す意図的な選択であり、汎用プロダクトのニュートラルグレーへは寄せない。成功色・失敗色は正誤フィードバックとエラー表示以外に流用しない。
 
 ## タイポグラフィ尺度
 
 | 名称 | サイズ | 書体 | 用途 |
 | --- | --- | --- | --- |
-| display | 48px | Georgia serif | 完了画面のスコア |
-| page title | clamp(32px, 6vw, 52px) | Georgia/Yu Mincho | `h1` |
-| section title | clamp(25px, 4vw, 34px) | Georgia/Yu Mincho | `h2` |
-| question title | clamp(26px, 5vw, 38px) | Georgia/Yu Mincho | 見出し語・文中問題の問い |
-| body | 16px / line-height 1.7 | Segoe UI系 | 本文・選択肢・例文の訳 |
-| helper | 13-14px | Segoe UI系 | ヒント・補助文・保存状態 |
-| label | 12px, 700, uppercase | Segoe UI系 | セクションラベルのみ（日本語ラベルは非uppercase） |
+| display | 40px | `--serif` | 完了画面のスコア |
+| page title | 21px | `--serif` | Ink地の`h1`バッジ |
+| section title | 24px | `--serif` | `h2` |
+| question title | 34-38px | `--serif` | 見出し語・文中問題の問い |
+| body | 16px / line-height 1.7 | `--sans` | 本文・選択肢・例文の訳 |
+| helper | 13px | `--sans` | ヒント・補助文・保存状態 |
+| label | 11px, 600, uppercase, `.16em` | `--mono` | セクションラベル |
 | numeric | `font-variant-numeric: tabular-nums` | — | 統計値・スコア・進捗番号 |
 
-`h3`（意味／例文／例文の訳の小見出し）は14px固定をやめ、bodyより明確に強い18-20pxへ引き上げる。日本語ラベルには過度な`letter-spacing`を付けない。
+`h3`（意味／例文／例文の訳の小見出し）は14px固定をやめ、bodyより明確に強い18-20pxへ引き上げる。monoラベルでは`.16em`の字間を許可し、短い日本語ラベルの判別を助ける。
 
 ## 形状ルール
 
@@ -77,7 +79,7 @@
 | `--motion-progress` | 280ms | 問題・残数の更新 |
 | `--motion-completion` | 420ms | 4語ブロック完了のステップsettle、初回CLEARのスコアsettle |
 | `--ease-standard` | `ease` | 通常の状態遷移 |
-| `--ease-spring-soft` | `cubic-bezier(.34, 1.2, .64, 1)` | 完了・達成のsettleのみに限定して使う |
+| `--ease-spring-soft` | `cubic-bezier(.34, 1.56, .64, 1)` | 完了・達成のsettleのみに限定して使う |
 
 ### 原則
 
@@ -96,8 +98,8 @@
 | 意味だけ復習 | — | 「今すぐ復習する語はありません」を`.hint`で表示 | — | — | — | — |
 | 学習履歴 | — | 「まだ学習履歴はありません。」 | — | — | — | — |
 | 単語一覧 | — | 該当なし（常時全語表示） | — | — | — | — |
-| 意味/文中問題 | — | — | — | 選択肢に○＋緑罫線＋`.feedback.ok`、○記号のみ短くsettle | 選択したものに×＋赤罫線、正答も同時表示＋`.feedback.ng`、選択肢のみ2〜3px一往復shake | — |
-| セッション完了 | — | 復習0件は「全語の文中問題に正解しました。」 | — | — | — | ライトテーマ内の強調面（反転なし） |
+| 意味/文中問題 | — | — | — | 選択肢に○＋2px緑罫線＋`.feedback.ok`、記号と文言を併用 | 選択したものに×＋2px赤罫線、正答も同時表示＋`.feedback.ng`、選択肢のみ一往復shake | — |
+| セッション完了 | — | 復習0件は「全語の文中問題に正解しました。」 | — | — | — | Ink地の反転バナー。初回CLEARのみ見出し前に✓を表示 |
 | 保存状態（`shareStatus`） | 保存中はローダー記号＋「保存中…」 | — | 保存失敗は静的な`!`記号＋インラインエラー文言 | — | — | 保存済みは`✓`記号、初回表示のみsettle・以降は静的 |
 | 語彙目標のハリネズミ（`.vgHedgehog`） | — | — | — | — | — | `data-walking`。到達1語以上で520ms・steps(2)の上下2フレーム歩行（`transform`のみ）。0語では静止し、`prefers-reduced-motion`でも静止した状態を表示する |
 | 4語ブロック完了（`stepBar`） | — | — | — | — | — | 完了ステップに`✓`＋`aria-label`、遷移した回だけ該当ステップがsettle |
@@ -107,7 +109,7 @@
 
 - Design Readとdial値が本ファイルに明記されている。
 - `Redesign - Preserve`としてIA・学習フロー・保存キーを維持している。
-- ライトテーマを全画面で維持し、完了画面だけ反転しない。ホームA層のheroのみ例外とする。
+- ライトテーマを基本とし、ホームA層のheroとセッション完了バナーだけInk地へ反転する。
 - 焦茶アクセントを一貫して使い、正解・不正解色は意味色としてのみ使う。
 - radius体系がコンテナ12px、操作8px、番号円形に限定される。
 - CTAのコントラストがAAを満たし、デスクトップで文言が折り返さない。
@@ -116,9 +118,17 @@
 - `prefers-reduced-motion`を実装する。
 - loading・empty・error・正解・不正解・完了状態が揃う。
 - 320px以上で明示的にcollapseし、横スクロールがない。
-- 新しい依存関係、GSAP、Motion、アイコンライブラリを追加していない。
+- 新しい依存関係、GSAP、Motion、アイコンライブラリは追加しない。Google FontsのCormorant Garamond / Inter / JetBrains Monoだけ外部書体として許可する。
 - 表示文言にem dashと装飾目的のstatus dotを追加していない。
 - LCP 2.5秒未満、CLS 0.1未満、INP 200ms未満を阻害する重い素材や処理を追加していない。
+
+## 意図的に統一しないもの
+
+- `--color-control-border`: select・ghost button・選択肢の通常時境界は、本文用の罫線より強いコントラストを維持する。
+- `.skipLink` と `.skeleton`: キーボード移動と初回読込の状態を明確にする既存のアクセシビリティ表現を維持する。
+- 選択肢の`○` / `×`: eikenの枠アニメーションへ揃えても、色だけに依存しない正誤表示として記号を残す。
+- 進捗リセットの2段階確認: `confirm()`へ統一せず、誤操作による学習記録の消失を防ぐ既存方式を維持する。
+- `.example` / `.cloze` の20px・行間2: Google Fonts適用後も古文本文の可読性を優先してサイズと行間を変えない。
 
 ## ホームの層構造
 
