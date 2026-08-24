@@ -61,6 +61,10 @@ const KobunVocabApp = (() => {
   const wordById = (id) => state.set.words.find((word) => word.id === id);
   const exampleBlank = "（　）";
   const isWaka = (word) => word.exampleForm === "waka" && Array.isArray(word.waka?.phrases);
+  const wakaRefText = (word) => {
+    const ref = word.waka?.ref;
+    return ref ? `${ref.book}・${ref.number}番` : "";
+  };
   const contextSmallKana = new Set(["ゃ", "ゅ", "ょ", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ"]);
   const contextMoraCount = (word) => [...word.headword.split("〜")[0]]
     .filter((character) => !contextSmallKana.has(character)).length;
@@ -874,6 +878,12 @@ const KobunVocabApp = (() => {
     const showRevealButton = hideMeaningEnabled && !revealed;
     const justRevealed = hideMeaningEnabled && revealed;
     const controlledIds = [meaningId, ...(word.notes?.length ? [notesId] : []), translationId].join(" ");
+    const wakaMeta = isWaka(word)
+      ? el("span", { class: "wakaMeta" },
+        el("span", { class: "wakaAuthor" }, `作者：${word.waka.author}`),
+        el("span", { class: "wakaRef" }, `出典箇所：${wakaRefText(word)}`),
+      )
+      : null;
     return el("article", { class: "flashCard" },
       el("div", { class: "flashHead" },
         el("div", { class: "flashTitle" },
@@ -891,7 +901,7 @@ const KobunVocabApp = (() => {
           ? el("section", { id: hideMeaningEnabled ? notesId : null, hidden: showRevealButton, class: `flashNotes${justRevealed ? " is-entering" : ""}` }, el("h3", {}, "解説・補足"), el("ul", {}, ...word.notes.map((note) => el("li", {}, note))))
           : null,
         el("section", {},
-          el("h3", {}, isWaka(word) ? "和歌　" : "例文　", `『${word.source}』`, isWaka(word) ? el("span", { class: "wakaAuthor" }, `作者：${word.waka.author}`) : null),
+          el("h3", {}, isWaka(word) ? "和歌　" : "例文　", `『${word.source}』`, wakaMeta),
           el("p", { class: exampleClass(word, "example") }, exampleBody(word)),
         ),
         el("section", { id: hideMeaningEnabled ? translationId : null, hidden: showRevealButton, class: justRevealed ? "is-entering" : null }, el("h3", {}, "例文の訳"), el("p", {}, word.translation)),

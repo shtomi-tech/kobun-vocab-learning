@@ -281,7 +281,8 @@ button:disabled { cursor: default; opacity: .55; }
 .example, .cloze { font-family: var(--serif); font-size: 20px; line-height: 2; }
 .example--waka, .cloze--waka { display: flex; flex-wrap: wrap; column-gap: 1em; }
 .example--waka .ku, .cloze--waka .ku { white-space: nowrap; }
-.wakaAuthor { margin-left: 8px; color: var(--muted); font-family: var(--sans); font-size: 12px; font-weight: 600; }
+.wakaMeta { display: inline-flex; flex-wrap: wrap; gap: 4px 8px; margin-left: 8px; color: var(--muted); font-family: var(--sans); font-size: 12px; font-weight: 600; vertical-align: baseline; }
+.wakaAuthor, .wakaRef { color: inherit; }
 .actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 20px; }
 .actionHint { flex-basis: 100%; margin: 0; }
 .quiz .askWord { margin: 20px 0; font-family: var(--serif); font-size: 34px; font-weight: 700; line-height: 1.25; }

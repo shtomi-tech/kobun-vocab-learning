@@ -60,6 +60,16 @@ function validateWaka(setId, word) {
   }
   if (/[、。]/u.test(word.example)) throw new Error(`${setId}: ${word.id} waka example must not contain punctuation`);
   if (typeof waka.author !== "string" || !waka.author.trim()) throw new Error(`${setId}: ${word.id} waka.author is required`);
+  if (/[（）()]/u.test(word.source)) throw new Error(`${setId}: ${word.id} waka source must contain collection name only`);
+  if (!waka.ref || typeof waka.ref !== "object" || Array.isArray(waka.ref)) throw new Error(`${setId}: ${word.id} waka.ref is required`);
+  if (typeof waka.ref.collection !== "string" || !waka.ref.collection.trim()) throw new Error(`${setId}: ${word.id} waka.ref.collection is required`);
+  if (typeof waka.ref.book !== "string" || !waka.ref.book.trim()) throw new Error(`${setId}: ${word.id} waka.ref.book is required`);
+  // 万葉集は部立を持たないため巻のみ。勅撰集は「巻＋部立」で表記を揃える。
+  if (waka.ref.collection !== "万葉集" && !waka.ref.book.includes("・")) {
+    throw new Error(`${setId}: ${word.id} waka.ref.book must include the section name`);
+  }
+  if (!Number.isInteger(waka.ref.number) || waka.ref.number < 1) throw new Error(`${setId}: ${word.id} waka.ref.number is required`);
+  if (waka.ref.collection !== word.source) throw new Error(`${setId}: ${word.id} waka.ref.collection must match source`);
 
   const blankIndex = word.cloze.indexOf(clozeBlank);
   const prefix = word.cloze.slice(0, blankIndex);
@@ -87,9 +97,10 @@ for (const [setId, entry] of Object.entries(manifest.sets)) {
   if (!Number.isInteger(data.meta.dataVersion) || data.meta.dataVersion < 1) throw new Error(`${setId}: invalid dataVersion`);
   const ids = new Set();
   for (const word of data.words) {
-    for (const key of ["id", "headword", "kanji", "meanings", "example", "translation", "source", "cloze"]) {
+    for (const key of ["id", "headword", "kanji", "meanings", "example", "translation", "source", "cloze", "exampleForm"]) {
       if (!word[key] || (Array.isArray(word[key]) && !word[key].length)) throw new Error(`${setId}: ${word.id || "unknown"} missing ${key}`);
     }
+    if (!["waka", "prose"].includes(word.exampleForm)) throw new Error(`${setId}: ${word.id} exampleForm must be waka or prose`);
     if (!word.meanings.every((meaning) => typeof meaning === "string" && meaning.length > 0)) throw new Error(`${setId}: ${word.id} has an empty meaning`);
     if (!Array.isArray(word.notes) || !word.notes.length || !word.notes.every((note) => typeof note === "string" && note.trim().length > 0)) throw new Error(`${setId}: ${word.id} missing valid notes`);
     if ((word.cloze.match(/（　）/g) ?? []).length !== 1) throw new Error(`${setId}: ${word.id} cloze must have exactly one blank`);

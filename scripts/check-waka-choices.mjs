@@ -40,18 +40,24 @@ const hasMeaningFamilyOverlap = (left, right) => meaningFamilies.some((family) =
 const isSafePair = (left, right) => !hasMeaningOverlap(left, right) && !hasMeaningFamilyOverlap(left, right);
 
 const manifest = JSON.parse(read("data/manifest.json"));
-const allWords = Object.values(manifest.sets).flatMap(({ dataUrl }) => JSON.parse(read(dataUrl)).words);
+const sets = Object.entries(manifest.sets).map(([setId, { dataUrl }]) => ({
+  setId,
+  words: JSON.parse(read(dataUrl)).words,
+}));
+const allWords = sets.flatMap(({ words }) => words);
 const wakaWords = allWords.filter((word) => word.exampleForm === "waka");
 assert.ok(wakaWords.length >= 6, "the six phase1 waka words must remain in the data");
 
-for (const word of wakaWords) {
-  const targetMora = contextMoraCount(word);
-  const sameMoraSafeCandidates = allWords.filter((candidate) =>
-    candidate.id !== word.id &&
-    Math.abs(contextMoraCount(candidate) - targetMora) <= 1 &&
-    isSafePair(word, candidate)
-  );
-  assert.ok(sameMoraSafeCandidates.length > 0, `${word.id}: no same-mora safe distractor exists for the priority check`);
+for (const { setId, words } of sets) {
+  for (const word of words.filter((candidate) => candidate.exampleForm === "waka")) {
+    const targetMora = contextMoraCount(word);
+    const sameSetSafeCandidates = words.filter((candidate) =>
+      candidate.id !== word.id &&
+      Math.abs(contextMoraCount(candidate) - targetMora) <= 1 &&
+      isSafePair(word, candidate)
+    );
+    assert.ok(sameSetSafeCandidates.length > 0, `${setId}/${word.id}: no same-set same-mora safe distractor exists for the priority check`);
+  }
 }
 
 console.log(`OK: waka context-choice mora priority / ${wakaWords.length}語`);
