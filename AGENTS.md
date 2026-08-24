@@ -39,3 +39,14 @@ re-read whole files.
 After big code changes, refresh the graph with `graft build` (deterministic,
 no API key, $0).
 <!-- graft:end -->
+
+## データ作成の正本
+
+`data/set-*.json` へ語・セットを追加する、または例文を差し替えるときは、
+[docs/AUTHORING_STANDARD.md](docs/AUTHORING_STANDARD.md) に従う。典拠と底本の決め方、
+`source` の表記、空欄の作り方、和歌の `waka` フィールド、検証手順をまとめてある。
+採用した底本は [docs/SOURCE_EDITIONS.md](docs/SOURCE_EDITIONS.md) に記録する。
+
+一括の差し替えは `docs/waka-adoptions.json` に入力表を書いて
+`node scripts/apply-waka.mjs` で反映する。データJSONを直接手で編集すると、
+入力表からの再実行で変更が巻き戻る。

@@ -18,6 +18,7 @@ const headwordOwnedSuffixesById = new Map([
 const answerRepeatAllowedById = new Map([
   ["kv08-086", "かつ"], // 「かつ〜かつ〜」は語法上の反復で、対句がないと「一方では」の意味を示せない。
 ]);
+const legacySourceLabels = new Set(["出典未詳", "学習用例文", "単語解説"]);
 const wakaMoraTargets = [5, 7, 5, 7, 7];
 const wakaSmallKana = new Set(["ゃ", "ゅ", "ょ", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ"]);
 const countMora = (reading) => [...reading].filter((character) => !wakaSmallKana.has(character)).length;
@@ -126,6 +127,8 @@ for (const [setId, entry] of Object.entries(manifest.sets)) {
     }
     validateWaka(setId, word);
     if (word.example.endsWith(`（${word.source}）`)) throw new Error(`${setId}: ${word.id} source is duplicated in example`);
+    // 出典が特定できない例文は「学習用作例」として作例と明示する（実出典を装わない）。
+    if (legacySourceLabels.has(word.source)) throw new Error(`${setId}: ${word.id} source must name a real text or 学習用作例`);
     if (ids.has(word.id)) throw new Error(`${setId}: duplicate id ${word.id}`);
     ids.add(word.id);
     if (idsAcrossSets.has(word.id)) throw new Error(`cross-set duplicate id ${word.id}`);
