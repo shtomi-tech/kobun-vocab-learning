@@ -15,9 +15,23 @@ const headwordOwnedSuffixesById = new Map([
   ["kv03-032", "む"], // よをそむく: よをそむ は語の一部で、後続の「きぬ」が見えている。
   ["kv08-091", "まし"], // まします: 連用形ましましの語尾で、助動詞「まし」ではない。
 ]);
+const answerRepeatAllowedById = new Map([
+  ["kv08-086", "かつ"], // 「かつ〜かつ〜」は語法上の反復で、対句がないと「一方では」の意味を示せない。
+]);
 const wakaMoraTargets = [5, 7, 5, 7, 7];
 const wakaSmallKana = new Set(["ゃ", "ゅ", "ょ", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ"]);
 const countMora = (reading) => [...reading].filter((character) => !wakaSmallKana.has(character)).length;
+const countNonOverlappingOccurrences = (text, needle) => {
+  if (!needle) return 0;
+  let count = 0;
+  let offset = 0;
+  while (true) {
+    const index = text.indexOf(needle, offset);
+    if (index < 0) return count;
+    count++;
+    offset = index + needle.length;
+  }
+};
 
 function validateWaka(setId, word) {
   if (word.exampleForm !== undefined && !["waka", "prose"].includes(word.exampleForm)) {
@@ -86,6 +100,10 @@ for (const [setId, entry] of Object.entries(manifest.sets)) {
       throw new Error(`${setId}: ${word.id} cloze must replace one contiguous span of example`);
     }
     const removed = word.example.slice(prefix.length, word.example.length - suffix.length);
+    const answerRepeatAllowed = answerRepeatAllowedById.get(word.id) === removed;
+    if (removed.length >= 2 && !answerRepeatAllowed && countNonOverlappingOccurrences(word.example, removed) >= 2) {
+      throw new Error(`${setId}: ${word.id} cloze answer is exposed in example more than once`);
+    }
     const attachedSuffix = attachedSuffixes.find((candidate) => removed.endsWith(candidate));
     const headwordForms = [word.headword, word.kanji].flatMap((form) => {
       const withoutParentheticalNote = form.replace(/[（）()]/g, "");

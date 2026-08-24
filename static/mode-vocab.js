@@ -61,6 +61,9 @@ const KobunVocabApp = (() => {
   const wordById = (id) => state.set.words.find((word) => word.id === id);
   const exampleBlank = "（　）";
   const isWaka = (word) => word.exampleForm === "waka" && Array.isArray(word.waka?.phrases);
+  const contextSmallKana = new Set(["ゃ", "ゅ", "ょ", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ"]);
+  const contextMoraCount = (word) => [...word.headword.split("〜")[0]]
+    .filter((character) => !contextSmallKana.has(character)).length;
 
   function wakaBlankPart(word) {
     const blankIndex = word.cloze.indexOf(exampleBlank);
@@ -287,7 +290,17 @@ const KobunVocabApp = (() => {
         if (selectedCandidates.length === 3) break;
       }
     };
-    addCandidates(distinctCandidates);
+    const isWakaContextQuestion = kind === "context" && word.exampleForm === "waka";
+    const preferredCandidates = isWakaContextQuestion
+      ? distinctCandidates.filter(({ word: other }) => Math.abs(contextMoraCount(word) - contextMoraCount(other)) <= 1)
+      : [];
+    if (isWakaContextQuestion) {
+      const preferredIds = new Set(preferredCandidates.map(({ word: other }) => other.id));
+      addCandidates(preferredCandidates);
+      addCandidates(distinctCandidates.filter(({ word: other }) => !preferredIds.has(other.id)));
+    } else {
+      addCandidates(distinctCandidates);
+    }
     if (kind === "meaning" && selectedCandidates.length < 3 && session?.mode !== "meaningReview") {
       const currentIds = new Set(source.map(({ word: other }) => other.id));
       addCandidates(reviewPoolEntries()
