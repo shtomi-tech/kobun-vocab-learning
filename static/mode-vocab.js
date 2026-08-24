@@ -231,6 +231,7 @@ const KobunVocabApp = (() => {
       )
     ))
   );
+  const isMeaningSafePair = (word, other) => !hasMeaningOverlap(word, other) && !hasMeaningFamilyOverlap(word, other);
 
   function choiceSet(word, kind) {
     const correct = kind === "meaning" ? meaningText(word) : word.headword;
@@ -242,12 +243,11 @@ const KobunVocabApp = (() => {
       : word.id;
     const candidates = source.filter((other) => other.key !== currentKey);
     const distinctCandidates = candidates
-      .filter(({ word: other }) => kind !== "meaning" || (!hasMeaningOverlap(word, other) && !hasMeaningFamilyOverlap(word, other)));
+      .filter(({ word: other }) => isMeaningSafePair(word, other));
     const selectedCandidates = [];
     const addCandidates = (items) => {
       for (const candidate of shuffle(items)) {
-        if (selectedCandidates.every(({ word: other }) => kind !== "meaning" ||
-          (!hasMeaningOverlap(candidate.word, other) && !hasMeaningFamilyOverlap(candidate.word, other)))) {
+        if (selectedCandidates.every(({ word: other }) => isMeaningSafePair(candidate.word, other))) {
           selectedCandidates.push(candidate);
         }
         if (selectedCandidates.length === 3) break;
@@ -259,7 +259,7 @@ const KobunVocabApp = (() => {
       addCandidates(reviewPoolEntries()
         .filter(({ word: other }) => !currentIds.has(other.id))
         .map((entry) => ({ key: entry.key, word: entry.word }))
-        .filter(({ word: other }) => !hasMeaningOverlap(word, other) && !hasMeaningFamilyOverlap(word, other)));
+        .filter(({ word: other }) => isMeaningSafePair(word, other)));
     }
     const pool = selectedCandidates
       .map(({ word: other }) => kind === "meaning" ? meaningText(other) : other.headword)
@@ -279,9 +279,9 @@ const KobunVocabApp = (() => {
       : source.find(({ key, word: other }) => key !== currentKey && meaningText(other) === choice)?.word);
     if (!selected.every(Boolean)) return false;
     const distractors = selected.filter((item) => item !== word);
-    return distractors.every((item) => !hasMeaningOverlap(word, item) && !hasMeaningFamilyOverlap(word, item)) &&
+    return distractors.every((item) => isMeaningSafePair(word, item)) &&
       selected.every((item, index) => selected.slice(index + 1).every((other) =>
-        !hasMeaningOverlap(item, other) && !hasMeaningFamilyOverlap(item, other)
+        isMeaningSafePair(item, other)
       ));
   }
 

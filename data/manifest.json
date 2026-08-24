@@ -52,6 +52,10 @@
     "kobun-set-13": {
       "label": "第13セット　指示代名詞・時間表現",
       "dataUrl": "data/set-13.json"
+    },
+    "kobun-set-14": {
+      "label": "第14セット　時間・性質表現",
+      "dataUrl": "data/set-14.json"
     }
   }
 }
