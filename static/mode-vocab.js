@@ -59,6 +59,40 @@ const KobunVocabApp = (() => {
   const passScore = () => Math.ceil(state.set.words.length * PASS_RATE);
   const meaningText = (word) => word.meanings.join("／");
   const wordById = (id) => state.set.words.find((word) => word.id === id);
+  const exampleBlank = "（　）";
+  const isWaka = (word) => word.exampleForm === "waka" && Array.isArray(word.waka?.phrases);
+
+  function wakaBlankPart(word) {
+    const blankIndex = word.cloze.indexOf(exampleBlank);
+    if (blankIndex < 0) return null;
+    const prefix = word.cloze.slice(0, blankIndex);
+    const suffix = word.cloze.slice(blankIndex + exampleBlank.length);
+    const blankStart = prefix.length;
+    const blankEnd = word.example.length - suffix.length;
+    let offset = 0;
+    for (const [index, phrase] of word.waka.phrases.entries()) {
+      const nextOffset = offset + phrase.length;
+      if (blankStart >= offset && blankStart < nextOffset && blankEnd > offset && blankEnd <= nextOffset) {
+        return { index, start: blankStart - offset, end: blankEnd - offset };
+      }
+      offset = nextOffset;
+    }
+    return null;
+  }
+
+  function exampleBody(word, { blank = false } = {}) {
+    if (!isWaka(word)) return blank ? word.cloze : word.example;
+    const blankPart = blank ? wakaBlankPart(word) : null;
+    if (blank && !blankPart) return word.cloze;
+    return word.waka.phrases.map((phrase, index) => {
+      const text = blankPart?.index === index
+        ? `${phrase.slice(0, blankPart.start)}${exampleBlank}${phrase.slice(blankPart.end)}`
+        : phrase;
+      return el("span", { class: "ku" }, text);
+    });
+  }
+
+  const exampleClass = (word, base) => `${base}${isWaka(word) ? ` ${base}--waka` : ""}`;
 
   function loadProgressFor(setId, set) {
     try {
@@ -843,7 +877,10 @@ const KobunVocabApp = (() => {
         word.notes?.length
           ? el("section", { id: hideMeaningEnabled ? notesId : null, hidden: showRevealButton, class: `flashNotes${justRevealed ? " is-entering" : ""}` }, el("h3", {}, "解説・補足"), el("ul", {}, ...word.notes.map((note) => el("li", {}, note))))
           : null,
-        el("section", {}, el("h3", {}, `例文　『${word.source}』`), el("p", { class: "example" }, word.example)),
+        el("section", {},
+          el("h3", {}, isWaka(word) ? "和歌　" : "例文　", `『${word.source}』`, isWaka(word) ? el("span", { class: "wakaAuthor" }, `作者：${word.waka.author}`) : null),
+          el("p", { class: exampleClass(word, "example") }, exampleBody(word)),
+        ),
         el("section", { id: hideMeaningEnabled ? translationId : null, hidden: showRevealButton, class: justRevealed ? "is-entering" : null }, el("h3", {}, "例文の訳"), el("p", {}, word.translation)),
       ),
     );
@@ -903,7 +940,7 @@ const KobunVocabApp = (() => {
       el("p", { class: "label" }, kind === "meaning" ? "次の語の意味は？" : "空欄に入る語の基本形は？"),
       kind === "meaning"
         ? el("p", { class: "askWord", tabindex: "-1" }, `${word.headword}【${word.kanji}】`)
-        : el("p", { class: "cloze", tabindex: "-1" }, word.cloze),
+        : el("p", { class: exampleClass(word, "cloze"), tabindex: "-1" }, exampleBody(word, { blank: true })),
       kind === "context" ? el("p", { class: "questionTranslation" }, `現代語訳：${word.translation}`) : null,
     );
     const choices = el("div", { class: "choices" });
@@ -928,7 +965,7 @@ const KobunVocabApp = (() => {
       box.appendChild(el("div", { class: `feedback ${isCorrect ? "ok" : "ng"}`, role: "status", "aria-live": "polite", "aria-atomic": "true", tabindex: "-1" },
         el("h3", {}, isCorrect ? "○ 正解" : "× 不正解"),
         el("p", {}, `${word.headword}【${word.kanji}】：${meaningText(word)}`),
-        kind === "context" ? el("p", { class: "example" }, word.example) : null,
+        kind === "context" ? el("p", { class: exampleClass(word, "example") }, exampleBody(word)) : null,
       ));
       box.appendChild(el("p", { class: "hint kbdHint" }, "Enterで次の問題へ"));
       box.appendChild(el("div", { class: "quizNextAction" },

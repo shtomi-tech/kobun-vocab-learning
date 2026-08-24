@@ -15,6 +15,56 @@ const headwordOwnedSuffixesById = new Map([
   ["kv03-032", "む"], // よをそむく: よをそむ は語の一部で、後続の「きぬ」が見えている。
   ["kv08-091", "まし"], // まします: 連用形ましましの語尾で、助動詞「まし」ではない。
 ]);
+const wakaMoraTargets = [5, 7, 5, 7, 7];
+const wakaSmallKana = new Set(["ゃ", "ゅ", "ょ", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ"]);
+const countMora = (reading) => [...reading].filter((character) => !wakaSmallKana.has(character)).length;
+
+function validateWaka(setId, word) {
+  if (word.exampleForm !== undefined && !["waka", "prose"].includes(word.exampleForm)) {
+    throw new Error(`${setId}: ${word.id} exampleForm must be waka or prose`);
+  }
+  if (word.waka !== undefined && word.exampleForm !== "waka") {
+    throw new Error(`${setId}: ${word.id} waka requires exampleForm=waka`);
+  }
+  if (word.exampleForm !== "waka") return;
+
+  const waka = word.waka;
+  if (!waka || typeof waka !== "object" || Array.isArray(waka)) throw new Error(`${setId}: ${word.id} waka must be an object`);
+  if (!Array.isArray(waka.phrases) || waka.phrases.length !== 5 || !waka.phrases.every((phrase) => typeof phrase === "string" && phrase.length > 0)) {
+    throw new Error(`${setId}: ${word.id} waka.phrases must contain five non-empty strings`);
+  }
+  if (waka.phrases.join("") !== word.example) throw new Error(`${setId}: ${word.id} waka.phrases must reconstruct example`);
+  if (!Array.isArray(waka.reading) || waka.reading.length !== 5 || !waka.reading.every((reading) => typeof reading === "string" && /^[ぁ-んー]+$/.test(reading))) {
+    throw new Error(`${setId}: ${word.id} waka.reading must contain five hiragana readings`);
+  }
+  if (waka.reading.some((reading) => /[ゃゅょぁぃぅぇぉ]/u.test(reading))) {
+    throw new Error(`${setId}: ${word.id} waka.reading must use historical kana without small kana`);
+  }
+  const moraCounts = waka.reading.map(countMora);
+  if (moraCounts.some((count, index) => Math.abs(count - wakaMoraTargets[index]) > 1)) {
+    throw new Error(`${setId}: ${word.id} waka readings have invalid mora counts: ${moraCounts.join("/")}`);
+  }
+  if (/[、。]/u.test(word.example)) throw new Error(`${setId}: ${word.id} waka example must not contain punctuation`);
+  if (typeof waka.author !== "string" || !waka.author.trim()) throw new Error(`${setId}: ${word.id} waka.author is required`);
+
+  const blankIndex = word.cloze.indexOf(clozeBlank);
+  const prefix = word.cloze.slice(0, blankIndex);
+  const suffix = word.cloze.slice(blankIndex + clozeBlank.length);
+  const blankStart = prefix.length;
+  const blankEnd = word.example.length - suffix.length;
+  let offset = 0;
+  let startPhrase = -1;
+  let endPhrase = -1;
+  for (const [index, phrase] of waka.phrases.entries()) {
+    const nextOffset = offset + phrase.length;
+    if (blankStart >= offset && blankStart < nextOffset) startPhrase = index;
+    if (blankEnd > offset && blankEnd <= nextOffset) endPhrase = index;
+    offset = nextOffset;
+  }
+  if (startPhrase < 0 || endPhrase < 0 || startPhrase !== endPhrase) {
+    throw new Error(`${setId}: ${word.id} waka cloze blank must stay within one phrase`);
+  }
+}
 
 for (const [setId, entry] of Object.entries(manifest.sets)) {
   const data = JSON.parse(fs.readFileSync(new URL(`../${entry.dataUrl}`, import.meta.url)));
@@ -45,6 +95,7 @@ for (const [setId, entry] of Object.entries(manifest.sets)) {
     if (attachedSuffix && !headwordOwnsSuffix) {
       throw new Error(`${setId}: ${word.id} cloze blank includes attached suffix ${attachedSuffix}`);
     }
+    validateWaka(setId, word);
     if (word.example.endsWith(`（${word.source}）`)) throw new Error(`${setId}: ${word.id} source is duplicated in example`);
     if (ids.has(word.id)) throw new Error(`${setId}: duplicate id ${word.id}`);
     ids.add(word.id);

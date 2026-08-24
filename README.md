@@ -54,7 +54,7 @@ py -3 -m http.server 8062 --bind 127.0.0.1
 - `data/set-13.json`: 第13セット「指示代名詞・時間表現」12語
 - `data/set-14.json`: 第14セット「時間・性質表現」12語
 
-新しいセットは、同じ形式のJSONを追加し、manifestへ登録します。各語には `example`、`translation`、`source`、`cloze` に加え、`notes`（空でない解説・補足の文字列配列。1件以上必須）を必ず収録します。
+新しいセットは、同じ形式のJSONを追加し、manifestへ登録します。各語には `example`、`translation`、`source`、`cloze` に加え、`notes`（空でない解説・補足の文字列配列。1件以上必須）を必ず収録します。`exampleForm` は省略時に散文として扱い、和歌には `exampleForm: "waka"` と5句の表記・読み・作者を持つ `waka` を追加します。`waka.reading` は歴史的仮名遣いで記載し、現代仮名遣いには直しません。
 
 ## 匿名利用・生徒別同期
 

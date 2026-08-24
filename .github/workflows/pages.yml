@@ -34,6 +34,8 @@ jobs:
         run: |
           node --check static/mode-vocab.js
           node scripts/check-data.mjs
+          node scripts/check-waka-phase1.mjs
+          node scripts/check-waka-display.mjs
           node scripts/check-srs.cjs
           node scripts/check-set-06.mjs
           node scripts/check-set-07.mjs
