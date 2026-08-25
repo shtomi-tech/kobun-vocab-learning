@@ -56,6 +56,10 @@
     "kobun-set-14": {
       "label": "第14セット　時間・性質表現",
       "dataUrl": "data/set-14.json"
+    },
+    "kobun-set-15": {
+      "label": "第15セット　性質・状態表現",
+      "dataUrl": "data/set-15.json"
     }
   }
 }
