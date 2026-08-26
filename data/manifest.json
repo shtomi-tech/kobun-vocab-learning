@@ -60,6 +60,10 @@
     "kobun-set-15": {
       "label": "第15セット　性質・状態表現",
       "dataUrl": "data/set-15.json"
+    },
+    "kobun-set-16": {
+      "label": "第16セット　指示語・呼応表現",
+      "dataUrl": "data/set-16.json"
     }
   }
 }
