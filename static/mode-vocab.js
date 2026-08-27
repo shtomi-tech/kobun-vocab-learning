@@ -237,7 +237,7 @@ const KobunVocabApp = (() => {
     return reviewEntryByKey(id)?.word || wordById(id);
   }
 
-  const normalizeMeaning = (value) => value.replace(/[「」『』【】（）()、。・／\s]/g, "");
+  const normalizeMeaning = (value) => value.replace(/[「」『』【】（）()、。・／①②③④⑤\s]/g, "");
   const meaningParts = (value) => value.split(/[。／]/).map(normalizeMeaning).filter(Boolean);
   const meaningFamilies = [
     /死ぬ|亡くなる|死別|先立たれる|命|いなくなる/,
@@ -261,6 +261,8 @@ const KobunVocabApp = (() => {
     /お与えになる|くださる|下賜/,
     /申しあげる/,
     /なさる|お〜になる|お召しになる|お乗りになる/,
+    /なぜ|どうして|どのように|どんなに|どうにかして|何とかして/,
+    /そのように|このように|あのように|そうである|こう$|そう$/,
   ];
   const hasMeaningFamilyOverlap = (word, other) => meaningFamilies.some((family) =>
     word.meanings.some((meaning) => family.test(meaning)) && other.meanings.some((meaning) => family.test(meaning))

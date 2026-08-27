@@ -20,7 +20,7 @@ const meaningFamilies = familyBlock
     return new RegExp(literal.slice(1, lastSlash), literal.slice(lastSlash + 1));
   });
 
-const normalizeMeaning = (value) => value.replace(/[「」『』【】（）()、。・／〜～⇔\s]/g, "");
+const normalizeMeaning = (value) => value.replace(/[「」『』【】（）()、。・／〜～⇔①②③④⑤\s]/g, "");
 const meaningParts = (value) => value.split(/[。／]/).map(normalizeMeaning).filter(Boolean);
 const hasMeaningOverlap = (left, right) => left.meanings.some((meaning) =>
   right.meanings.some((candidate) => meaningParts(meaning).some((leftPart) =>
