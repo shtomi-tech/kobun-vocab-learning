@@ -68,6 +68,10 @@
     "kobun-set-17": {
       "label": "第17セット　指示語・疑問表現",
       "dataUrl": "data/set-17.json"
+    },
+    "kobun-set-18": {
+      "label": "第18セット　可能・難易・接尾語表現",
+      "dataUrl": "data/set-18.json"
     }
   }
 }
