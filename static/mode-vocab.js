@@ -23,8 +23,6 @@ const KobunVocabApp = (() => {
   let homeIntroduced = false;
   let lastQuizEntryKey = null;
   let lastStepKey = null;
-  let hideMeaningEnabled = false;
-  let revealedFlashWordId = null;
   let shareStatusIntroduced = false;
 
   const $ = (selector) => document.querySelector(selector);
@@ -724,7 +722,6 @@ const KobunVocabApp = (() => {
       contextOrder: shuffle(ids), contextIndex: 0, contextCorrect: 0,
       wrongMeaningIds: [], reviewedIds: [], answered: false, choices: null,
     };
-    revealedFlashWordId = null;
     lastStepKey = stepKey();
     renderSession();
   }
@@ -763,37 +760,8 @@ const KobunVocabApp = (() => {
 
   function restoreSession() {
     session = JSON.parse(JSON.stringify(state.progress.resume));
-    revealedFlashWordId = null;
     lastStepKey = stepKey();
     renderSession();
-  }
-
-  function stepShortLabel() {
-    if (session.stage === "flash") return "覚える";
-    if (session.stage === "meaning") return session.mode === "meaningReview" ? "意味だけ復習" : session.mode === "final" ? "最終チェック" : "確かめる";
-    if (session.stage === "wrongReview") return "必要なら復習";
-    if (session.stage === "context") return "解く";
-    return "完了";
-  }
-
-  function currentCountLabel() {
-    if (session.stage === "flash") return `${session.index + 1} / ${currentBatchIds().length}`;
-    if (session.stage === "meaning") return `${session.meaningIndex + 1} / ${session.meaningOrder.length}`;
-    if (session.stage === "context") return `${session.contextIndex + 1} / ${session.contextOrder.length}`;
-    if (session.stage === "wrongReview") return `${session.reviewedIds.length} / ${session.wrongMeaningIds.length}`;
-    return "";
-  }
-
-  function sessionProgressBar() {
-    const parts = [];
-    if (session.mode === "learn") parts.push(`第${session.batchIndex + 1}/${session.batchCount}ブロック`);
-    parts.push(stepShortLabel());
-    const count = currentCountLabel();
-    if (count) parts.push(count);
-    return el("div", { class: "sessionProgressBar" },
-      el("button", { class: "ghost", type: "button", onclick: () => { saveResume(); renderHome(); } }, "一覧へ"),
-      el("span", { class: "sessionProgressText" }, parts.join("・")),
-    );
   }
 
   function renderSession() {
@@ -814,7 +782,6 @@ const KobunVocabApp = (() => {
     if (session.stage !== "done") sessionHead.appendChild(el("button", { class: "ghost", onclick: () => { saveResume(); renderHome(); } }, "一覧へ戻る"));
     panel.appendChild(sessionHead);
     panel.appendChild(stepBar());
-    if (session.stage !== "done") panel.appendChild(sessionProgressBar());
 
     if (session.stage === "flash") renderFlash(panel);
     else if (session.stage === "meaning") renderQuiz(panel, "meaning");
@@ -873,13 +840,7 @@ const KobunVocabApp = (() => {
     }));
   }
 
-  function wordCard(word, { hideMeaningEnabled = false, revealed = false, onReveal, flashCounter = "" } = {}) {
-    const meaningId = `flashMeaning-${word.id}`;
-    const notesId = `flashNotes-${word.id}`;
-    const translationId = `flashTranslation-${word.id}`;
-    const showRevealButton = hideMeaningEnabled && !revealed;
-    const justRevealed = hideMeaningEnabled && revealed;
-    const controlledIds = [meaningId, ...(word.notes?.length ? [notesId] : []), translationId].join(" ");
+  function wordCard(word, { flashCounter = "" } = {}) {
     const wakaMeta = isWaka(word)
       ? el("span", { class: "wakaMeta" },
         el("span", { class: "wakaAuthor" }, `作者：${word.waka.author}`),
@@ -895,18 +856,15 @@ const KobunVocabApp = (() => {
         flashCounter ? el("span", { class: "flashCounter" }, flashCounter) : null,
       ),
       el("div", { class: "flashBody" },
-        showRevealButton
-          ? el("button", { class: "cta revealMeaning", type: "button", "aria-expanded": "false", "aria-controls": controlledIds, onclick: onReveal }, "意味を見る")
-          : null,
-        el("section", { id: hideMeaningEnabled ? meaningId : null, hidden: showRevealButton, class: justRevealed ? "is-entering" : null }, el("h3", {}, "意味"), ...word.meanings.map((meaning) => el("p", {}, meaning))),
+        el("section", {}, el("h3", {}, "意味"), ...word.meanings.map((meaning) => el("p", {}, meaning))),
         word.notes?.length
-          ? el("section", { id: hideMeaningEnabled ? notesId : null, hidden: showRevealButton, class: `flashNotes${justRevealed ? " is-entering" : ""}` }, el("h3", {}, "解説・補足"), el("ul", {}, ...word.notes.map((note) => el("li", {}, note))))
+          ? el("section", { class: "flashNotes" }, el("h3", {}, "解説・補足"), el("ul", {}, ...word.notes.map((note) => el("li", {}, note))))
           : null,
         el("section", {},
           el("h3", {}, isWaka(word) ? "和歌　" : "例文　", `『${word.source}』`, wakaMeta),
           el("p", { class: exampleClass(word, "example") }, exampleBody(word)),
         ),
-        el("section", { id: hideMeaningEnabled ? translationId : null, hidden: showRevealButton, class: justRevealed ? "is-entering" : null }, el("h3", {}, "例文の訳"), el("p", {}, word.translation)),
+        el("section", {}, el("h3", {}, "例文の訳"), el("p", {}, word.translation)),
       ),
     );
   }
@@ -919,22 +877,11 @@ const KobunVocabApp = (() => {
   function renderFlash(panel) {
     const batchIds = currentBatchIds();
     const word = wordById(batchIds[session.index]);
-    const revealed = revealedFlashWordId === word.id;
-    panel.appendChild(el("button", {
-      class: `ghost hideMeaningToggle${hideMeaningEnabled ? " is-active" : ""}`,
-      type: "button",
-      "aria-pressed": hideMeaningEnabled ? "true" : "false",
-      onclick: () => { hideMeaningEnabled = !hideMeaningEnabled; revealedFlashWordId = null; renderSession(); },
-    }, hideMeaningEnabled ? "意味を隠して覚える：オン" : "意味を隠して覚える"));
-    panel.appendChild(wordCard(word, {
-      hideMeaningEnabled, revealed, flashCounter: `カード ${session.index + 1} / ${batchIds.length}`,
-      onReveal: () => { revealedFlashWordId = word.id; renderSession(); },
-    }));
+    panel.appendChild(wordCard(word, { flashCounter: `カード ${session.index + 1} / ${batchIds.length}・第${session.batchIndex + 1} / ${session.batchCount}ブロック` }));
     const last = session.index === batchIds.length - 1;
     panel.appendChild(el("div", { class: "actions" },
-      el("button", { class: "ghost", disabled: !session.index, onclick: () => { if (session.index) { session.index--; revealedFlashWordId = null; renderSession(); } } }, "← 前の語"),
+      el("button", { class: "ghost", disabled: !session.index, onclick: () => { if (session.index) { session.index--; renderSession(); } } }, "← 前の語"),
       el("button", { class: "cta", onclick: () => {
-        revealedFlashWordId = null;
         if (last) {
           session.stage = "meaning";
           session.meaningOrder = shuffle(batchIds);
@@ -983,8 +930,6 @@ const KobunVocabApp = (() => {
       choices.appendChild(button);
     });
     box.appendChild(choices);
-    if (!session.answered) box.appendChild(el("p", { class: "hint kbdHint" }, "キーボード: 1〜4で回答"));
-
     if (session.answered) {
       const isCorrect = session.picked === correct;
       box.appendChild(el("div", { class: `feedback ${isCorrect ? "ok" : "ng"}`, role: "status", "aria-live": "polite", "aria-atomic": "true", tabindex: "-1" },
@@ -992,7 +937,6 @@ const KobunVocabApp = (() => {
         el("p", {}, `${word.headword}【${word.kanji}】：${meaningText(word)}`),
         kind === "context" ? el("p", { class: exampleClass(word, "example") }, exampleBody(word)) : null,
       ));
-      box.appendChild(el("p", { class: "hint kbdHint" }, "Enterで次の問題へ"));
       box.appendChild(el("div", { class: "quizNextAction" },
         el("button", { class: "cta next", onclick: () => nextQuiz(kind) }, index === order.length - 1 ? "次へ →" : "次の問題 →"),
       ));

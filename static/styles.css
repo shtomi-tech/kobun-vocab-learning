@@ -252,16 +252,10 @@ button:disabled { cursor: default; opacity: .55; }
 .sessionHead { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .savedState { font-size: 13px; }
 .stepBar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--step-gap); margin-bottom: 24px; }
-.sessionProgressBar { position: sticky; top: 0; z-index: 15; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 20px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--canvas); }
-.sessionProgressBar .ghost { flex: none; }
-.sessionProgressText { flex: 1 1 auto; min-width: 0; color: var(--muted); font-size: 13px; font-weight: 700; text-align: right; }
 .step { min-height: 44px; display: grid; place-items: center; padding: 8px; border-radius: var(--radius-control); border-bottom: 3px solid transparent; background: var(--card); color: var(--muted); font-family: var(--mono); font-size: 13px; text-align: center; transition: background-color var(--transition-hover), border-color var(--transition-hover), color var(--transition-hover); }
 .step.active { background: var(--ink); color: var(--canvas); font-weight: 700; border-bottom-color: var(--ink); }
 .step.cleared { border-bottom-color: var(--ok); }
 .step.cleared::before { content: "✓ "; color: var(--color-success-text); }
-.hideMeaningToggle { margin-bottom: 12px; font-size: 13px; }
-.hideMeaningToggle.is-active { border-color: var(--clay); color: var(--clay-dark); }
-.revealMeaning { margin-bottom: 8px; }
 .flashCard { padding: 0; overflow: hidden; background: var(--canvas); }
 .flashHead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 16px 18px; background: var(--ink); color: var(--canvas); }
 .flashTitle { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
@@ -270,7 +264,6 @@ button:disabled { cursor: default; opacity: .55; }
 .flashHead .kanji { color: rgba(250, 249, 245, .72); }
 .flashCounter { color: rgba(250, 249, 245, .76); font-family: var(--mono); font-size: 11px; letter-spacing: .04em; }
 .flashBody { padding: 4px 0 0; background: var(--canvas); }
-.flashBody > .revealMeaning { margin: 12px 18px 0; }
 .flashCard section { padding: 16px 18px 0; border-top: 1px solid var(--line); }
 .flashNotes ul { margin: 0; padding-left: 1.4em; max-width: var(--text-measure); }
 .flashNotes li + li { margin-top: 6px; }
@@ -344,7 +337,6 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
   .quiz--answered { margin-bottom: 0; }
   .quizNextAction { position: static; left: auto; bottom: auto; transform: none; z-index: auto; width: auto; margin: 16px 0 0; padding: 0; border-top: 0; background: none; }
   .next { width: 100%; }
-  .kbdHint { display: none; }
   .feedback { scroll-margin-bottom: 0; }
   .flashHead { padding: 14px 16px; }
   .flashCard section { padding-left: 16px; padding-right: 16px; }
