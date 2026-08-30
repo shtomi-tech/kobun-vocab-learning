@@ -96,6 +96,7 @@
 
 ```bash
 node --check static/mode-vocab.js
+node --check static/meaning-guard.js
 node scripts/check-data.mjs
 node scripts/check-waka-data.mjs
 node scripts/check-waka-choices.mjs

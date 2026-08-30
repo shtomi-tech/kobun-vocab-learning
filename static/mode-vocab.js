@@ -55,7 +55,7 @@ const KobunVocabApp = (() => {
   };
   const progressKey = (setId = state.setId) => PROGRESS_PREFIX + setId;
   const passScore = () => Math.ceil(state.set.words.length * PASS_RATE);
-  const meaningText = (word) => word.meanings.join("／");
+  const { meaningText, isSafePair: isMeaningSafePair } = KobunMeaningGuard;
   const wordById = (id) => state.set.words.find((word) => word.id === id);
   const exampleBlank = "（　）";
   const isWaka = (word) => word.exampleForm === "waka" && Array.isArray(word.waka?.phrases);
@@ -117,8 +117,6 @@ const KobunVocabApp = (() => {
     return { units: {}, finalCheck: {}, dataVersion: set.meta.dataVersion || 1 };
   }
 
-  function loadProgress() { return loadProgressFor(state.setId, state.set); }
-
   function saveProgressFor(setId, progress) {
     try { localStorage.setItem(progressKey(setId), JSON.stringify(progress)); } catch (_) { /* localStorageなしでも学習は続ける */ }
     if (cloud) cloud.queueSave({ datasetId: setId, progress, meta: { lastDatasetId: state.setId } });
@@ -152,27 +150,23 @@ const KobunVocabApp = (() => {
     return state.set.words.filter((word) => unit(word.id).needsReview).map((word) => word.id);
   }
 
-  function itemState(id) {
-    if (!state.progress.items) state.progress.items = {};
-    state.progress.items[id] = KobunSrs.normalize(state.progress.items[id]);
-    return state.progress.items[id];
+  // 全セットの { setId, set, progress }。開いているセットだけは state 側が最新なので差し替える。
+  function progressSources() {
+    const sources = state.reviewPool.length
+      ? state.reviewPool
+      : [{ setId: state.setId, set: state.set, progress: state.progress }];
+    return sources.map((source) => source.setId === state.setId
+      ? { ...source, set: state.set, progress: state.progress }
+      : source);
   }
 
   function reviewPoolEntries() {
-    const sources = (state.reviewPool.length ? state.reviewPool : [{ setId: state.setId, set: state.set, progress: state.progress }])
-      .map((source) => source.setId === state.setId ? { ...source, progress: state.progress } : source);
-    return sources.flatMap(({ setId, set, progress }) => {
-      if (setId === state.setId) {
-        set = state.set;
-        progress = state.progress;
-      }
-      return set.words.map((word) => ({
-        key: `${setId}::${word.id}`,
-        setId,
-        word,
-        progress,
-      }));
-    });
+    return progressSources().flatMap(({ setId, set, progress }) => set.words.map((word) => ({
+      key: `${setId}::${word.id}`,
+      setId,
+      word,
+      progress,
+    })));
   }
 
   function reviewEntryByKey(key) {
@@ -234,45 +228,6 @@ const KobunVocabApp = (() => {
   function wordForSession(id) {
     return reviewEntryByKey(id)?.word || wordById(id);
   }
-
-  const normalizeMeaning = (value) => value.replace(/[「」『』【】（）()、。・／①②③④⑤\s]/g, "");
-  const meaningParts = (value) => value.split(/[。／]/).map(normalizeMeaning).filter(Boolean);
-  const meaningFamilies = [
-    /死ぬ|亡くなる|死別|先立たれる|命|いなくなる/,
-    /男女|夫婦|交際|結婚|求婚|言い寄|出会|対面|愛情|恋人|男女の縁|親しく言葉/,
-    /泣|涙|悲し/,
-    /出家|仏道修行|隠遁/,
-    /歩く|徒歩|去る|行く|渡る|通る|移動|出歩く|遠ざかる|進む/,
-    /連れる|伴う|連れ立つ|備える|持っていく/,
-    /じっとしている|座る|ひざまずく|腰をおろす|居ずまい/,
-    /書物|漢籍|漢詩|学問|漢学|学才|学識|芸能|技能/,
-    /天皇|上皇|法皇|中宮|東宮|皇族|行幸|御幸|行啓|ご機嫌/,
-    /前世|宿命|運命|約束|縁|契り|愛の誓い/,
-    /茫然|前後不覚|正気を失|どうしてよいかわから|道理をわきまえない/,
-    /言うまでもない|もちろん|不十分|言い尽くせない|ありきたり|表現できない|なんとも/,
-    /異様|奇怪|度を超えてよくない|異常|普通ではない|普段とは異な|並々ではない/,
-    /有名|評判|名声|名前/,
-    /たいした|これといった|それほど|まったく|少しも|決して|けっして|滅多に|ほとんど/,
-    /まさか|よもや/,
-    /するな|してはいけない/,
-    /いらっしゃる|おいでになる|おありになる|ていらっしゃる|でいらっしゃる/,
-    /お与えになる|くださる|下賜/,
-    /申しあげる/,
-    /なさる|お〜になる|お召しになる|お乗りになる/,
-    /なぜ|どうして|どのように|どんなに|どうにかして|何とかして/,
-    /そのように|このように|あのように|そうである|こう$|そう$/,
-  ];
-  const hasMeaningFamilyOverlap = (word, other) => meaningFamilies.some((family) =>
-    word.meanings.some((meaning) => family.test(meaning)) && other.meanings.some((meaning) => family.test(meaning))
-  );
-  const hasMeaningOverlap = (word, other) => word.meanings.some((meaning) =>
-    other.meanings.some((candidate) => meaningParts(meaning).some((left) =>
-      meaningParts(candidate).some((right) =>
-        left === right || (Math.min(left.length, right.length) >= 4 && (left.includes(right) || right.includes(left)))
-      )
-    ))
-  );
-  const isMeaningSafePair = (word, other) => !hasMeaningOverlap(word, other) && !hasMeaningFamilyOverlap(word, other);
 
   function choiceSet(word, kind) {
     const correct = kind === "meaning" ? meaningText(word) : word.headword;
@@ -577,9 +532,7 @@ const KobunVocabApp = (() => {
     const details = el("details", { class: "card learningHistory" },
       el("summary", {}, "最近の学習履歴"),
     );
-    const sources = (state.reviewPool.length ? state.reviewPool : [{ setId: state.setId, set: state.set, progress: state.progress }])
-      .map((source) => source.setId === state.setId ? { ...source, progress: state.progress } : source);
-    const events = sources.flatMap(({ setId, progress }) => (Array.isArray(progress.history) ? progress.history : []).map((event) => ({ ...event, datasetId: setId })))
+    const events = progressSources().flatMap(({ setId, progress }) => (Array.isArray(progress.history) ? progress.history : []).map((event) => ({ ...event, datasetId: setId })))
       .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
       .slice(0, 10);
     if (!events.length) {
