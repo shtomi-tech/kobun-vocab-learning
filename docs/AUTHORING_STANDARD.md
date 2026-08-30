@@ -6,12 +6,48 @@
 
 ## 0. 追加の手順
 
-1. 例文の典拠を決める（§2）。和歌にするか散文にするかを§1の基準で判断する。
+1. 例文の典拠を決める（§2）。候補が複数ある場合は、§0-1の採用順で主例文を決める。和歌にするか散文にするかを§1の基準で判断する。
 2. 本文を底本から起こす（§2-2）。**日文研の和歌データベースは所在確認にだけ使い、本文の入力元にはしない。**
 3. 語のJSONを組み立てる（§3〜§5）。
 4. 底本を [SOURCE_EDITIONS.md](SOURCE_EDITIONS.md) の「語ごとの対応」へ追記する。
 5. 差し替え・一括追加は `docs/waka-adoptions.json` に入力表を書き、`node scripts/apply-waka.mjs` で反映する。**JSONを直接手で編集しない**（再実行で巻き戻るため）。
 6. §7の検証をすべて通す。
+
+### 0-1. 例文候補の採用順
+
+同じ語に複数の例文候補がある場合は、次の順で**主例文を1件**選ぶ。
+
+1. 添付資料にある例文（`sourceType: "attached"`）
+2. 和歌（`sourceType: "waka"`）
+3. 古典作品の文章（`sourceType: "prose"`）
+4. 生成した学習用作例（`sourceType: "generated"`）
+
+和歌は、語義・文法・本文の確認ができる場合だけ候補にする。順位を満たすために、語義と合わない和歌を無理に採用しない。
+
+既存の単一例文形式との互換性を保つため、候補は語レコードの任意フィールド `examples` に同じ形式で収録できる。各候補には `example` / `translation` / `source` / `cloze` / `exampleForm` を必須とし、和歌なら `waka` も添える。
+
+```json
+"examples": [
+  {
+    "sourceType": "prose",
+    "example": "古典作品の本文…",
+    "translation": "現代語訳…",
+    "source": "作品名（段・章）",
+    "cloze": "古典作品の（　）…",
+    "exampleForm": "prose"
+  },
+  {
+    "sourceType": "attached",
+    "example": "添付資料の例文…",
+    "translation": "現代語訳…",
+    "source": "資料名",
+    "cloze": "添付資料の（　）…",
+    "exampleForm": "prose"
+  }
+]
+```
+
+`examples` の配列順ではなく `sourceType` の順位で選び、同じ種類が複数ある場合だけ配列順を使う。選ばれた候補は既存の `example` / `translation` / `source` / `cloze` / `exampleForm` として学習画面に渡される。候補未登録の語は、従来どおり語レコード直下の単一例文を使う。添付資料を確認できない場合は、添付例文や出典を推測して登録しない。
 
 ## 1. 和歌にするか散文にするか
 

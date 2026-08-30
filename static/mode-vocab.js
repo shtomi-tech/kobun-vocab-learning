@@ -144,6 +144,13 @@ const KobunVocabApp = (() => {
     return { units: {}, finalCheck: {}, dataVersion: set.meta.dataVersion || 1 };
   }
 
+  function applyExampleSourcePriority(set) {
+    return {
+      ...set,
+      words: set.words.map((word) => KobunExampleSource.select(word)),
+    };
+  }
+
   function saveProgressFor(setId, progress) {
     try { localStorage.setItem(progressKey(setId), JSON.stringify(progress)); } catch (_) { /* localStorageなしでも学習は続ける */ }
     if (cloud) cloud.queueSave({ datasetId: setId, progress, meta: { lastDatasetId: state.setId } });
@@ -247,7 +254,8 @@ const KobunVocabApp = (() => {
         if (!response.ok) throw new Error(`set: HTTP ${response.status}`);
         return response.json();
       });
-      return { setId, set, progress: loadProgressFor(setId, set) };
+      const selectedSet = applyExampleSourcePriority(set);
+      return { setId, set: selectedSet, progress: loadProgressFor(setId, selectedSet) };
     }));
     state.reviewPool = entries;
   }
@@ -1108,9 +1116,10 @@ const KobunVocabApp = (() => {
       if (!response.ok) throw new Error(`set: HTTP ${response.status}`);
       return response.json();
     });
-    const progress = loadProgressFor(setId, set);
+    const selectedSet = applyExampleSourcePriority(set);
+    const progress = loadProgressFor(setId, selectedSet);
     state.setId = setId;
-    state.set = set;
+    state.set = selectedSet;
     state.progress = progress;
     localStorage.setItem(SET_KEY, setId);
   }
