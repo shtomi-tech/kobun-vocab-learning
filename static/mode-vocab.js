@@ -864,7 +864,9 @@ const KobunVocabApp = (() => {
     const box = el("section", { class: `quiz${session.answered ? " quiz--answered" : ""}${!session.answered && isNewEntry ? " is-entering" : ""}` },
       el("p", { class: "label" }, kind === "meaning" ? "次の語の意味は？" : "空欄に入る語の基本形は？"),
       kind === "meaning"
-        ? el("p", { class: "askWord", tabindex: "-1" }, `${word.headword}【${word.kanji}】`)
+        ? el("p", { class: "askWord", tabindex: "-1" },
+          word.headword,
+          el("span", { class: "askWordKanji" }, `【${word.kanji}】`))
         : el("p", { class: exampleClass(word, "cloze"), tabindex: "-1" }, exampleBody(word, { blank: true })),
       kind === "context" ? el("p", { class: "questionTranslation" }, `現代語訳：${word.translation}`) : null,
     );
