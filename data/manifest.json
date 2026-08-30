@@ -72,6 +72,10 @@
     "kobun-set-18": {
       "label": "第18セット　可能・難易・接尾語表現",
       "dataUrl": "data/set-18.json"
+    },
+    "kobun-set-19": {
+      "label": "第19セット　心情・親疎表現",
+      "dataUrl": "data/set-19.json"
     }
   }
 }
