@@ -5,7 +5,7 @@ const read = (relativePath) => fs.readFileSync(new URL(relativePath, import.meta
 const mode = read("../static/mode-vocab.js");
 const styles = read("../static/styles.css");
 
-assert.match(mode, /function exampleBody\(word, \{ blank = false \} = \{\}\)/, "exampleBody helper is required");
+assert.match(mode, /function exampleBody\(word, \{ blank = false, underline = false \} = \{\}\)/, "exampleBody helper is required");
 assert.match(mode, /exampleBody\(word, \{ blank: true \}\)/, "cloze rendering must use exampleBody");
 assert.ok((mode.match(/exampleBody\(word\)/g) ?? []).length >= 2, "card and feedback must use exampleBody");
 assert.match(mode, /exampleForm === "waka"/, "waka display must be selected by exampleForm");

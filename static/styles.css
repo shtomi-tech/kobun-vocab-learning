@@ -83,7 +83,7 @@
 body { margin: 0; background: var(--canvas); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.7; }
 button, select { font: inherit; }
 button:focus-visible, select:focus-visible, summary:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-.askWord:focus, .cloze:focus, .feedback:focus { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+.askWord:focus, .meaningExample:focus, .cloze:focus, .feedback:focus { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 .wrap { width: min(var(--container-max), calc(100% - var(--page-gutter))); margin: 0 auto; padding: 40px 0 64px; }
 .top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 2px solid var(--ink); padding-bottom: 12px; margin-bottom: 16px; }
 .brand { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
@@ -276,15 +276,18 @@ button:disabled { cursor: default; opacity: .55; }
 .flashCard section:last-of-type { padding-top: 8px; border-top: 0; }
 .flashCard section:last-of-type p { color: var(--muted); }
 .lead, .flashCard section p:not(.example), .feedback p { max-width: var(--text-measure); }
-.example, .cloze { font-family: var(--serif); font-size: 20px; line-height: 2; }
-.example--waka, .cloze--waka { display: flex; flex-wrap: wrap; column-gap: 1em; }
-.example--waka .ku, .cloze--waka .ku { white-space: nowrap; }
+.example, .cloze, .meaningExample { font-family: var(--serif); font-size: 20px; line-height: 2; }
+.example--waka, .cloze--waka, .meaningExample--waka { display: flex; flex-wrap: wrap; column-gap: 1em; }
+.example--waka .ku, .cloze--waka .ku, .meaningExample--waka .ku { white-space: nowrap; }
 .wakaMeta { display: inline-flex; flex-wrap: wrap; gap: 4px 8px; margin-left: 8px; color: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 600; vertical-align: baseline; }
 .wakaAuthor, .wakaRef { color: inherit; }
 .actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 20px; }
 .actionHint { flex-basis: 100%; margin: 0; }
 .quiz .askWord { margin: 6px 0 20px; font-family: var(--serif); font-size: 34px; font-weight: 700; line-height: 1.25; }
 .cloze { padding: 18px; border-radius: var(--radius-control); background: var(--canvas); }
+.quiz .meaningExample { margin: 6px 0 20px; padding: 18px; border-radius: var(--radius-control); background: var(--canvas); }
+.meaningTarget { text-decoration-line: underline; text-decoration-color: var(--clay); text-decoration-thickness: 2px; text-underline-offset: .18em; }
+.questionSource { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
 .askWordKanji { white-space: nowrap; }
 .choices { display: grid; gap: 12px; }
 .choice { position: relative; display: grid; grid-template-columns: 24px 1fr; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 12px; border: 1px solid var(--color-control-border); background: var(--card); color: var(--ink); text-align: left; }
@@ -340,7 +343,7 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
   .wordRow { grid-template-columns: 30px 1fr; }
   .wordStatus { grid-column: 2; }
   .actions > button { flex: 1 1 160px; }
-  .example, .cloze { font-size: 18px; }
+  .example, .cloze, .meaningExample { font-size: 18px; }
   .quiz--answered { margin-bottom: 0; }
   .quizNextAction { position: static; left: auto; bottom: auto; transform: none; z-index: auto; width: auto; margin: 16px 0 0; padding: 0; border-top: 0; background: none; }
   .next { width: 100%; }

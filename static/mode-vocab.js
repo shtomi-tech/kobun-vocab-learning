@@ -67,13 +67,22 @@ const KobunVocabApp = (() => {
   const contextMoraCount = (word) => [...word.headword.split("〜")[0]]
     .filter((character) => !contextSmallKana.has(character)).length;
 
-  function wakaBlankPart(word) {
-    const blankIndex = word.cloze.indexOf(exampleBlank);
+  function exampleTargetPart(word) {
+    const blankIndex = word.cloze?.indexOf(exampleBlank) ?? -1;
     if (blankIndex < 0) return null;
     const prefix = word.cloze.slice(0, blankIndex);
     const suffix = word.cloze.slice(blankIndex + exampleBlank.length);
-    const blankStart = prefix.length;
-    const blankEnd = word.example.length - suffix.length;
+    const start = prefix.length;
+    const end = word.example.length - suffix.length;
+    if (end <= start || word.example.slice(0, start) !== prefix || word.example.slice(end) !== suffix) return null;
+    return { start, end };
+  }
+
+  function wakaBlankPart(word) {
+    const target = exampleTargetPart(word);
+    if (!target) return null;
+    const blankStart = target.start;
+    const blankEnd = target.end;
     let offset = 0;
     for (const [index, phrase] of word.waka.phrases.entries()) {
       const nextOffset = offset + phrase.length;
@@ -85,15 +94,33 @@ const KobunVocabApp = (() => {
     return null;
   }
 
-  function exampleBody(word, { blank = false } = {}) {
-    if (!isWaka(word)) return blank ? word.cloze : word.example;
-    const blankPart = blank ? wakaBlankPart(word) : null;
-    if (blank && !blankPart) return word.cloze;
+  function exampleBody(word, { blank = false, underline = false } = {}) {
+    if (!isWaka(word)) {
+      if (blank) return word.cloze;
+      if (!underline) return word.example;
+      const target = exampleTargetPart(word);
+      if (!target) return word.example;
+      return [
+        word.example.slice(0, target.start),
+        el("span", { class: "meaningTarget" }, word.example.slice(target.start, target.end)),
+        word.example.slice(target.end),
+      ];
+    }
+    const targetPart = blank || underline ? wakaBlankPart(word) : null;
+    if (blank && !targetPart) return word.cloze;
+    if (underline && !targetPart) return word.example;
     return word.waka.phrases.map((phrase, index) => {
-      const text = blankPart?.index === index
-        ? `${phrase.slice(0, blankPart.start)}${exampleBlank}${phrase.slice(blankPart.end)}`
-        : phrase;
-      return el("span", { class: "ku" }, text);
+      if (targetPart?.index !== index) return el("span", { class: "ku" }, phrase);
+      const content = blank
+        ? `${phrase.slice(0, targetPart.start)}${exampleBlank}${phrase.slice(targetPart.end)}`
+        : underline
+          ? [
+            phrase.slice(0, targetPart.start),
+            el("span", { class: "meaningTarget" }, phrase.slice(targetPart.start, targetPart.end)),
+            phrase.slice(targetPart.end),
+          ]
+          : phrase;
+      return el("span", { class: "ku" }, content);
     });
   }
 
@@ -852,6 +879,7 @@ const KobunVocabApp = (() => {
     const order = kind === "meaning" ? session.meaningOrder : session.contextOrder;
     const index = kind === "meaning" ? session.meaningIndex : session.contextIndex;
     const word = wordForSession(order[index]);
+    const isMeaningExample = kind === "meaning";
     const correct = kind === "meaning" ? meaningText(word) : word.headword;
     if (!session.choices || (kind === "meaning" && !meaningChoicesAreSafe(word, session.choices))) {
       session.choices = choiceSet(word, kind);
@@ -862,11 +890,10 @@ const KobunVocabApp = (() => {
     lastQuizEntryKey = entryKey;
 
     const box = el("section", { class: `quiz${session.answered ? " quiz--answered" : ""}${!session.answered && isNewEntry ? " is-entering" : ""}` },
-      el("p", { class: "label" }, kind === "meaning" ? "次の語の意味は？" : "空欄に入る語の基本形は？"),
-      kind === "meaning"
-        ? el("p", { class: "askWord", tabindex: "-1" },
-          word.headword,
-          el("span", { class: "askWordKanji" }, `【${word.kanji}】`))
+      el("p", { class: "label" }, isMeaningExample ? "傍線部の意味として最も適当なものを選べ" : "空欄に入る語の基本形は？"),
+      isMeaningExample ? el("p", { class: "questionSource" }, `出典：『${word.source}』`) : null,
+      isMeaningExample
+        ? el("p", { class: exampleClass(word, "meaningExample"), tabindex: "-1" }, exampleBody(word, { underline: true }))
         : el("p", { class: exampleClass(word, "cloze"), tabindex: "-1" }, exampleBody(word, { blank: true })),
       kind === "context" ? el("p", { class: "questionTranslation" }, `現代語訳：${word.translation}`) : null,
     );
@@ -890,6 +917,8 @@ const KobunVocabApp = (() => {
       box.appendChild(el("div", { class: `feedback ${isCorrect ? "ok" : "ng"}`, role: "status", "aria-live": "polite", "aria-atomic": "true", tabindex: "-1" },
         el("h3", {}, isCorrect ? "○ 正解" : "× 不正解"),
         el("p", {}, `${word.headword}【${word.kanji}】：${meaningText(word)}`),
+        isMeaningExample ? el("p", { class: exampleClass(word, "meaningExample") }, exampleBody(word, { underline: true })) : null,
+        isMeaningExample ? el("p", { class: "meaningExampleTranslation" }, `現代語訳：${word.translation}`) : null,
         kind === "context" ? el("p", { class: exampleClass(word, "example") }, exampleBody(word)) : null,
       ));
       box.appendChild(el("div", { class: "quizNextAction" },
@@ -956,7 +985,7 @@ const KobunVocabApp = (() => {
     else if (kind === "meaning") session.stage = (session.mode === "final" || session.mode === "meaningReview") ? "done" : "context";
     else session.stage = "done";
     renderSession();
-    ($(".askWord") || $(".cloze"))?.focus({ preventScroll: true });
+    $(".askWord, .meaningExample, .cloze")?.focus({ preventScroll: true });
   }
 
   function handleQuizKeydown(event) {
