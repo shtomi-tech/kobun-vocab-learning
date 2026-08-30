@@ -58,6 +58,7 @@ py -3 -m http.server 8062 --bind 127.0.0.1
 - `data/set-17.json`: 第17セット「指示語・疑問表現」12語
 - `data/set-18.json`: 第18セット「可能・難易・接尾語表現」12語
 - `data/set-19.json`: 第19セット「心情・親疎表現」12語
+- `data/set-20.json`: 第20セット「評価・性質表現」12語
 
 新しいセットは、同じ形式のJSONを追加し、manifestへ登録します。各語には `example`、`translation`、`source`、`cloze`、`notes`（空でない解説・補足の文字列配列。1件以上必須）に加え、`exampleForm`（`"waka"` か `"prose"`）を必ず収録します。和歌には5句の表記・読み・作者・出典箇所を持つ `waka` を添えます。
 

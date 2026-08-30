@@ -76,6 +76,10 @@
     "kobun-set-19": {
       "label": "第19セット　心情・親疎表現",
       "dataUrl": "data/set-19.json"
+    },
+    "kobun-set-20": {
+      "label": "第20セット　評価・性質表現",
+      "dataUrl": "data/set-20.json"
     }
   }
 }
