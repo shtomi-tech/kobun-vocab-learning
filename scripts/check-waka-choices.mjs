@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 const root = new URL("../", import.meta.url);
-const read = (relativePath) => fs.readFileSync(new URL(relativePath, root), "utf8");
+const read = (relativePath) => fs.readFileSync(new URL(relativePath, root), "utf8").replace(/\r\n/g, "\n");
 
 const source = read("static/mode-vocab.js");
 const choiceSet = source.match(/function choiceSet\(word, kind\) \{(.*?)\n  \}\n\n  function meaningChoicesAreSafe/s)?.[1];

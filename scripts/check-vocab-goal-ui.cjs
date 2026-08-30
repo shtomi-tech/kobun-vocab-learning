@@ -1,8 +1,9 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 
-const js = fs.readFileSync("static/mode-vocab.js", "utf8");
-const css = fs.readFileSync("static/styles.css", "utf8");
+const read = (relativePath) => fs.readFileSync(relativePath, "utf8").replace(/\r\n/g, "\n");
+const js = read("static/mode-vocab.js");
+const css = read("static/styles.css");
 
 assert.match(js, /const VOCAB_GOAL_TOTAL = 600;/, "語彙目標は600語で定義する必要がある");
 

@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const mode = fs.readFileSync(new URL("../static/mode-vocab.js", import.meta.url), "utf8");
-const styles = fs.readFileSync(new URL("../static/styles.css", import.meta.url), "utf8");
+const read = (relativePath) => fs.readFileSync(new URL(relativePath, import.meta.url), "utf8").replace(/\r\n/g, "\n");
+const mode = read("../static/mode-vocab.js");
+const styles = read("../static/styles.css");
 
 assert.match(mode, /function exampleBody\(word, \{ blank = false \} = \{\}\)/, "exampleBody helper is required");
 assert.match(mode, /exampleBody\(word, \{ blank: true \}\)/, "cloze rendering must use exampleBody");
