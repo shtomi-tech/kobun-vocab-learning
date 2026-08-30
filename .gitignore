@@ -1,7 +1,10 @@
 static/config.json
 _site/
 .hermes/
-.claude/
+.claude/*
+# セット追加スキルはリポジトリ固有の手順を指すのでバージョン管理する。
+# 親ディレクトリごと除外すると再包含できないため .claude/* で書く。
+!.claude/skills/
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 graft/
