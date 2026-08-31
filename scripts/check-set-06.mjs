@@ -10,6 +10,7 @@ checkSet({
     assert.equal(word69.translation, "その女君は、夢のような一夜を過ごしたところ、妊娠した。");
     assert.equal(word69.cloze, "かの女君ゆめのごとありしに、（　）なりにけり。");
     assert.equal(word69.source, "宇津保物語");
+    assert.equal(wordsById.get("kv06-065").source, "伊勢物語（血の涙）");
   },
   familyOverlapPairs: [
     ...allPairs(["kv06-063", "kv06-064", "kv06-068", "kv06-069"]),

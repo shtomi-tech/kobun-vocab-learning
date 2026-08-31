@@ -20,9 +20,14 @@ checkSet({
   ]),
   expect(wordsById) {
     assert.deepEqual(wordsById.get("kv08-085").meanings, ["だんだん。しだいに。"]);
-    assert.equal(wordsById.get("kv08-086").source, "方丈記");
+    assert.equal(wordsById.get("kv08-086").source, "方丈記（冒頭・p.297）");
     assert.equal(wordsById.get("kv08-087").source, "平中物語");
-    assert.equal(wordsById.get("kv08-094").source, "竹取物語");
+    assert.equal(wordsById.get("kv08-088").example, "昔、おほきおほいまうちぎみと聞ゆるおはしけり。");
+    assert.equal(wordsById.get("kv08-088").source, "伊勢物語（頼む君）");
+    assert.equal(wordsById.get("kv08-088").cloze, "昔、おほきおほいまうちぎみと聞ゆる（　）けり。");
+    assert.equal(wordsById.get("kv08-092").source, "落窪物語（二の巻・p.90）");
+    assert.equal(wordsById.get("kv08-094").source, "竹取物語（かぐや姫の昇天・p.68）");
+    assert.equal(wordsById.get("kv08-095").source, "枕草子（p.109）");
     assert.deepEqual(wordsById.get("kv08-096").meanings, ["おっしゃる。"]);
   },
   familyOverlapPairs: [

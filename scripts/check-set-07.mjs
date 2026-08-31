@@ -19,7 +19,7 @@ checkSet({
     const word79 = wordsById.get("kv07-079");
     assert.equal(word79.example, "ゆめゆめ人に語るべからず。");
     assert.equal(word79.translation, "けっして人に語るな。");
-    assert.equal(word79.source, "宇治拾遺物語");
+    assert.equal(word79.source, "宇治拾遺物語（巻第七・canvas65）");
 
     assert.deepEqual(wordsById.get("kv07-083").meanings, ["やはり。依然として。", "それでもやはり。なんと言ってもやはり。"]);
   },
