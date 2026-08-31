@@ -120,18 +120,18 @@ node scripts/check-set-choices.mjs kobun-set-NN --pairs
 
 `--pairs` が挙げるのは「同時に選択肢へ出せるペア」。**この一覧を持って、各語の `cloze` にペアの相手を入れてみる。** 文として成立してしまうものが正答一意性の穴で、例文を選び直すか `meanings` の書き分けで直す。
 
-第4・第5セットは**以前から**この検査に落ちる（選択肢が2〜3個で出題されている）。新規セットの追加でここが増えていないかを見る。
+第4・第5セットは**以前から**この検査に落ちていた（選択肢が2〜3個で出題されていた）が、意味ガードの過剰な同一視を分割して現在は通過する。新規セットの追加でここが増えていないかも見る。
 
 `static/meaning-guard.js` の `meaningFamilies` に正規表現を足して同義語をまとめるのは有効だが、**まとめすぎるとそのセットの誤答候補が枯れる**。第17セットでは「いかがはせむ」を疑問語グループに入れた瞬間、12語全部で四択を作れなくなった。1語が2つのグループの橋渡しとして効いていることがある。足したら必ず全セットで再検査する。
 
-CI（`.github/workflows/pages.yml`）は `check-context-choices.mjs` と `check-set-choices.mjs` を回さず、代わりに `check-data.mjs`・`check-waka-*.mjs`・`check-srs.cjs`・`check-set-06〜11.mjs`・`check-vocab-goal-ui.cjs` を回す。push前にワークフローの一覧と突き合わせて通す。
+CI（`.github/workflows/pages.yml`）は `check-data.mjs`・`check-set-choices.mjs`・`check-waka-*.mjs`・`check-srs.cjs`・`check-set-06〜11.mjs`・`check-vocab-goal-ui.cjs` を回す。`check-set-choices.mjs` はセット内プールの文中四択を全セットで検査する。push前にワークフローの一覧と突き合わせて通す。
 
 誤答候補の安全判定（`normalizeMeaning`・`meaningFamilies`・`isSafePair`・`hasThreeMutuallySafe`）は
 `static/meaning-guard.js` が唯一の正本で、アプリと検査スクリプトの両方がこれを読む。判定を変えるときは
 ここだけを直す。セット別検査の共通部分は `scripts/lib/set-check.mjs` にあり、`check-set-NN.mjs` は
 「語番号の開始・cloze が復元する語形・意味の実値・同時に出してはいけない組」だけを渡す。
 
-**セット専用の検査スクリプトを、隣に在るからという理由で足さない。** 汎用検査で表せない不変条件があり、かつ長く効く場合だけ足す。`check-set-choices.mjs` は既存セットが落ちるためCIには入れていない。作成時に手で回す道具として使う。
+**セット専用の検査スクリプトを、隣に在るからという理由で足さない。** 汎用検査で表せない不変条件があり、かつ長く効く場合だけ足す。`check-set-choices.mjs` は全セット共通の不変条件を検査するため、現在はCIにも組み込んでいる。個別の `check-set-NN.mjs` は作成時に必要なセットだけ手で回す。
 
 ### 5. 登録
 

@@ -35,6 +35,9 @@ checkSet({
     assert.equal(wordsById.get("kv09-102").source, "源氏物語（桐壺）");
     assert.equal(wordsById.get("kv09-102").example, "物などもきこしめさず、朝がれひの気色ばかり触れさせ給ひて、");
     assert.equal(wordsById.get("kv09-102").cloze, "物なども（　）ず、朝がれひの気色ばかり触れさせ給ひて、");
+    assert.equal(wordsById.get("kv09-103").source, "平家物語（巻四・源氏そろへの事）");
+    assert.equal(wordsById.get("kv09-103").example, "御手跡美しうあそばし、御覚もすぐれてましましければ、太子にも立ち、位にも即かせ給ふべかりしかども、故建春門院の御そねみによつて、おし籠められさせ給ひけり。");
+    assert.equal(wordsById.get("kv09-103").cloze, "御手跡美しう（　）、御覚もすぐれてましましければ、太子にも立ち、位にも即かせ給ふべかりしかども、故建春門院の御そねみによつて、おし籠められさせ給ひけり。");
     assert.deepEqual(wordsById.get("kv09-105").meanings, ["知っていらっしゃる。", "お治めになる。"]);
     assert.equal(wordsById.get("kv09-105").source, "源氏物語（若紫）");
     assert.equal(wordsById.get("kv09-105").example, "「なにがし、此の寺にこもり侍り」とは、しろしめしながら、");

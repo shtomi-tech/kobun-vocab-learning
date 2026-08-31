@@ -16,7 +16,7 @@ checkSet({
     ["kv15-177", "虚言"],
     ["kv15-178", "一日"],
     ["kv15-179", "物憂く"],
-    ["kv15-180", "生"],
+    ["kv15-180", "なま"],
   ]),
   expect(wordsById) {
     assert.equal(wordsById.get("kv15-169").source, "源氏物語（蜻蛉）");
@@ -33,6 +33,8 @@ checkSet({
     assert.equal(wordsById.get("kv15-178").source, "源氏物語（夕顔）");
     assert.equal(wordsById.get("kv15-179").source, "源氏物語（藤袴）");
     assert.equal(wordsById.get("kv15-180").source, "源氏物語（末摘花）");
+    assert.equal(wordsById.get("kv15-180").example, "なま女ばらなどもゑみまけて、「なほ聞え給へ」とそそのかし奉れど、…");
+    assert.equal(wordsById.get("kv15-180").cloze, "（　）女ばらなどもゑみまけて、「なほ聞え給へ」とそそのかし奉れど、…");
     assert.equal(wordsById.get("kv15-175").example, "男、こと心ありてかかる前栽の中にかくれゐて、かの河内へいぬるがほにて、見れば、この女、いとようけさうじで、うちながめて、…");
     assert.equal(wordsById.get("kv15-175").cloze, "男、（　）ありてかかる前栽の中にかくれゐて、かの河内へいぬるがほにて、見れば、この女、いとようけさうじで、うちながめて、…");
   },

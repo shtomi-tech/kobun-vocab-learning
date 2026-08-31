@@ -57,7 +57,7 @@ no API key, $0).
   版面を開く前にここで弾ける。
 - `node scripts/check-set-choices.mjs <setId> --pairs` — セット内プールで文中四択が
   成立するかを見る。`check-context-choices.mjs` は全セット横断で数えるため、同義語を
-  1セットに固めても通ってしまう。作成時に手で回す道具で、CIには入れていない。
+  1セットに固めても通ってしまう。全セット検査はCIにも組み込んでいる。
 
 Claude Code の `add-vocab-set` スキルと Codex の `kobun-vocab-set-authoring` スキルは
 どちらも上記の手順書を実体として参照する。手順を直すときは手順書を直す。

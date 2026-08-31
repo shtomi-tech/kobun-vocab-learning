@@ -36,6 +36,7 @@ jobs:
           node --check static/example-source.js
           node --check static/meaning-guard.js
           node scripts/check-data.mjs
+          node scripts/check-set-choices.mjs
           node scripts/check-waka-data.mjs
           node scripts/check-waka-choices.mjs
           node scripts/check-waka-display.mjs
