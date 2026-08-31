@@ -36,6 +36,12 @@ checkSet({
     assert.equal(word80.example, "「一事な落としそ」と侍れば、如何がはせん。");
     assert.equal(word80.cloze, "「（　）」と侍れば、如何がはせん。");
 
+    const word84 = wordsById.get("kv07-084");
+    assert.equal(word84.source, "今鏡（第六・ふぢなみの下）");
+    assert.equal(word84.example, "ほととぎすは鳴かで、やうやう明けゆくほどに、水鶏のたたきければ…。");
+    assert.equal(word84.translation, "ほととぎすは鳴かないで、だんだん夜が明けていく頃に、水鶏が鳴いたので…。");
+    assert.equal(word84.cloze, "ほととぎすは鳴かで、（　）明けゆくほどに、水鶏のたたきければ…。");
+
     assert.deepEqual(wordsById.get("kv07-083").meanings, ["やはり。依然として。", "それでもやはり。なんと言ってもやはり。"]);
   },
   familyOverlapPairs: [
