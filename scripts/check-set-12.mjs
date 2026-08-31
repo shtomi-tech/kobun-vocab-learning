@@ -26,6 +26,7 @@ checkSet({
     assert.equal(wordsById.get("kv12-139").example, "急ぐことある折に、長言するまらうど。");
     assert.equal(wordsById.get("kv12-139").source, "枕草子（にくきもの・p.27）");
     assert.equal(wordsById.get("kv12-139").cloze, "急ぐことある折に、長言する（　）。");
+    assert.equal(wordsById.get("kv12-144").source, "源氏物語（桐壺）");
   },
   unsafePairs: [
     ["kv12-141", "kv12-142"],

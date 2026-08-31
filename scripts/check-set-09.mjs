@@ -32,7 +32,13 @@ checkSet({
     assert.equal(wordsById.get("kv09-101").translation, "これを帝が御覧になって、ますますお帰りになる気持ちもなくお思いになる。");
     assert.equal(wordsById.get("kv09-101").source, "竹取物語（御狩の行幸）");
     assert.deepEqual(wordsById.get("kv09-102").meanings, ["お聞きになる。", "召しあがる。"]);
+    assert.equal(wordsById.get("kv09-102").source, "源氏物語（桐壺）");
+    assert.equal(wordsById.get("kv09-102").example, "物などもきこしめさず、朝がれひの気色ばかり触れさせ給ひて、");
+    assert.equal(wordsById.get("kv09-102").cloze, "物なども（　）ず、朝がれひの気色ばかり触れさせ給ひて、");
     assert.deepEqual(wordsById.get("kv09-105").meanings, ["知っていらっしゃる。", "お治めになる。"]);
+    assert.equal(wordsById.get("kv09-105").source, "源氏物語（若紫）");
+    assert.equal(wordsById.get("kv09-105").example, "「なにがし、此の寺にこもり侍り」とは、しろしめしながら、");
+    assert.equal(wordsById.get("kv09-105").cloze, "「なにがし、此の寺にこもり侍り」とは、（　）ながら、");
     assert.deepEqual(wordsById.get("kv09-106").meanings, ["お呼びになる。", "召しあがる。", "お召しになる。"]);
     assert.deepEqual(wordsById.get("kv09-107").meanings, ["さしあげる。", "〜申しあげる。お〜する。"]);
     assert.deepEqual(wordsById.get("kv09-108").meanings, ["申しあげる。", "〜申しあげる。お〜する。"]);

@@ -20,10 +20,19 @@ checkSet({
   ]),
   expect(wordsById) {
     assert.deepEqual(wordsById.get("kv11-121").meanings, ["さしあげる。", "参上する。", "召しあがる。"]);
+    assert.equal(wordsById.get("kv11-121").source, "とりかへばや物語（p.545）");
+    assert.equal(wordsById.get("kv11-121").example, "ただ今まゐれる御返りたまはらん。");
+    assert.equal(wordsById.get("kv11-121").cloze, "ただ今（　）る御返りたまはらん。");
     assert.deepEqual(wordsById.get("kv11-122").meanings, ["あります。います。", "〜です。〜ます。〜ございます。", "お仕えする。お控えする。"]);
     assert.deepEqual(wordsById.get("kv11-123").meanings, ["あります。います。", "〜です。〜ます。〜ございます。", "お仕えする。お控えする。"]);
     assert.deepEqual(wordsById.get("kv11-124").meanings, ["天皇。", "奥様。", "将軍。", "上（⇔下）。"]);
     assert.deepEqual(wordsById.get("kv11-125").meanings, ["天皇。", "主君。", "高貴な人。", "あなた。"]);
+    assert.equal(wordsById.get("kv11-125").source, "源氏物語（若菜下）");
+    assert.equal(wordsById.get("kv11-125").example, "次の君とならせたまふべき皇子おはしまさず…。");
+    assert.equal(wordsById.get("kv11-125").cloze, "次の（　）とならせたまふべき皇子おはしまさず…。");
+    assert.equal(wordsById.get("kv11-127").source, "宇津保物語（蔵開・中）");
+    assert.equal(wordsById.get("kv11-127").example, "内裏こそ聞かせたまはざらめ。");
+    assert.equal(wordsById.get("kv11-127").cloze, "（　）こそ聞かせたまはざらめ。");
     assert.deepEqual(wordsById.get("kv11-126").meanings, ["天皇。", "朝廷。"]);
     assert.deepEqual(wordsById.get("kv11-127").meanings, ["天皇。", "宮中。内裏。", "内側。"]);
     assert.deepEqual(wordsById.get("kv11-128").meanings, ["皇族。", "皇族の邸。", "神社。"]);
