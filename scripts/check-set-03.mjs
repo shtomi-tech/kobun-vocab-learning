@@ -48,6 +48,16 @@ checkSet({
 
     const word31 = wordsById.get("kv03-031");
     assert.equal(word31.source, "古今和歌集（詞書・巻六）");
+
+    const word32 = wordsById.get("kv03-032");
+    assert.equal(word32.source, "弁内侍日記（上）");
+    assert.equal(word32.example, "はや、この暁、霊山にてよをそむきぬ。");
+    assert.equal(word32.cloze, "はや、この暁、霊山にて（　）きぬ。");
+
+    const word33 = wordsById.get("kv03-033");
+    assert.equal(word33.source, "閑居友（上・第13話）");
+    assert.equal(word33.example, "やがて頭おろして、いみじくおこなひて侍り。");
+    assert.equal(word33.cloze, "やがて頭おろして、いみじく（　）て侍り。");
     const word34 = wordsById.get("kv03-034");
     assert.equal(word34.source, "新拾遺和歌集");
     const word35 = wordsById.get("kv03-035");
