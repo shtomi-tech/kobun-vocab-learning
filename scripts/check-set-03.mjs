@@ -62,6 +62,11 @@ checkSet({
     assert.equal(word34.source, "新拾遺和歌集");
     const word35 = wordsById.get("kv03-035");
     assert.equal(word35.source, "源氏物語（賢木）");
+
+    const word36 = wordsById.get("kv03-036");
+    assert.equal(word36.source, "平治物語（巻二）");
+    assert.equal(word36.example, "鎌田も今年三十八、頭の殿と同年にてうせにけり。");
+    assert.equal(word36.cloze, "鎌田も今年三十八、頭の殿と同年にて（　）にけり。");
   },
   summary: "OK: set-03 data, cloze forms, and confirmed source entries",
 });
