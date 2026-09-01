@@ -80,6 +80,10 @@
     "kobun-set-20": {
       "label": "第20セット　評価・性質表現",
       "dataUrl": "data/set-20.json"
+    },
+    "kobun-set-21": {
+      "label": "第21セット　性質・判断・心情表現",
+      "dataUrl": "data/set-21.json"
     }
   }
 }
