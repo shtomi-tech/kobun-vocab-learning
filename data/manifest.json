@@ -88,6 +88,10 @@
     "kobun-set-22": {
       "label": "第22セット　方法・時期・状態表現",
       "dataUrl": "data/set-22.json"
+    },
+    "kobun-set-23": {
+      "label": "第23セット　程度・場所・判断表現",
+      "dataUrl": "data/set-23.json"
     }
   }
 }
