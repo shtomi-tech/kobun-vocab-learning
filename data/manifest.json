@@ -84,6 +84,10 @@
     "kobun-set-21": {
       "label": "第21セット　性質・判断・心情表現",
       "dataUrl": "data/set-21.json"
+    },
+    "kobun-set-22": {
+      "label": "第22セット　方法・時期・状態表現",
+      "dataUrl": "data/set-22.json"
     }
   }
 }
