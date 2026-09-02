@@ -43,6 +43,7 @@ jobs:
           node scripts/check-meaning-example-ui.cjs
           node scripts/check-example-source.mjs
           node scripts/check-srs.cjs
+          node scripts/check-study-plan.cjs
           node scripts/check-set-06.mjs
           node scripts/check-set-07.mjs
           node scripts/check-set-08.mjs

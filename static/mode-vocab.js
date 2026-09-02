@@ -16,10 +16,18 @@ const KobunVocabApp = (() => {
   const APP_ID = "kobun-vocab-learning";
   // 古文単語の学習目標。全セット横断で「文中回答済み」になった語を積み上げる。
   const VOCAB_GOAL_TOTAL = 600;
+  // 学習目標（1日の単語目標）と到達予想。常時表示は「今日 n / m語」1本に絞る。
+  const STUDY_PLAN_KEY = `kobun_vocab_study_plan_v1${storageScope}`;
+  const STUDY_PLAN_VERSION = 1;
+  const STUDY_PLAN_DEFAULT_DAILY = 12;
+  const STUDY_PLAN_DAILY_MAX = 60;
+  const STUDY_PLAN_FORECAST_DAYS = [7, 30, 90, 180, 365];
 
   const state = { manifest: null, setId: null, set: null, progress: null, reviewPool: [] };
   let session = null;
   let cloud = null;
+  let studyPlan = null;
+  let pendingCloudStudyPlan = null;
   let homeIntroduced = false;
   let lastQuizEntryKey = null;
   let lastStepKey = null;
@@ -153,11 +161,143 @@ const KobunVocabApp = (() => {
 
   function saveProgressFor(setId, progress) {
     try { localStorage.setItem(progressKey(setId), JSON.stringify(progress)); } catch (_) { /* localStorageなしでも学習は続ける */ }
-    if (cloud) cloud.queueSave({ datasetId: setId, progress, meta: { lastDatasetId: state.setId } });
+    if (cloud) cloud.queueSave({ datasetId: setId, progress, meta: cloudMeta() });
   }
 
   function saveProgress() {
     saveProgressFor(state.setId, state.progress);
+  }
+
+  function cloudMeta() {
+    return {
+      lastDatasetId: state.setId,
+      ...(studyPlan ? { studyPlanV1: studyPlan } : {}),
+    };
+  }
+
+  function isValidIsoDate(value) {
+    return typeof value === "string"
+      && /^\d{4}-\d{2}-\d{2}T/.test(value)
+      && Number.isFinite(new Date(value).getTime());
+  }
+
+  function startOfLocalDay(date = new Date()) {
+    const value = new Date(date);
+    value.setHours(0, 0, 0, 0);
+    return value;
+  }
+
+  function normalizeStudyPlan(candidate) {
+    const source = candidate && typeof candidate === "object" && !Array.isArray(candidate) ? candidate : {};
+    const daily = Number(source.dailyWordGoal);
+    return {
+      version: STUDY_PLAN_VERSION,
+      dailyWordGoal: Number.isInteger(daily) && daily >= 1 && daily <= STUDY_PLAN_DAILY_MAX
+        ? daily
+        : STUDY_PLAN_DEFAULT_DAILY,
+    };
+  }
+
+  function defaultStudyPlan() {
+    return normalizeStudyPlan(null);
+  }
+
+  // 全セットの語について、初回答時刻つきの unit 状態だけを取り出す。
+  function studyPlanUnitEntries() {
+    return reviewPoolEntries().map((entry) => {
+      const unitState = entry.progress && entry.progress.units && entry.progress.units[entry.word.id];
+      return { unit: unitState && typeof unitState === "object" ? unitState : {} };
+    });
+  }
+
+  // 「今日」の実績は firstAnsweredAt（再回答で上書きされない初回答時刻）をローカル日付へ戻して数える。
+  function studyPlanSummary(now = new Date(), plan = {}, entries = []) {
+    const safe = normalizeStudyPlan(plan);
+    const todayStart = startOfLocalDay(now);
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+    const answeredToday = entries.filter((entry) => {
+      const value = entry && entry.unit && entry.unit.firstAnsweredAt;
+      if (!isValidIsoDate(value)) return false;
+      const at = new Date(value).getTime();
+      return at >= todayStart.getTime() && at < tomorrowStart.getTime();
+    }).length;
+    return {
+      dailyWordGoal: safe.dailyWordGoal,
+      answeredToday,
+      dailyRemaining: Math.max(0, safe.dailyWordGoal - answeredToday),
+    };
+  }
+
+  function vocabularyForecast(plan = {}) {
+    const daily = normalizeStudyPlan(plan).dailyWordGoal;
+    return STUDY_PLAN_FORECAST_DAYS.map((days) => ({ days, vocabulary: daily * days }));
+  }
+
+  function vocabularyGoalForecast(now = new Date(), plan = {}, learnedVocabulary = 0) {
+    const dailyVocabulary = normalizeStudyPlan(plan).dailyWordGoal;
+    const currentVocabulary = Math.min(VOCAB_GOAL_TOTAL, Math.max(0, Number(learnedVocabulary) || 0));
+    const remainingVocabulary = Math.max(0, VOCAB_GOAL_TOTAL - currentVocabulary);
+    const daysToGoal = remainingVocabulary > 0 ? Math.ceil(remainingVocabulary / dailyVocabulary) : 0;
+    const estimatedDate = startOfLocalDay(now);
+    estimatedDate.setDate(estimatedDate.getDate() + daysToGoal);
+    return { currentVocabulary, remainingVocabulary, dailyVocabulary, daysToGoal, estimatedDate };
+  }
+
+  // 旧データ救済: units[wordId].firstAnsweredAt が無い語へ、history の最古の文中回答時刻を1度だけ補完する。
+  function migrateFirstAnsweredAt(progress) {
+    if (!progress || typeof progress !== "object" || Array.isArray(progress)) return false;
+    if (progress.migrations && progress.migrations.studyPlanFirstAnsweredAtV1 === 1) return false;
+    const firstByWord = new Map();
+    (Array.isArray(progress.history) ? progress.history : []).forEach((event) => {
+      if (!event || event.kind !== "question" || typeof event.wordId !== "string" || !isValidIsoDate(event.at)) return;
+      const current = firstByWord.get(event.wordId);
+      if (!current || new Date(event.at).getTime() < new Date(current).getTime()) firstByWord.set(event.wordId, event.at);
+    });
+    if (!progress.units || typeof progress.units !== "object" || Array.isArray(progress.units)) progress.units = {};
+    Object.entries(progress.units).forEach(([wordId, unitState]) => {
+      if (!unitState || typeof unitState !== "object" || isValidIsoDate(unitState.firstAnsweredAt)) return;
+      const firstAnsweredAt = firstByWord.get(wordId);
+      if (firstAnsweredAt) unitState.firstAnsweredAt = firstAnsweredAt;
+    });
+    progress.migrations = { ...(progress.migrations || {}), studyPlanFirstAnsweredAtV1: 1 };
+    return true;
+  }
+
+  function readStudyPlanLocal() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(STUDY_PLAN_KEY));
+      return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function saveStudyPlan() {
+    if (!studyPlan) return;
+    try { localStorage.setItem(STUDY_PLAN_KEY, JSON.stringify(studyPlan)); } catch (_) { /* localStorageなしでも学習は続く */ }
+  }
+
+  function loadStudyPlan() {
+    const local = readStudyPlanLocal();
+    const localPlan = local ? normalizeStudyPlan(local) : null;
+    const cloudPlan = pendingCloudStudyPlan ? normalizeStudyPlan(pendingCloudStudyPlan) : null;
+    const shared = Boolean(cloud && cloud.isEnabled());
+    studyPlan = shared && cloudPlan ? cloudPlan : (localPlan || defaultStudyPlan());
+    if (shared && cloudPlan) saveStudyPlan();
+    return studyPlan;
+  }
+
+  function migrateStudyPlanFirstAnswers() {
+    let migrated = false;
+    state.reviewPool.forEach((source) => {
+      if (!source || !source.progress) return;
+      if (migrateFirstAnsweredAt(source.progress)) {
+        migrated = true;
+        saveProgressFor(source.setId, source.progress);
+      }
+    });
+    return migrated;
   }
 
   function unit(id) {
@@ -238,6 +378,12 @@ const KobunVocabApp = (() => {
 
   function applyCloudProgress(value) {
     if (!value || typeof value !== "object") return;
+    const cloudPlan = value._meta && value._meta.studyPlanV1;
+    pendingCloudStudyPlan = cloudPlan && typeof cloudPlan === "object" && !Array.isArray(cloudPlan) ? cloudPlan : null;
+    if (studyPlan && pendingCloudStudyPlan) {
+      studyPlan = normalizeStudyPlan(pendingCloudStudyPlan);
+      saveStudyPlan();
+    }
     const lastSetId = value._meta?.lastDatasetId;
     if (lastSetId && state.manifest.sets[lastSetId]) localStorage.setItem(SET_KEY, lastSetId);
     for (const [setId, progress] of Object.entries(value)) {
@@ -473,6 +619,151 @@ const KobunVocabApp = (() => {
     ));
   }
 
+  function studyPlanProgress(label, value, max, valueText, detail) {
+    const safeMax = Math.max(1, Number(max) || 1);
+    const boundedValue = Math.min(Math.max(0, Number(value) || 0), safeMax);
+    const track = el("div", {
+      class: "studyPlanProgress",
+      role: "progressbar",
+      "aria-label": label,
+      "aria-valuemin": "0",
+      "aria-valuemax": String(safeMax),
+      "aria-valuenow": String(boundedValue),
+      "aria-valuetext": valueText,
+    });
+    const fill = el("span", { class: "studyPlanProgressFill" });
+    fill.style.width = `${(boundedValue / safeMax) * 100}%`;
+    track.appendChild(fill);
+    return el("div", { class: "studyPlanMetric" },
+      el("div", { class: "studyPlanMetricHead" },
+        el("strong", {}, label),
+        el("span", { class: "studyPlanMetricValue" }, valueText),
+      ),
+      track,
+      el("p", { class: "studyPlanMetricDetail" }, detail),
+    );
+  }
+
+  // 学習目標パネル。語彙目標カードの先頭に置き、常時表示は「今日 n / m語」1本に絞る。
+  function studyPlanPanel() {
+    const plan = studyPlan || defaultStudyPlan();
+    const summary = studyPlanSummary(new Date(), plan, studyPlanUnitEntries());
+    const num = (value) => Number(value).toLocaleString("ja-JP");
+    const dailyStatus = summary.dailyRemaining === 0 ? "✓ 今日の目標達成" : `あと${num(summary.dailyRemaining)}語`;
+
+    const settingsId = "studyPlanSettings";
+    const settingsToggle = el("button", {
+      class: "ghost studyPlanSettingsToggle",
+      type: "button",
+      "aria-expanded": "false",
+      "aria-controls": settingsId,
+    }, "学習目標を設定");
+
+    const settings = el("form", {
+      class: "studyPlanSettings hide",
+      id: settingsId,
+      "aria-labelledby": "studyPlanSettingsTitle",
+    });
+    const dailyInput = el("input", {
+      type: "number",
+      min: "1",
+      max: String(STUDY_PLAN_DAILY_MAX),
+      value: String(plan.dailyWordGoal),
+      inputmode: "numeric",
+    });
+    const error = el("p", { class: "studyPlanFormError", role: "alert", "aria-live": "polite" });
+    const restoreSettingsForm = () => {
+      dailyInput.value = String(plan.dailyWordGoal);
+      error.textContent = "";
+    };
+    const closeSettings = () => {
+      restoreSettingsForm();
+      settings.classList.add("hide");
+      settingsToggle.setAttribute("aria-expanded", "false");
+      settingsToggle.focus();
+    };
+    settings.appendChild(el("h4", { id: "studyPlanSettingsTitle" }, "学習目標の設定"));
+    settings.appendChild(el("p", { class: "hint" }, `1日の単語目標は1〜${num(STUDY_PLAN_DAILY_MAX)}語で設定できます。`));
+    settings.appendChild(el("label", { class: "studyPlanField" },
+      el("span", { class: "fieldLabel" }, "1日の単語目標"),
+      dailyInput,
+      el("span", { class: "studyPlanFieldHint" }, "文中問題まで解いた語で数えます"),
+    ));
+    settings.appendChild(error);
+    settings.appendChild(el("div", { class: "actions studyPlanFormActions" },
+      el("button", { class: "cta", type: "submit" }, "保存"),
+      el("button", { class: "ghost", type: "button", onclick: closeSettings }, "キャンセル"),
+    ));
+    settings.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const dailyWordGoal = Number(dailyInput.value);
+      if (!Number.isInteger(dailyWordGoal) || dailyWordGoal < 1 || dailyWordGoal > STUDY_PLAN_DAILY_MAX) {
+        error.textContent = `1日の単語目標は1〜${num(STUDY_PLAN_DAILY_MAX)}語で入力してください。`;
+        return;
+      }
+      studyPlan = normalizeStudyPlan({ ...plan, dailyWordGoal });
+      saveStudyPlan();
+      if (cloud) cloud.queueSave({ datasetId: state.setId, progress: state.progress, meta: cloudMeta() });
+      renderHome();
+    });
+    settingsToggle.addEventListener("click", () => {
+      if (settings.classList.contains("hide")) {
+        settings.classList.remove("hide");
+        settingsToggle.setAttribute("aria-expanded", "true");
+        dailyInput.focus();
+      } else {
+        closeSettings();
+      }
+    });
+
+    return el("div", { class: "studyPlanPanel", "aria-labelledby": "studyPlanTitle" },
+      el("div", { class: "studyPlanHead" },
+        el("div", {},
+          el("p", { class: "label" }, "学習目標"),
+          el("h3", { id: "studyPlanTitle" }, "新規に学んだ語の進捗"),
+        ),
+        settingsToggle,
+      ),
+      el("div", { class: "studyPlanMetrics" },
+        studyPlanProgress(
+          "今日",
+          summary.answeredToday,
+          plan.dailyWordGoal,
+          `${num(summary.answeredToday)} / ${num(plan.dailyWordGoal)}語`,
+          dailyStatus,
+        ),
+      ),
+      settings,
+    );
+  }
+
+  // 到達予想。既定は折りたたみ。1語＝語彙1で、このペースの600語到達日と期間別の理論語数を出す。注記文は置かない。
+  function vocabForecastDetails(learned) {
+    const plan = studyPlan || defaultStudyPlan();
+    const goalForecast = vocabularyGoalForecast(new Date(), plan, learned);
+    const periods = vocabularyForecast(plan);
+    const num = (value) => Number(value).toLocaleString("ja-JP");
+    const periodLabels = { 7: "1週間後", 30: "1か月後", 90: "3か月後", 180: "半年後", 365: "1年後" };
+    const reached = goalForecast.remainingVocabulary === 0;
+    const details = el("details", { class: "vocabForecast" });
+    details.appendChild(el("summary", { class: "vocabForecastSummary" },
+      el("span", { class: "vocabForecastSummaryTitle" }, "このペースで学べる語"),
+      el("span", { class: "vocabForecastLead" }, reached
+        ? `${num(VOCAB_GOAL_TOTAL)}語の目安に到達しています`
+        : `このペースなら${num(VOCAB_GOAL_TOTAL)}語まであと${num(goalForecast.remainingVocabulary)}語`),
+    ));
+    details.appendChild(el("p", { class: "hint vocabForecastDate" }, reached
+      ? `${num(VOCAB_GOAL_TOTAL)}語の目安に到達しています。`
+      : `1日${num(goalForecast.dailyVocabulary)}語で、${goalForecast.estimatedDate.toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}ごろ（あと${num(goalForecast.daysToGoal)}日）`));
+    details.appendChild(el("div", { class: "vocabForecastGrid", "aria-label": "期間別の理論上の語数予測" },
+      ...periods.map(({ days, vocabulary }) => el("div", { class: "vocabForecastRow" },
+        el("span", {}, periodLabels[days] || `${days}日後`),
+        el("strong", {}, `+${num(vocabulary)}語`),
+      )),
+    ));
+    return details;
+  }
+
   // 語彙目標カード。セット単位ではなく全セット横断の到達語数を、目標600語に対して1本のバーで示す。
   function vocabGoalCard() {
     const learned = Math.min(learnedMeaningEntries().length, VOCAB_GOAL_TOTAL);
@@ -510,6 +801,7 @@ const KobunVocabApp = (() => {
     });
 
     return el("section", { class: "card vocabGoal", "aria-labelledby": "vocabGoalTitle" },
+      studyPlanPanel(),
       el("div", { class: "vgHead" },
         el("div", {},
           el("p", { class: "label" }, "語彙の目標"),
@@ -521,6 +813,7 @@ const KobunVocabApp = (() => {
       ),
       el("div", { class: "vgBar" }, track, ticks),
       el("p", { class: "vgMessage" }, message),
+      vocabForecastDetails(learned),
     );
   }
 
@@ -963,7 +1256,9 @@ const KobunVocabApp = (() => {
       u.learned = true;
       u.solvedCorrect = isCorrect;
       u.needsReview = !isCorrect;
-      u.lastAnsweredAt = new Date().toISOString();
+      const answeredAt = new Date().toISOString();
+      if (!isValidIsoDate(u.firstAnsweredAt)) u.firstAnsweredAt = answeredAt;
+      u.lastAnsweredAt = answeredAt;
       appendHistory({ kind: "question", wordId: id, result: isCorrect ? "correct" : "wrong" });
       saveProgress();
     }
@@ -1133,6 +1428,7 @@ const KobunVocabApp = (() => {
       session = null;
       await loadSet(setId);
       await loadReviewPool();
+      migrateStudyPlanFirstAnswers();
       if (cloud) cloud.queueSave();
       setShareStatus("");
       renderHome();
@@ -1155,7 +1451,7 @@ const KobunVocabApp = (() => {
         getPatch: () => ({
           datasetId: state.setId,
           progress: state.progress,
-          meta: { lastDatasetId: state.setId },
+          meta: cloudMeta(),
         }),
         applyLoaded: applyCloudProgress,
         onStatus: setShareStatus,
@@ -1164,6 +1460,8 @@ const KobunVocabApp = (() => {
       const savedSetId = localStorage.getItem(SET_KEY);
       await loadSet(state.manifest.sets[savedSetId] ? savedSetId : state.manifest.defaultSetId);
       await loadReviewPool();
+      migrateStudyPlanFirstAnswers();
+      loadStudyPlan();
       renderHome();
     } catch (error) {
       const home = $("#homePanel");
