@@ -610,13 +610,6 @@ const KobunVocabApp = (() => {
     });
     list.appendChild(grid);
     home.appendChild(list);
-
-    home.appendChild(recentHistory());
-
-    home.appendChild(el("details", { class: "card utility" },
-      el("summary", {}, "その他"),
-      el("button", { class: "ghost", onclick: resetProgress }, "進捗リセット"),
-    ));
   }
 
   function studyPlanProgress(label, value, max, valueText, detail) {
@@ -854,38 +847,6 @@ const KobunVocabApp = (() => {
     return section;
   }
 
-  function recentHistory() {
-    const details = el("details", { class: "card learningHistory" },
-      el("summary", {}, "最近の学習履歴"),
-    );
-    const events = progressSources().flatMap(({ setId, progress }) => (Array.isArray(progress.history) ? progress.history : []).map((event) => ({ ...event, datasetId: setId })))
-      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-      .slice(0, 10);
-    if (!events.length) {
-      details.appendChild(el("p", { class: "hint" }, "まだ学習履歴はありません。"));
-      return details;
-    }
-    const descriptions = {
-      question: "文中問題",
-      meaning: "意味だけ復習",
-      "wrong-review": "誤答確認",
-      final: "最終チェック",
-    };
-    const list = el("ol", { class: "historyList" });
-    events.forEach((event) => {
-      const source = state.reviewPool.find((entry) => entry.setId === event.datasetId);
-      const word = source?.set.words.find((item) => item.id === event.wordId) || wordById(event.wordId);
-      const result = event.result === "correct" ? "正解" : event.result === "wrong" ? "不正解" : "確認";
-      const date = new Date(event.at);
-      list.appendChild(el("li", {},
-        el("time", { datetime: event.at }, Number.isNaN(date.getTime()) ? "日時不明" : date.toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })),
-        el("span", {}, `${word?.headword || "語句"}・${descriptions[event.kind] || "学習"}・${result}`),
-      ));
-    });
-    details.appendChild(list);
-    return details;
-  }
-
   function setSources() {
     const poolBySetId = new Map(state.reviewPool.map((source) => [source.setId, source]));
     return Object.entries(state.manifest.sets).map(([setId, entry]) => {
@@ -969,18 +930,6 @@ const KobunVocabApp = (() => {
       el("strong", {}, value, el("small", {}, ` / ${total}`)),
       el("span", {}, label),
     );
-  }
-
-  function resetProgress(event) {
-    const button = event?.currentTarget;
-    if (button && button.dataset.confirmReset !== "yes") {
-      button.dataset.confirmReset = "yes";
-      button.textContent = "もう一度押すと進捗をリセット";
-      return;
-    }
-    state.progress = { units: {}, finalCheck: {}, dataVersion: state.set.meta.dataVersion || 1 };
-    saveProgress();
-    renderHome();
   }
 
   function startLearn(batchIndexOverride = null) {

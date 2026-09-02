@@ -236,12 +236,6 @@ button:disabled { cursor: default; opacity: .55; }
 .intervalCell strong, .intervalCell span { display: block; }
 .intervalCell strong { font-family: var(--mono); font-size: var(--numeric-secondary); }
 .intervalCell span { color: var(--muted); font-family: var(--mono); font-size: 11px; }
-.card.learningHistory, .card.utility { padding: 16px var(--card-padding); background: transparent; border-radius: 0; border-top: 1px solid var(--line); }
-.learningHistory summary { cursor: pointer; font-weight: 700; }
-.learningHistory .hint { margin-top: 14px; }
-.historyList { display: grid; gap: 8px; margin: 16px 0 0; padding-left: 24px; }
-.historyList li { padding-left: 4px; }
-.historyList time { display: inline-block; min-width: 100px; color: var(--muted); font-size: 13px; }
 .stat { padding: 14px; border-radius: var(--radius-control); background: var(--canvas); }
 .stat strong, .stat span { display: block; }
 .stat strong { font-family: var(--mono); font-size: var(--numeric-primary); }
