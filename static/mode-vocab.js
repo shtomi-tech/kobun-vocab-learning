@@ -476,7 +476,6 @@ const KobunVocabApp = (() => {
   // 語彙目標カード。セット単位ではなく全セット横断の到達語数を、目標600語に対して1本のバーで示す。
   function vocabGoalCard() {
     const learned = Math.min(learnedMeaningEntries().length, VOCAB_GOAL_TOTAL);
-    const recorded = reviewPoolEntries().length;
     const pct = (value) => `${(value / VOCAB_GOAL_TOTAL) * 100}%`;
     const num = (value) => value.toLocaleString("ja-JP");
     const message = learned === 0 ? `まずは1語から。${num(VOCAB_GOAL_TOTAL)}語への第一歩。`
@@ -522,7 +521,6 @@ const KobunVocabApp = (() => {
       ),
       el("div", { class: "vgBar" }, track, ticks),
       el("p", { class: "vgMessage" }, message),
-      el("p", { class: "hint" }, `全セットを通して文中問題まで進んだ語を数えています。このアプリの収録は現在${num(recorded)}語です。`),
     );
   }
 

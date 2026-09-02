@@ -14,8 +14,8 @@ const body = js.slice(start, js.indexOf("\n  function ", start + 1));
 // 目標はアプリ全体の到達語数。現在セットだけを数えるとセットを切り替えるたび数字が戻ってしまう。
 assert.match(body, /learnedMeaningEntries\(\)\.length/, "到達語数は全セット横断で数える必要がある");
 assert.match(body, /Math\.min\(learnedMeaningEntries\(\)\.length, VOCAB_GOAL_TOTAL\)/, "到達語数は目標値でクランプする必要がある");
-// 収録語数は目標に届いていないため、数え方と収録数を必ず添える
-assert.ok(body.includes("このアプリの収録は現在"), "収録語数の注記が必要");
+// 収録語数の注記はカード上に表示しない
+assert.ok(!body.includes("このアプリの収録は現在"), "収録語数の注記を表示してはいけない");
 assert.ok(body.includes("文中問題まで進んだ語"), "何を数えているかの注記が必要");
 assert.ok(body.includes('role: "progressbar"'), "バーは progressbar として読み上げ可能にする必要がある");
 assert.ok(body.includes('"aria-valuetext"'), "aria-valuetext で内訳を読み上げる必要がある");
