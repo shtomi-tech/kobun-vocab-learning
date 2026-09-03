@@ -253,7 +253,6 @@ button:disabled { cursor: default; opacity: .55; }
 .utility summary { cursor: pointer; }
 .utility button { margin-top: 16px; }
 .sessionHead { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
-.savedState { font-size: 13px; }
 .stepBar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: var(--step-gap); margin-bottom: 24px; }
 .step { min-height: 44px; display: grid; place-items: center; padding: 8px; border-radius: var(--radius-control); border-bottom: 3px solid transparent; background: var(--card); color: var(--muted); font-family: var(--mono); font-size: 13px; text-align: center; transition: background-color var(--transition-hover), border-color var(--transition-hover), color var(--transition-hover); }
 .step.active { background: var(--ink); color: var(--canvas); font-weight: 700; border-bottom-color: var(--ink); }

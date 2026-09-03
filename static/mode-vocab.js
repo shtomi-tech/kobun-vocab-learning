@@ -1004,7 +1004,6 @@ const KobunVocabApp = (() => {
       el("div", {},
        el("p", { class: "label" }, sessionLabel()),
        el("h2", {}, stageTitle()),
-       el("p", { class: "hint savedState" }, session.stage === "done" ? "次の学習を選べます。" : cloud?.isEnabled() ? "現在地はクラウドとこの端末に保存済み" : "現在地はこの端末に保存済み"),
       ),
     );
     if (session.stage !== "done") sessionHead.appendChild(el("button", { class: "ghost", onclick: () => { saveResume(); renderHome(); } }, "一覧へ戻る"));
