@@ -120,6 +120,10 @@
     "kobun-set-30": {
       "label": "第30セット　動作・心情・状態表現",
       "dataUrl": "data/set-30.json"
+    },
+    "kobun-set-31": {
+      "label": "第31セット　苦悩・身分・評価表現",
+      "dataUrl": "data/set-31.json"
     }
   }
 }
