@@ -18,6 +18,9 @@ assert.match(css, /\.meaningTarget\s*\{[\s\S]*text-decoration-line:\s*underline/
 assert.match(css, /\.questionSource\s*\{/, "出典表示のスタイルが必要");
 
 const blank = "（　）";
+const expectedUnderlineTargets = new Map([
+  ["kv24-277", "本意なけれ"],
+]);
 let wordCount = 0;
 for (const [setId, entry] of Object.entries(manifest.sets)) {
   const data = JSON.parse(read(entry.dataUrl));
@@ -31,6 +34,9 @@ for (const [setId, entry] of Object.entries(manifest.sets)) {
     assert.ok(word.example.endsWith(suffix), `${word.id}: cloze suffix must match example`);
     const target = word.example.slice(prefix.length, word.example.length - suffix.length);
     assert.ok(target.length > 0, `${word.id}: underline target must not be empty`);
+    if (expectedUnderlineTargets.has(word.id)) {
+      assert.equal(target, expectedUnderlineTargets.get(word.id), `${word.id}: underline target must match the intended phrase`);
+    }
     wordCount += 1;
   }
 }
