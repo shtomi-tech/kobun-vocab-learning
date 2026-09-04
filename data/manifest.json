@@ -124,6 +124,10 @@
     "kobun-set-31": {
       "label": "第31セット　苦悩・身分・評価表現",
       "dataUrl": "data/set-31.json"
+    },
+    "kobun-set-32": {
+      "label": "第32セット　心情・評価・体裁表現",
+      "dataUrl": "data/set-32.json"
     }
   }
 }
