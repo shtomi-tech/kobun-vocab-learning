@@ -112,6 +112,10 @@
     "kobun-set-28": {
       "label": "第28セット　性質・評価・視線表現",
       "dataUrl": "data/set-28.json"
+    },
+    "kobun-set-29": {
+      "label": "第29セット　様子・自分・判断表現",
+      "dataUrl": "data/set-29.json"
     }
   }
 }

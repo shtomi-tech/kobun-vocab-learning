@@ -77,6 +77,7 @@ py -3 -m http.server 8062 --bind 127.0.0.1
 - `data/set-26.json`: 第26セット「評価・判断・状態表現」12語
 - `data/set-27.json`: 第27セット「評価・程度・状態表現」12語
 - `data/set-28.json`: 第28セット「性質・評価・視線表現」12語
+- `data/set-29.json`: 第29セット「様子・自分・判断表現」12語
 
 新しいセットは、同じ形式のJSONを追加し、manifestへ登録します。各語には `example`、`translation`、`source`、`cloze`、`notes`（空でない解説・補足の文字列配列。1件以上必須）に加え、`exampleForm`（`"waka"` か `"prose"`）を必ず収録します。和歌には5句の表記・読み・作者・出典箇所を持つ `waka` を添えます。複数の候補例文を登録する場合は任意の `examples` に `sourceType` を付け、添付資料 → 和歌 → 古典作品の文章 → 生成した学習用作例の順で主例文を選びます。
 
