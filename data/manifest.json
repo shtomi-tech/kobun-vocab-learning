@@ -100,6 +100,18 @@
     "kobun-set-25": {
       "label": "第25セット　性質・状態・評価表現",
       "dataUrl": "data/set-25.json"
+    },
+    "kobun-set-26": {
+      "label": "第26セット　評価・判断・状態表現",
+      "dataUrl": "data/set-26.json"
+    },
+    "kobun-set-27": {
+      "label": "第27セット　評価・程度・状態表現",
+      "dataUrl": "data/set-27.json"
+    },
+    "kobun-set-28": {
+      "label": "第28セット　性質・評価・視線表現",
+      "dataUrl": "data/set-28.json"
     }
   }
 }
