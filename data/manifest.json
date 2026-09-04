@@ -116,6 +116,10 @@
     "kobun-set-29": {
       "label": "第29セット　様子・自分・判断表現",
       "dataUrl": "data/set-29.json"
+    },
+    "kobun-set-30": {
+      "label": "第30セット　動作・心情・状態表現",
+      "dataUrl": "data/set-30.json"
     }
   }
 }
