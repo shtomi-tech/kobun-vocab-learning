@@ -92,6 +92,10 @@
     "kobun-set-23": {
       "label": "第23セット　程度・場所・判断表現",
       "dataUrl": "data/set-23.json"
+    },
+    "kobun-set-24": {
+      "label": "第24セット　心情・状態・動作表現",
+      "dataUrl": "data/set-24.json"
     }
   }
 }
