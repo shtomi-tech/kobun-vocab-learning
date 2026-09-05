@@ -164,6 +164,10 @@
     "kobun-set-41": {
       "label": "第41セット　美・優雅・趣の表現",
       "dataUrl": "data/set-41.json"
+    },
+    "kobun-set-42": {
+      "label": "第42セット　情趣・つらさ・不快の表現",
+      "dataUrl": "data/set-42.json"
     }
   }
 }
