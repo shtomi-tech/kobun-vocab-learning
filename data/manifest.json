@@ -140,6 +140,10 @@
     "kobun-set-35": {
       "label": "第35セット　動作・状態・評価表現",
       "dataUrl": "data/set-35.json"
+    },
+    "kobun-set-36": {
+      "label": "第36セット　評価・都合・名詞表現",
+      "dataUrl": "data/set-36.json"
     }
   }
 }
