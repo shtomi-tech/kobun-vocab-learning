@@ -184,6 +184,10 @@
     "kobun-set-46": {
       "label": "第46セット　同音異義・訪問・比類の表現",
       "dataUrl": "data/set-46.json"
+    },
+    "kobun-set-47": {
+      "label": "第47セット　同表記・多義の名詞表現",
+      "dataUrl": "data/set-47.json"
     }
   }
 }
