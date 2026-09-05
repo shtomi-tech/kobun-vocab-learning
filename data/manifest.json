@@ -132,6 +132,10 @@
     "kobun-set-33": {
       "label": "第33セット　不快・評価・場所表現",
       "dataUrl": "data/set-33.json"
+    },
+    "kobun-set-34": {
+      "label": "第34セット　時間・程度・動作表現",
+      "dataUrl": "data/set-34.json"
     }
   }
 }
