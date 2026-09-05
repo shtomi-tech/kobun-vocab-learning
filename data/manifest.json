@@ -148,6 +148,10 @@
     "kobun-set-37": {
       "label": "第37セット　行為・名詞・活用の違い",
       "dataUrl": "data/set-37.json"
+    },
+    "kobun-set-38": {
+      "label": "第38セット　副詞・呼応・思考表現",
+      "dataUrl": "data/set-38.json"
     }
   }
 }

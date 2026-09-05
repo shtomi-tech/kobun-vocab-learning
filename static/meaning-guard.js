@@ -66,6 +66,8 @@ const KobunMeaningGuard = (() => {
     /はっと|目が覚める|目を覚まさせる/,
     // 「ためらふ」の「気を静める」と「ねんず」の「こらえる」は、同じ我慢の場面に等しく収まる。
     /気を静める|こらえる|我慢/,
+    // 動詞「おぼゆ」と形容詞「おぼし」は、どちらも「そう思われる」で、空欄からは決められない。
+    /思われる/,
   ];
 
   const hasMeaningOverlap = (word, other) => word.meanings.some((meaning) =>
