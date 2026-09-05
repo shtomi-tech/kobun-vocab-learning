@@ -180,6 +180,10 @@
     "kobun-set-45": {
       "label": "第45セット　一途・風流・伝聞の表現",
       "dataUrl": "data/set-45.json"
+    },
+    "kobun-set-46": {
+      "label": "第46セット　同音異義・訪問・比類の表現",
+      "dataUrl": "data/set-46.json"
     }
   }
 }
