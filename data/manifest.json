@@ -152,6 +152,10 @@
     "kobun-set-38": {
       "label": "第38セット　副詞・呼応・思考表現",
       "dataUrl": "data/set-38.json"
+    },
+    "kobun-set-39": {
+      "label": "第39セット　視覚・願望・評価表現",
+      "dataUrl": "data/set-39.json"
     }
   }
 }
