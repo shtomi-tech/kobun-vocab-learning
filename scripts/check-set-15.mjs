@@ -22,12 +22,12 @@ checkSet({
     assert.equal(wordsById.get("kv15-169").source, "源氏物語（蜻蛉）");
     assert.equal(wordsById.get("kv15-169").example, "下衆は僻事もいふなり。");
     assert.equal(wordsById.get("kv15-169").cloze, "下衆は（　）もいふなり。");
-    assert.equal(wordsById.get("kv15-170").source, "枕草子（清涼殿の丑寅のすみの・p.21）");
+    assert.equal(wordsById.get("kv15-170").source, "枕草子（清涼殿の丑寅のすみの）");
     assert.equal(wordsById.get("kv15-171").source, "源氏物語（末摘花）");
     assert.equal(wordsById.get("kv15-172").source, "源氏物語（蓬生）");
     assert.equal(wordsById.get("kv15-173").source, "源氏物語（総角）");
     assert.equal(wordsById.get("kv15-174").source, "源氏物語（若紫）");
-    assert.equal(wordsById.get("kv15-175").source, "伊勢物語（第二十三段・p.25）");
+    assert.equal(wordsById.get("kv15-175").source, "伊勢物語（第二十三段）");
     assert.equal(wordsById.get("kv15-176").source, "源氏物語（総角）");
     assert.equal(wordsById.get("kv15-177").source, "源氏物語（総角）");
     assert.equal(wordsById.get("kv15-178").source, "源氏物語（夕顔）");

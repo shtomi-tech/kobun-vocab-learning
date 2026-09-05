@@ -24,7 +24,7 @@ checkSet({
     const word79 = wordsById.get("kv07-079");
     assert.equal(word79.example, "ゆめゆめ人に語るべからず。");
     assert.equal(word79.translation, "けっして人に語るな。");
-    assert.equal(word79.source, "宇治拾遺物語（巻第七・canvas65）");
+    assert.equal(word79.source, "宇治拾遺物語（巻第七）");
 
     const word77 = wordsById.get("kv07-077");
     assert.equal(word77.source, "古今著聞集（巻第十・馬藝）");

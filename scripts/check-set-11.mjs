@@ -20,7 +20,7 @@ checkSet({
   ]),
   expect(wordsById) {
     assert.deepEqual(wordsById.get("kv11-121").meanings, ["さしあげる。", "参上する。", "召しあがる。"]);
-    assert.equal(wordsById.get("kv11-121").source, "とりかへばや物語（p.545）");
+    assert.equal(wordsById.get("kv11-121").source, "とりかへばや物語");
     assert.equal(wordsById.get("kv11-121").example, "ただ今まゐれる御返りたまはらん。");
     assert.equal(wordsById.get("kv11-121").cloze, "ただ今（　）る御返りたまはらん。");
     assert.deepEqual(wordsById.get("kv11-122").meanings, ["あります。います。", "〜です。〜ます。〜ございます。", "お仕えする。お控えする。"]);

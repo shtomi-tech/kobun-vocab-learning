@@ -20,7 +20,7 @@ checkSet({
   ]),
   expect(wordsById) {
     const word25 = wordsById.get("kv03-025");
-    assert.equal(word25.source, "和泉式部日記（p.39）");
+    assert.equal(word25.source, "和泉式部日記");
     assert.equal(word25.example, "女は、雲間なきながめに「よのなかいかになりぬるならむ」とつきせずのみ眺めて…。");
     assert.equal(word25.cloze, "女は、雲間なきながめに「（　）いかになりぬるならむ」とつきせずのみ眺めて…。");
 

@@ -6,7 +6,7 @@ checkSet({
   firstNumber: 61,
   expect(wordsById) {
     const word61 = wordsById.get("kv06-061");
-    assert.equal(word61.source, "松浦宮物語（巻第五百二）");
+    assert.equal(word61.source, "松浦宮物語");
     const word62 = wordsById.get("kv06-062");
     assert.equal(word62.source, "宇津保物語（あて宮）");
     assert.equal(word62.example, "数ならぬ身に、思ふまじきこと思ひそめたるが、過ちこそあれ…。");

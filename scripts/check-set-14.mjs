@@ -20,14 +20,14 @@ checkSet({
   ]),
   expect(wordsById) {
     assert.equal(wordsById.get("kv14-157").source, "源氏物語（若紫）");
-    assert.equal(wordsById.get("kv14-158").source, "更級日記（新註・p.14）");
-    assert.equal(wordsById.get("kv14-161").source, "徒然草（p.395）");
+    assert.equal(wordsById.get("kv14-158").source, "更級日記");
+    assert.equal(wordsById.get("kv14-161").source, "徒然草");
     assert.equal(wordsById.get("kv14-160").source, "源氏物語（葵）");
     assert.equal(wordsById.get("kv14-162").source, "源氏物語（末摘花）");
-    assert.equal(wordsById.get("kv14-163").source, "竹取物語（燕の子安貝・p.40）");
+    assert.equal(wordsById.get("kv14-163").source, "竹取物語（燕の子安貝）");
     assert.equal(wordsById.get("kv14-164").source, "源氏物語（帚木）");
     assert.equal(wordsById.get("kv14-165").source, "源氏物語（若紫）");
-    assert.equal(wordsById.get("kv14-166").source, "竹取物語（つまどひ・p.3）");
+    assert.equal(wordsById.get("kv14-166").source, "竹取物語（つまどひ）");
     assert.equal(wordsById.get("kv14-167").source, "源氏物語（若紫）");
     assert.equal(wordsById.get("kv14-168").source, "源氏物語（若紫）");
     assert.equal(wordsById.get("kv14-163").example, "まめなる男ども二十人ばかり遣して、あななひにあげすゑられたり。");

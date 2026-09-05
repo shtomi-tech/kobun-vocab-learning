@@ -19,18 +19,18 @@ checkSet({
     ["kv13-156", "ひごろ"],
   ]),
   expect(wordsById) {
-    assert.equal(wordsById.get("kv13-145").source, "枕草子（p.17）");
+    assert.equal(wordsById.get("kv13-145").source, "枕草子");
     assert.equal(wordsById.get("kv13-146").source, "源氏物語（夕霧）");
-    assert.equal(wordsById.get("kv13-147").source, "更級日記（p.28）");
-    assert.equal(wordsById.get("kv13-148").source, "徒然草（p.355）");
-    assert.equal(wordsById.get("kv13-149").source, "枕草子（春はあけぼの・p.1）");
+    assert.equal(wordsById.get("kv13-147").source, "更級日記");
+    assert.equal(wordsById.get("kv13-148").source, "徒然草");
+    assert.equal(wordsById.get("kv13-149").source, "枕草子（春はあけぼの）");
     assert.equal(wordsById.get("kv13-150").source, "源氏物語（手習）");
     assert.equal(wordsById.get("kv13-151").source, "源氏物語（真木柱）");
-    assert.equal(wordsById.get("kv13-152").source, "更級日記（p.36）");
+    assert.equal(wordsById.get("kv13-152").source, "更級日記");
     assert.equal(wordsById.get("kv13-153").source, "源氏物語（松風）");
     assert.equal(wordsById.get("kv13-154").source, "源氏物語（幻）");
     assert.equal(wordsById.get("kv13-155").source, "源氏物語（若紫）");
-    assert.equal(wordsById.get("kv13-156").source, "更級日記（p.36）");
+    assert.equal(wordsById.get("kv13-156").source, "更級日記");
   },
   unsafePairs: [
     ["kv13-148", "kv13-149"],

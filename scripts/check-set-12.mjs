@@ -19,12 +19,12 @@ checkSet({
     ["kv12-144", "かれ"],
   ]),
   expect(wordsById) {
-    assert.equal(wordsById.get("kv12-133").source, "宇津保物語（国譲・p.548）");
+    assert.equal(wordsById.get("kv12-133").source, "宇津保物語（国譲）");
     assert.equal(wordsById.get("kv12-136").example, "櫻の直衣に、出社して、客人にもあれ、御兄の公達にもあれ、そこ近くゐて物などうちいひたる、いとをかし。");
     assert.equal(wordsById.get("kv12-136").source, "枕草子（第二段）");
     assert.equal(wordsById.get("kv12-136").cloze, "櫻の直衣に、出社して、客人にもあれ、御（　）の公達にもあれ、そこ近くゐて物などうちいひたる、いとをかし。");
     assert.equal(wordsById.get("kv12-139").example, "急ぐことある折に、長言するまらうど。");
-    assert.equal(wordsById.get("kv12-139").source, "枕草子（にくきもの・p.27）");
+    assert.equal(wordsById.get("kv12-139").source, "枕草子（にくきもの）");
     assert.equal(wordsById.get("kv12-139").cloze, "急ぐことある折に、長言する（　）。");
     assert.equal(wordsById.get("kv12-144").source, "源氏物語（桐壺）");
   },

@@ -32,12 +32,12 @@ checkSet({
     assert.deepEqual(wordsById.get("kv10-119").meanings, ["お与えになる。くださる。", "〜なさる。お〜になる。", "〜ております。"]);
     assert.deepEqual(wordsById.get("kv10-120").meanings, ["さしあげる。", "お〜する。〜申しあげる。", "召しあがる。", "お召しになる。", "お乗りになる。"]);
     assert.equal(wordsById.get("kv10-109").source, "伊勢物語（武蔵鐙）");
-    assert.equal(wordsById.get("kv10-110").source, "大和物語（下巻・p.128）");
-    assert.equal(wordsById.get("kv10-111").source, "大和物語（上巻・p.74）");
-    assert.equal(wordsById.get("kv10-112").source, "大和物語（下巻・p.113）");
-    assert.equal(wordsById.get("kv10-115").source, "伊勢物語（p.79）");
-    assert.equal(wordsById.get("kv10-117").source, "伊勢物語（p.59）");
-    assert.equal(wordsById.get("kv10-118").source, "徒然草（p.336）");
+    assert.equal(wordsById.get("kv10-110").source, "大和物語（下巻）");
+    assert.equal(wordsById.get("kv10-111").source, "大和物語（上巻）");
+    assert.equal(wordsById.get("kv10-112").source, "大和物語（下巻）");
+    assert.equal(wordsById.get("kv10-115").source, "伊勢物語");
+    assert.equal(wordsById.get("kv10-117").source, "伊勢物語");
+    assert.equal(wordsById.get("kv10-118").source, "徒然草");
     assert.equal(wordsById.get("kv10-113").source, "源氏物語（桐壺）");
     assert.equal(wordsById.get("kv10-114").source, "源氏物語（蓬生）");
     assert.equal(wordsById.get("kv10-119").source, "毎月抄");
