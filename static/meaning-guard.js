@@ -76,6 +76,10 @@ const KobunMeaningGuard = (() => {
     /いやだ|いやなことに|嘆かわしい/,
     // 形容詞「わびし」と動詞「わぶ」は、已然形＋「ど」でどちらも成立する。
     /わびし/,
+    // 名詞「すき」と形容詞「すきずきし」は、どちらも好色系・風流系の同じ訳になる。
+    /好色/,
+    // 動詞「きこゆ」の連用形と名詞「きこえ」は同形。
+    /噂/,
   ];
 
   const hasMeaningOverlap = (word, other) => word.meanings.some((meaning) =>
