@@ -136,6 +136,10 @@
     "kobun-set-34": {
       "label": "第34セット　時間・程度・動作表現",
       "dataUrl": "data/set-34.json"
+    },
+    "kobun-set-35": {
+      "label": "第35セット　動作・状態・評価表現",
+      "dataUrl": "data/set-35.json"
     }
   }
 }

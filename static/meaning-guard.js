@@ -64,6 +64,8 @@ const KobunMeaningGuard = (() => {
     /なまける|怠慢/,
     // 「おどろく」（自動詞）と「おどろかす」（他動詞）は語義が同一で、空欄からは決められない。
     /はっと|目が覚める|目を覚まさせる/,
+    // 「ためらふ」の「気を静める」と「ねんず」の「こらえる」は、同じ我慢の場面に等しく収まる。
+    /気を静める|こらえる|我慢/,
   ];
 
   const hasMeaningOverlap = (word, other) => word.meanings.some((meaning) =>
