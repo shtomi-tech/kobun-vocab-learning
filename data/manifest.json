@@ -168,6 +168,10 @@
     "kobun-set-42": {
       "label": "第42セット　情趣・つらさ・不快の表現",
       "dataUrl": "data/set-42.json"
+    },
+    "kobun-set-43": {
+      "label": "第43セット　無作法・不審・仰々しさの表現",
+      "dataUrl": "data/set-43.json"
     }
   }
 }
