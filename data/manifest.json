@@ -192,6 +192,10 @@
     "kobun-set-48": {
       "label": "第48セット　同表記の名詞・代動詞の表現",
       "dataUrl": "data/set-48.json"
+    },
+    "kobun-set-49": {
+      "label": "第49セット　音信・限度・身分の名詞表現",
+      "dataUrl": "data/set-49.json"
     }
   }
 }
