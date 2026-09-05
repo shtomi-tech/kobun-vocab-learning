@@ -70,6 +70,8 @@ const KobunMeaningGuard = (() => {
     /思われる/,
     // 「いさ」「いざ」とその慣用句は、どれも「さあ」と訳せ、空欄の前後では区別できない。
     /さあ/,
+    // 「きよらなり」「きよげなり」「きよし」は同じ「きよ」の系統で、二語は同じ例文を共有する。
+    /気品があって美しい|さっぱりとして美しい|けがれがなく美しい/,
   ];
 
   const hasMeaningOverlap = (word, other) => word.meanings.some((meaning) =>

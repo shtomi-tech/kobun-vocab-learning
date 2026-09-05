@@ -160,6 +160,10 @@
     "kobun-set-40": {
       "label": "第40セット　程度・感動・呼びかけ表現",
       "dataUrl": "data/set-40.json"
+    },
+    "kobun-set-41": {
+      "label": "第41セット　美・優雅・趣の表現",
+      "dataUrl": "data/set-41.json"
     }
   }
 }
