@@ -128,6 +128,10 @@
     "kobun-set-32": {
       "label": "第32セット　心情・評価・体裁表現",
       "dataUrl": "data/set-32.json"
+    },
+    "kobun-set-33": {
+      "label": "第33セット　不快・評価・場所表現",
+      "dataUrl": "data/set-33.json"
     }
   }
 }
