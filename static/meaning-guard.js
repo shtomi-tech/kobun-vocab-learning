@@ -68,6 +68,8 @@ const KobunMeaningGuard = (() => {
     /気を静める|こらえる|我慢/,
     // 動詞「おぼゆ」と形容詞「おぼし」は、どちらも「そう思われる」で、空欄からは決められない。
     /思われる/,
+    // 「いさ」「いざ」とその慣用句は、どれも「さあ」と訳せ、空欄の前後では区別できない。
+    /さあ/,
   ];
 
   const hasMeaningOverlap = (word, other) => word.meanings.some((meaning) =>

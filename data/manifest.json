@@ -156,6 +156,10 @@
     "kobun-set-39": {
       "label": "第39セット　視覚・願望・評価表現",
       "dataUrl": "data/set-39.json"
+    },
+    "kobun-set-40": {
+      "label": "第40セット　程度・感動・呼びかけ表現",
+      "dataUrl": "data/set-40.json"
     }
   }
 }
