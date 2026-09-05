@@ -24,7 +24,7 @@ checkSet({
     assert.equal(wordsById.get("kv06-068").source, "源氏物語（玉鬘）");
     const word72 = wordsById.get("kv06-072");
     assert.equal(word72.example, "「好きごとせし人々の文もなし」とのみ言はせて、さらに返事もせずのみあるほどに御文あり。");
-    assert.equal(word72.translation, "「浮ついたことをしてきた人々の手紙もない」とだけ言わせて、さらに返事もせずにいるうちに、お手紙が来た。");
+    assert.equal(word72.translation, "「浮ついたことをした人々からの手紙もない」とだけ言わせて、まったく返事もしないでいるうちに、お手紙が来た。");
     assert.equal(word72.cloze, "「好きごとせし人々の文もなし」とのみ言はせて、（　）返事もせずのみあるほどに御文あり。");
     assert.equal(word72.source, "和泉式部日記");
     const word64 = wordsById.get("kv06-064");
