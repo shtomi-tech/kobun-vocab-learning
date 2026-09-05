@@ -196,6 +196,10 @@
     "kobun-set-49": {
       "label": "第49セット　音信・限度・身分の名詞表現",
       "dataUrl": "data/set-49.json"
+    },
+    "kobun-set-50": {
+      "label": "第50セット　心・情趣・由緒の名詞表現",
+      "dataUrl": "data/set-50.json"
     }
   }
 }
