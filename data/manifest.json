@@ -172,6 +172,10 @@
     "kobun-set-43": {
       "label": "第43セット　無作法・不審・仰々しさの表現",
       "dataUrl": "data/set-43.json"
+    },
+    "kobun-set-44": {
+      "label": "第44セット　両極端・程度・愛情の表現",
+      "dataUrl": "data/set-44.json"
     }
   }
 }
