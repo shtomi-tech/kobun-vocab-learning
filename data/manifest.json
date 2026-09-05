@@ -144,6 +144,10 @@
     "kobun-set-36": {
       "label": "第36セット　評価・都合・名詞表現",
       "dataUrl": "data/set-36.json"
+    },
+    "kobun-set-37": {
+      "label": "第37セット　行為・名詞・活用の違い",
+      "dataUrl": "data/set-37.json"
     }
   }
 }

@@ -40,6 +40,6 @@ for (const [setId, entry] of Object.entries(manifest.sets)) {
     wordCount += 1;
   }
 }
-assert.equal(wordCount, 432, "全セットの収録語数を確認する必要がある");
+assert.equal(wordCount, 444, "全セットの収録語数を確認する必要がある");
 
-console.log("meaning-example UI contract: OK / 432語");
+console.log("meaning-example UI contract: OK / 444語");
