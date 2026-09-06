@@ -47,7 +47,7 @@ const KobunExampleSource = (() => {
       if (!candidate.waka.ref || typeof candidate.waka.ref !== "object" || Array.isArray(candidate.waka.ref)) return false;
       if (candidate.waka.ref.collection !== candidate.source || typeof candidate.waka.ref.book !== "string" || !candidate.waka.ref.book.trim()) return false;
       if (candidate.waka.ref.collection !== "万葉集" && !candidate.waka.ref.book.includes("・")) return false;
-      if (!Number.isInteger(candidate.waka.ref.number) || candidate.waka.ref.number < 1) return false;
+      if (candidate.waka.ref.number !== undefined && (!Number.isInteger(candidate.waka.ref.number) || candidate.waka.ref.number < 1)) return false;
     } else if (candidate.waka !== undefined) {
       return false;
     }

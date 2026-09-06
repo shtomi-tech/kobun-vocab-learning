@@ -23,7 +23,11 @@ for (const word of words) {
     if (word.waka.ref.collection !== "万葉集") {
       assert.ok(word.waka.ref.book.includes("・"), `${word.id}: waka ref book must include the section name`);
     }
-    assert.ok(Number.isInteger(word.waka.ref.number) && word.waka.ref.number > 0, `${word.id}: waka ref number is required`);
+    // 歌番号は任意。底本が通し番号を印刷していない歌集（和歌三代集・万葉集古義など）でも採れるようにする。
+    // 値を入れる場合だけ、正の整数であることを求める。
+    if (word.waka.ref.number !== undefined) {
+      assert.ok(Number.isInteger(word.waka.ref.number) && word.waka.ref.number > 0, `${word.id}: waka ref number must be a positive integer`);
+    }
     assert.doesNotMatch(word.source, /[（）()]/u, `${word.id}: waka source must be collection-only`);
   }
 }

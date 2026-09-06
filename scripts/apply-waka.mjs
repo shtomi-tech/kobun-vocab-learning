@@ -74,6 +74,8 @@ for (const [dataUrl, location] of changedFiles) {
     "data/set-04.json",
     "data/set-05.json",
     "data/set-08.json",
+    "data/set-09.json",
+    "data/set-10.json",
     "data/set-11.json",
   ]).has(dataUrl);
   const serialized = collapseSelectedArrays(`${JSON.stringify(location.data, null, 2)}\n`, notesOneLine);

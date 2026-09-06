@@ -78,7 +78,10 @@ function validateWaka(setId, word) {
   if (waka.ref.collection !== "万葉集" && !waka.ref.book.includes("・")) {
     throw new Error(`${setId}: ${word.id} waka.ref.book must include the section name`);
   }
-  if (!Number.isInteger(waka.ref.number) || waka.ref.number < 1) throw new Error(`${setId}: ${word.id} waka.ref.number is required`);
+  // 歌番号は任意。底本が通し番号を印刷していない歌集でも和歌を採れるようにする。値がある場合だけ検査する。
+  if (waka.ref.number !== undefined && (!Number.isInteger(waka.ref.number) || waka.ref.number < 1)) {
+    throw new Error(`${setId}: ${word.id} waka.ref.number must be a positive integer`);
+  }
   if (waka.ref.collection !== word.source) throw new Error(`${setId}: ${word.id} waka.ref.collection must match source`);
 
   const blankIndex = word.cloze.indexOf(clozeBlank);

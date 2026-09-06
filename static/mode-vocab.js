@@ -69,7 +69,9 @@ const KobunVocabApp = (() => {
   const isWaka = (word) => word.exampleForm === "waka" && Array.isArray(word.waka?.phrases);
   const wakaRefText = (word) => {
     const ref = word.waka?.ref;
-    return ref ? `${ref.book}・${ref.number}番` : "";
+    if (!ref) return "";
+    // 歌番号は任意。底本に通し番号がない歌集では巻・部立だけを出す。
+    return Number.isInteger(ref.number) ? `${ref.book}・${ref.number}番` : ref.book;
   };
   const contextSmallKana = new Set(["ゃ", "ゅ", "ょ", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ"]);
   const contextMoraCount = (word) => [...word.headword.split("〜")[0]]
