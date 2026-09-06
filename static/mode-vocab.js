@@ -546,6 +546,7 @@ const KobunVocabApp = (() => {
     const reviews = reviewIds();
     const final = state.progress.finalCheck || {};
     const resume = state.progress.resume;
+    const nextUnclearedId = final.cleared && !resume && !reviews.length ? nextUnclearedSetId(state.setId) : null;
     const isFirstReveal = !homeIntroduced;
     const isFirstVisit = learned === 0;
     homeIntroduced = true;
@@ -576,13 +577,19 @@ const KobunVocabApp = (() => {
     else if (learned < total) primary = [`${total}語の学習を始める`, startLearn, "4語の暗記カードと意味確認を1ブロックとして進めます。"];
     else if (reviews.length) primary = [`間違えた${reviews.length}語を復習する`, startReview, "文中問題を解き直します。"];
     else if (!final.cleared) primary = ["最終チェックに挑戦する", startFinal, `${passScore()}/${total}問以上でCLEARです。`];
+    else if (nextUnclearedId) {
+      const nextIndex = Object.keys(state.manifest.sets).indexOf(nextUnclearedId) + 1;
+      primary = [`第${nextIndex}セットへ進む →`, () => switchSet(nextUnclearedId), "次の未CLEARセットを開きます。"];
+    }
     else primary = ["このセットをもう一周する", startLearn, "暗記カードからもう一度確認します。"];
 
-    card.appendChild(el("div", { class: "recommend" },
+    const recommend = el("div", { class: "recommend" },
       el("p", { class: "recEyebrow" }, "▶ まずはここから"),
       el("button", { class: "cta", onclick: () => primary[1]() }, primary[0]),
       el("p", { class: "recWhy" }, primary[2]),
-    ));
+    );
+    if (nextUnclearedId) recommend.appendChild(el("button", { class: "ghost", onclick: startLearn }, "このセットをもう一周する"));
+    card.appendChild(recommend);
 
     card.appendChild(el("div", { class: "stats" },
       stat(learned, total, "文中回答済み"),
@@ -865,6 +872,17 @@ const KobunVocabApp = (() => {
     return ids[index + 1];
   }
 
+  function nextUnclearedSetId(currentSetId) {
+    const ids = Object.keys(state.manifest.sets);
+    const index = ids.indexOf(currentSetId);
+    if (index < 0) return null;
+    for (const setId of ids.slice(index + 1)) {
+      const source = state.reviewPool.find((entry) => entry.setId === setId);
+      if (source && KobunSetProgress.summarize(source.set, source.progress).key !== "cleared") return setId;
+    }
+    return null;
+  }
+
   function showAllSetsHome() {
     renderHome();
     const picker = $(".setPicker");
@@ -1027,7 +1045,10 @@ const KobunVocabApp = (() => {
       return `意味確認 ${session.meaningIndex + 1} / ${session.meaningOrder.length}${block}`;
     }
     if (session.stage === "context") return `文中問題 ${session.contextIndex + 1} / ${session.contextOrder.length}`;
-    if (session.stage === "wrongReview") return `誤答確認 ${session.reviewedIds.length} / ${session.wrongMeaningIds.length}`;
+    if (session.stage === "wrongReview") {
+      const total = session.wrongMeaningIds.length;
+      return `誤答確認 ${Math.min(session.reviewedIds.length + 1, total)} / ${total}`;
+    }
     return "学習結果";
   }
 
@@ -1164,14 +1185,18 @@ const KobunVocabApp = (() => {
     if (session.answered) {
       const isCorrect = session.picked === correct;
       box.appendChild(el("div", { class: `feedback ${isCorrect ? "ok" : "ng"}`, role: "status", "aria-live": "polite", "aria-atomic": "true", tabindex: "-1" },
-        el("h3", {}, isCorrect ? "○ 正解" : "× 不正解"),
-        el("p", {}, `${word.headword}【${word.kanji}】：${meaningText(word)}`),
-        isMeaningExample ? el("p", { class: exampleClass(word, "meaningExample") }, exampleBody(word, { underline: true })) : null,
-        isMeaningExample ? el("p", { class: "meaningExampleTranslation" }, `現代語訳：${word.translation}`) : null,
-        kind === "context" ? el("p", { class: exampleClass(word, "example") }, exampleBody(word)) : null,
-      ));
-      box.appendChild(el("div", { class: "quizNextAction" },
-        el("button", { class: "cta next", onclick: () => nextQuiz(kind) }, index === order.length - 1 ? "次へ →" : "次の問題 →"),
+        el("div", { class: "feedbackSummary" },
+          el("h3", {}, isCorrect ? "○ 正解" : "× 不正解"),
+          el("p", {}, `${word.headword}【${word.kanji}】：${meaningText(word)}`),
+        ),
+        el("div", { class: "quizNextAction" },
+          el("button", { class: "cta next", onclick: () => nextQuiz(kind) }, index === order.length - 1 ? "次へ →" : "次の問題 →"),
+        ),
+        el("div", { class: "feedbackDetails" },
+          isMeaningExample ? el("p", { class: exampleClass(word, "meaningExample") }, exampleBody(word, { underline: true })) : null,
+          isMeaningExample ? el("p", { class: "meaningExampleTranslation" }, `現代語訳：${word.translation}`) : null,
+          kind === "context" ? el("p", { class: exampleClass(word, "example") }, exampleBody(word)) : null,
+        ),
       ));
     }
     panel.appendChild(box);
@@ -1265,40 +1290,52 @@ const KobunVocabApp = (() => {
 
   function renderWrongReview(panel) {
     panel.appendChild(el("p", { class: "lead" }, "間違えた語を読み直し、確認した語にチェックを付けてください。"));
+    const total = session.wrongMeaningIds.length;
+    const reviewedCount = session.reviewedIds.length;
+    const remainingIds = session.wrongMeaningIds.filter((id) => !session.reviewedIds.includes(id));
+    const nextId = remainingIds[0];
+    const isFinalStage = session.mode === "final" || session.mode === "meaningReview";
+    panel.appendChild(el("p", { class: "reviewProgress" }, `未確認 ${remainingIds.length} / 全${total}語・確認済み ${reviewedCount}語`));
     const list = el("div", { class: "reviewList" });
-    session.wrongMeaningIds.forEach((id, index) => {
-      const entry = reviewEntryByKey(id);
-      const word = wordForSession(id);
-      const checked = session.reviewedIds.includes(id);
-      if (checked) {
-        list.appendChild(el("div", { class: "wordRow done" },
-          el("span", { class: "wordNo" }, index + 1),
-          el("span", { class: "wordName" }, `${word.headword}【${word.kanji}】`),
-          el("span", { class: "wordStatus" }, "✓ 確認済み"),
-        ));
-        return;
-      }
+    if (nextId) {
+      const entry = reviewEntryByKey(nextId);
+      const word = wordForSession(nextId);
       const card = wordCard(word);
       card.classList.add("reviewCard");
+      card.setAttribute("tabindex", "-1");
+      const last = remainingIds.length === 1;
+      const nextLabel = last
+        ? (isFinalStage ? "確認した・結果を見る →" : "確認した・文中問題へ →")
+        : "確認した・次の誤答へ →";
       card.appendChild(el("button", { class: "ghost", onclick: () => {
-        if (!session.reviewedIds.includes(id)) {
-          session.reviewedIds.push(id);
-          appendHistory({ kind: "wrong-review", wordId: entry?.word.id || id, result: "viewed" }, entry?.progress || state.progress);
+        if (!session.reviewedIds.includes(nextId)) {
+          session.reviewedIds.push(nextId);
+          appendHistory({ kind: "wrong-review", wordId: entry?.word.id || nextId, result: "viewed" }, entry?.progress || state.progress);
           saveProgressFor(entry?.setId || state.setId, entry?.progress || state.progress);
         }
+        if (last) {
+          session.stage = isFinalStage ? "done" : "context";
+          session.answered = false;
+          session.choices = null;
+        }
         renderSession();
-      } }, "確認した"));
+        const destination = last ? $(isFinalStage ? ".doneBanner h2" : ".askWord, .meaningExample, .cloze") : $(".reviewCard");
+        if (destination) {
+          if (!destination.hasAttribute("tabindex")) destination.setAttribute("tabindex", "-1");
+          destination.focus({ preventScroll: true });
+        }
+      } }, nextLabel));
       list.appendChild(card);
-    });
+    }
     panel.appendChild(list);
-    const complete = session.reviewedIds.length === session.wrongMeaningIds.length;
-    panel.appendChild(el("button", { class: "cta", disabled: !complete, onclick: () => {
-      if (!complete) return;
-      session.stage = (session.mode === "final" || session.mode === "meaningReview") ? "done" : "context";
-      session.answered = false;
-      session.choices = null;
-      renderSession();
-    } }, complete ? ((session.mode === "final" || session.mode === "meaningReview") ? "結果を見る →" : "文中問題へ →") : `残り${session.wrongMeaningIds.length - session.reviewedIds.length}語を確認`));
+    if (!nextId) {
+      panel.appendChild(el("button", { class: "cta", onclick: () => {
+        session.stage = isFinalStage ? "done" : "context";
+        session.answered = false;
+        session.choices = null;
+        renderSession();
+      } }, isFinalStage ? "結果を見る →" : "文中問題へ →"));
+    }
   }
 
   function saveFinalResult() {
@@ -1330,7 +1367,7 @@ const KobunVocabApp = (() => {
       el("h2", { class: celebrateFirstClear ? "firstClear" : "" }, isFinal ? (passed ? `${state.set.meta.title} CLEAR` : "最終チェック完了") : isMeaningReview ? "意味だけ復習が完了しました" : (session.mode === "review" ? "誤答復習が完了しました" : "通常学習が完了しました")),
       el("p", { class: "hint" }, isFinal ? `${passScore()}/${state.set.words.length}問以上でCLEAR` : isMeaningReview ? "正解した語は次の復習日へ、誤答した語は要再確認へ戻りました。" : (reviewIds().length ? `復習対象があと${reviewIds().length}語あります。` : "全語の文中問題に正解しました。")),
     ));
-    const actions = el("div", { class: "actions" });
+    const actions = el("div", { class: "actions doneActions" });
     if (!isMeaningReview && reviewIds().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startReview }, `間違えた${reviewIds().length}語を復習する →`));
     else if (isMeaningReview && dueMeaningEntries().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startMeaningReview }, `要再確認の${Math.min(dueMeaningEntries().length, MEANING_SESSION_SIZE)}語をもう一度解く →`));
     else if (!isFinal && allSolved() && !finalCleared) {

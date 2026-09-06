@@ -308,6 +308,7 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .quiz--answered { margin-bottom: var(--quiz-next-action-height); }
 .quizNextAction { position: fixed; left: 50%; bottom: 0; z-index: 20; display: flex; justify-content: flex-end; width: min(var(--container-max), calc(100% - var(--page-gutter))); padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--card); transform: translateX(-50%); }
 .reviewList { display: grid; gap: 16px; }
+.reviewProgress { margin: 16px 0; color: var(--muted); font-family: var(--mono); font-size: 13px; }
 .reviewCard { margin: 0; border-left: 4px solid var(--clay); }
 .reviewCard > .ghost { margin: 0 18px 16px; }
 .doneBanner { padding: 20px; border-radius: var(--radius-container); background: var(--ink); color: var(--canvas); text-align: center; }
@@ -328,17 +329,21 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 @media (max-width: 640px) {
   :root { --page-gutter: 20px; --card-padding: 18px; --card-gap: var(--space-6); --numeric-primary: 24px; }
   .wrap { padding-top: 24px; }
-  .card, .flashCard, .quiz { padding: var(--card-padding); }
+  .card, .quiz { padding: var(--card-padding); }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .intervalGrid { grid-template-columns: repeat(3, 1fr); }
   .intervalCell:nth-child(4) { border-left: 0; border-top: 1px solid var(--line); }
   .intervalCell:nth-child(n+5) { border-top: 1px solid var(--line); }
   .sessionHead { display: grid; }
+  .sessionHead > div { min-width: 0; }
+  .sessionHead h2 { max-width: calc(100% - 8px); }
   .sessionHead > .ghost { justify-self: start; }
   .stepBar { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; padding-bottom: 0; }
   .wordRow { grid-template-columns: 30px 1fr; }
   .wordStatus { grid-column: 2; }
   .actions > button { flex: 1 1 160px; }
+  .doneActions > .cta { flex: 1 1 100%; min-width: 0; padding-inline: 8px; white-space: nowrap; }
+  .doneActions > .ghost { flex: 0 0 auto; width: auto; }
   .example, .cloze, .meaningExample { font-size: 18px; }
   .quiz--answered { margin-bottom: 0; }
   .quizNextAction { position: static; left: auto; bottom: auto; transform: none; z-index: auto; width: auto; margin: 16px 0 0; padding: 0; border-top: 0; background: none; }
