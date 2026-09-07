@@ -43,8 +43,8 @@ checkSet({
 
     const word30 = wordsById.get("kv03-030");
     assert.equal(word30.source, "宇治拾遺物語（巻十・第六話）");
-    assert.equal(word30.example, "日を數へて、明暮は唯だ音をのみ泣く。");
-    assert.equal(word30.cloze, "日を數へて、明暮は唯だ（　）のみ泣く。");
+    assert.equal(word30.example, "日を数へて、明暮は唯だ音をのみ泣く。");
+    assert.equal(word30.cloze, "日を数へて、明暮は唯だ（　）のみ泣く。");
 
     const word31 = wordsById.get("kv03-031");
     assert.equal(word31.source, "古今和歌集（詞書・巻六）");

@@ -21,8 +21,8 @@ checkSet({
   expect(wordsById) {
     assert.deepEqual(wordsById.get("kv08-085").meanings, ["だんだん。しだいに。"]);
     assert.equal(wordsById.get("kv08-085").source, "徒然草（第十九段）");
-    assert.equal(wordsById.get("kv08-085").example, "鳥の聲などもことの外に春めきて、のどやかなる日かげに、垣根の草萌え出づるころより、やや春深くかすみわたりて、花もやうやう氣色だつほどこそあれ、をりしも雨風うちつどきて、心あわたゞしく散りすぎぬ。");
-    assert.equal(wordsById.get("kv08-085").cloze, "鳥の聲などもことの外に春めきて、のどやかなる日かげに、垣根の草萌え出づるころより、（　）春深くかすみわたりて、花もやうやう氣色だつほどこそあれ、をりしも雨風うちつどきて、心あわたゞしく散りすぎぬ。");
+    assert.equal(wordsById.get("kv08-085").example, "鳥の声などもことの外に春めきて、のどやかなる日かげに、垣根の草萌え出づるころより、やや春深くかすみわたりて、花もやうやう気色だつほどこそあれ、をりしも雨風うちつどきて、心あわただしく散りすぎぬ。");
+    assert.equal(wordsById.get("kv08-085").cloze, "鳥の声などもことの外に春めきて、のどやかなる日かげに、垣根の草萌え出づるころより、（　）春深くかすみわたりて、花もやうやう気色だつほどこそあれ、をりしも雨風うちつどきて、心あわただしく散りすぎぬ。");
     assert.equal(wordsById.get("kv08-086").source, "方丈記（冒頭）");
     assert.equal(wordsById.get("kv08-087").source, "伊勢物語（第四十二段）");
     assert.equal(wordsById.get("kv08-087").example, "昔、男、色好みと知る知る、女をあひ言へりけり。されど、憎くはたあらざりけり。");

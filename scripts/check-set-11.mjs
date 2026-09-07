@@ -50,12 +50,12 @@ checkSet({
     assert.equal(wordsById.get("kv11-131").example, "御前に、男ども二百人ばかり居て、物言ひなどす。");
     assert.equal(wordsById.get("kv11-131").source, "宇津保物語（吹上・上）");
     assert.equal(wordsById.get("kv11-131").cloze, "（　）に、男ども二百人ばかり居て、物言ひなどす。");
-    assert.equal(wordsById.get("kv11-132").example, "三條におはして、北の方に、ありつるやう申し給ひて、この御文の目錄を見給へば、");
+    assert.equal(wordsById.get("kv11-132").example, "三条におはして、北の方に、ありつるやう申し給ひて、この御文の目録を見給へば、");
     assert.equal(wordsById.get("kv11-132").source, "宇津保物語（蔵開・上）");
-    assert.equal(wordsById.get("kv11-132").cloze, "三條におはして、（　）に、ありつるやう申し給ひて、この御文の目錄を見給へば、");
-    assert.equal(wordsById.get("kv11-130").example, "其夜中にぞ、二條殿に歸らせ給ふ。");
+    assert.equal(wordsById.get("kv11-132").cloze, "三条におはして、（　）に、ありつるやう申し給ひて、この御文の目録を見給へば、");
+    assert.equal(wordsById.get("kv11-130").example, "其夜中にぞ、二条殿に帰らせ給ふ。");
     assert.equal(wordsById.get("kv11-130").source, "栄花物語（巻二・見はてぬ夢）");
-    assert.equal(wordsById.get("kv11-130").cloze, "其夜中にぞ、二條（　）に歸らせ給ふ。");
+    assert.equal(wordsById.get("kv11-130").cloze, "其夜中にぞ、二条（　）に帰らせ給ふ。");
   },
   unsafePairs: [
     ["kv11-122", "kv11-123"],
