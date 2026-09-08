@@ -29,6 +29,7 @@ const KobunVocabApp = (() => {
   let studyPlan = null;
   let pendingCloudStudyPlan = null;
   let homeIntroduced = false;
+  let cloudPagehideBound = false;
   let lastQuizEntryKey = null;
   let lastStepKey = null;
   let shareStatusIntroduced = false;
@@ -136,11 +137,25 @@ const KobunVocabApp = (() => {
 
   const exampleClass = (word, base) => `${base}${isWaka(word) ? ` ${base}--waka` : ""}`;
 
+  function normalizeProgress(candidate, set) {
+    const source = candidate && typeof candidate === "object" && !Array.isArray(candidate) ? candidate : {};
+    const isRecord = (value) => value && typeof value === "object" && !Array.isArray(value) ? value : {};
+    return {
+      ...source,
+      units: isRecord(source.units),
+      finalCheck: isRecord(source.finalCheck),
+      items: isRecord(source.items),
+      history: Array.isArray(source.history) ? source.history : [],
+      dataVersion: source.dataVersion,
+      ...(source.dataVersion == null ? { dataVersion: set.meta.dataVersion || 1 } : {}),
+    };
+  }
+
   function loadProgressFor(setId, set) {
     try {
       const saved = JSON.parse(localStorage.getItem(progressKey(setId)));
       if (saved && typeof saved === "object") {
-        const progress = { units: {}, finalCheck: {}, ...saved };
+        const progress = normalizeProgress(saved, set);
         const dataVersion = set.meta.dataVersion || 1;
         if (progress.dataVersion !== dataVersion) {
           progress.dataVersion = dataVersion;
@@ -151,7 +166,7 @@ const KobunVocabApp = (() => {
         return progress;
       }
     } catch (_) { /* 壊れた記録は上書きせず、今回だけ空状態で表示する。 */ }
-    return { units: {}, finalCheck: {}, dataVersion: set.meta.dataVersion || 1 };
+    return normalizeProgress(null, set);
   }
 
   function applyExampleSourcePriority(set) {
@@ -548,10 +563,9 @@ const KobunVocabApp = (() => {
     const resume = state.progress.resume;
     const nextUnclearedId = final.cleared && !resume && !reviews.length ? nextUnclearedSetId(state.setId) : null;
     const isFirstReveal = !homeIntroduced;
-    const isFirstVisit = learned === 0;
     homeIntroduced = true;
 
-    if (isFirstVisit) {
+    if (isFirstReveal) {
       home.appendChild(el("section", { class: "card hero" },
         el("p", { class: "label" }, "学習の流れ"),
         el("h2", {}, "古文単語を「覚えてから解く」"),
@@ -952,7 +966,7 @@ const KobunVocabApp = (() => {
     );
   }
 
-  function startLearn(batchIndexOverride = null) {
+  function createLearnSession(batchIndexOverride = null) {
     const ids = state.set.words.map((word) => word.id);
     const batchCount = Math.ceil(ids.length / BATCH_SIZE);
     let batchIndex;
@@ -963,13 +977,17 @@ const KobunVocabApp = (() => {
       batchIndex = Math.min(Math.max(batchIndexOverride, 0), Math.max(batchCount - 1, 0));
     }
     const batchIds = ids.slice(batchIndex * BATCH_SIZE, (batchIndex + 1) * BATCH_SIZE);
-    session = {
+    return {
       mode: "learn", stage: "flash", order: ids, index: 0,
       batchIndex, batchCount,
       meaningOrder: shuffle(batchIds), meaningIndex: 0, meaningCorrect: 0,
-      contextOrder: shuffle(ids), contextIndex: 0, contextCorrect: 0,
+      contextOrder: shuffle(ids.slice(batchIndex * BATCH_SIZE)), contextIndex: 0, contextCorrect: 0,
       wrongMeaningIds: [], reviewedIds: [], answered: false, choices: null,
     };
+  }
+
+  function startLearn(batchIndexOverride = null) {
+    session = createLearnSession(batchIndexOverride);
     lastStepKey = stepKey();
     renderSession();
   }
@@ -1443,6 +1461,10 @@ const KobunVocabApp = (() => {
         applyLoaded: applyCloudProgress,
         onStatus: setShareStatus,
       });
+      if (!cloudPagehideBound) {
+        window.addEventListener("pagehide", () => cloud?.flush({ keepalive: true }));
+        cloudPagehideBound = true;
+      }
       await cloud.init();
       const savedSetId = localStorage.getItem(SET_KEY);
       await loadSet(state.manifest.sets[savedSetId] ? savedSetId : state.manifest.defaultSetId);

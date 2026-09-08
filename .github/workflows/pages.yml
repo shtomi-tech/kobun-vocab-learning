@@ -33,6 +33,7 @@ jobs:
       - name: Check data and SRS
         run: |
           node --check static/mode-vocab.js
+          node scripts/check-vocab-runtime.cjs
           node --check static/example-source.js
           node --check static/meaning-guard.js
           node scripts/check-data.mjs

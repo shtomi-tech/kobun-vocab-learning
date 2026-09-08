@@ -31,7 +31,7 @@ const KobunCloud = (() => {
     let queue = Promise.resolve();
     const pending = new Map();
 
-    async function rpc(name, body) {
+    async function rpc(name, body, options = {}) {
       const response = await fetch(`${config.supabaseUrl.replace(/\/+$/, "")}/rest/v1/rpc/${name}`, {
         method: "POST",
         headers: {
@@ -40,6 +40,7 @@ const KobunCloud = (() => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
+        ...options,
       });
       if (!response.ok) throw new Error(`${name}: HTTP ${response.status}`);
       return response.status === 204 ? null : response.json();
@@ -79,6 +80,33 @@ const KobunCloud = (() => {
       return session;
     }
 
+    function flush({ keepalive = false } = {}) {
+      clearTimeout(timer);
+      timer = null;
+      const patches = [...pending.values()];
+      pending.clear();
+      if (!patches.length) return queue;
+      const requestOptions = keepalive ? { keepalive: true } : {};
+      queue = queue.then(async () => {
+        for (const item of patches) {
+          await rpc("app_save_progress_dataset", {
+            p_app: appId,
+            p_student_id: session.studentId,
+            p_access_token: session.token,
+            p_dataset_id: item.datasetId,
+            p_dataset_progress: item.progress,
+            p_meta: item.meta || {},
+          }, requestOptions);
+        }
+      }).then(() => onStatus(`${session.student.name} さんの進捗を保存済み`, "ok"))
+        .catch((error) => {
+          patches.forEach((item) => pending.set(String(item.datasetId), item));
+          console.error(error);
+          onStatus("クラウド保存に失敗しました。通信状況を確認してください。", "ng");
+        });
+      return queue;
+    }
+
     function queueSave(patchOverride = null) {
       if (!session.enabled) return;
       const patch = patchOverride || getPatch();
@@ -86,30 +114,10 @@ const KobunCloud = (() => {
       pending.set(String(patch.datasetId), patch);
       onStatus(`${session.student.name} さんの進捗を保存中…`, "syncing");
       clearTimeout(timer);
-      timer = setTimeout(() => {
-        const patches = [...pending.values()];
-        pending.clear();
-        queue = queue.then(async () => {
-          for (const item of patches) {
-            await rpc("app_save_progress_dataset", {
-              p_app: appId,
-              p_student_id: session.studentId,
-              p_access_token: session.token,
-              p_dataset_id: item.datasetId,
-              p_dataset_progress: item.progress,
-              p_meta: item.meta || {},
-            });
-          }
-        }).then(() => onStatus(`${session.student.name} さんの進捗を保存済み`, "ok"))
-          .catch((error) => {
-            patches.forEach((item) => pending.set(String(item.datasetId), item));
-            console.error(error);
-            onStatus("クラウド保存に失敗しました。通信状況を確認してください。", "ng");
-          });
-      }, 600);
+      timer = setTimeout(() => { void flush(); }, 600);
     }
 
-    return { init, queueSave, isEnabled: () => session.enabled };
+    return { init, queueSave, flush, isEnabled: () => session.enabled };
   }
 
   return { create };
