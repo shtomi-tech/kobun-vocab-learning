@@ -17,6 +17,19 @@ assert.match(js, /\$\("\.askWord, \.meaningExample, \.cloze"\)/, "新形式で�
 assert.match(css, /\.meaningTarget\s*\{[\s\S]*text-decoration-line:\s*underline/, "傍線はテキスト装飾で表示する必要がある");
 assert.match(css, /\.questionSource\s*\{/, "出典表示のスタイルが必要");
 
+// 解答時間はスケジューリングへ効くため、解答直後に何が測られたかを見せる。
+assert.match(js, /function responseTimeNote\(\)/, "解答時間の表示関数が必要");
+assert.match(js, /session\.mode !== "meaningReview"/, "解答時間の表示は意味だけ復習に限定する必要がある");
+assert.match(js, /出題から \$\{\(elapsed \/ 1000\)\.toFixed\(1\)\} 秒で解答/, "解答時間を秒で表示する必要がある");
+assert.match(js, /前回までの平均 \$\{\(average \/ 1000\)\.toFixed\(1\)\} 秒/, "前回までの平均を併記する必要がある");
+assert.match(js, /session\.prevAvgMs = KobunSrs\.normalize\(progress\.items\[wordId\]\)\.avgMs;/,
+  "平均は record が更新する前の値を控える必要がある（今回の値を混ぜない）");
+assert.match(js, /session\.lastElapsedMs = null;/, "新しい問題では前の計測値を持ち越さない必要がある");
+assert.ok(
+  js.includes("responseTimeNote()"),
+  "フィードバックへ解答時間の表示を差し込む必要がある",
+);
+
 const blank = "（　）";
 const expectedUnderlineTargets = new Map([
   ["kv24-277", "本意なけれ"],
