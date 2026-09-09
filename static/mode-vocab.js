@@ -850,7 +850,7 @@ const KobunVocabApp = (() => {
     const section = el("section", { class: "card meaningMission" },
       el("p", { class: "label" }, "間隔復習"),
       el("h2", {}, "意味だけ復習"),
-      el("p", { class: "lead" }, `全セットの文中問題まで回答した語を、1回最大${MEANING_SESSION_SIZE}語で復習します。正解すると1・3・7・14日後へ進みます。`),
+      el("p", { class: "lead" }, `全セットの文中問題まで回答した語を、1回最大${MEANING_SESSION_SIZE}語で復習します。次に出す日は語ごとに計算され、正解を重ねるほど間隔が伸びます。`),
       el("div", { class: "meaningMetrics" },
         stat(learned.length, pool.length, "対象語"),
         stat(due.length, learned.length || pool.length, "今すぐ復習"),
@@ -1176,6 +1176,8 @@ const KobunVocabApp = (() => {
     const entryKey = `${session.mode}:${kind}:${order[index]}`;
     const isNewEntry = entryKey !== lastQuizEntryKey;
     lastQuizEntryKey = entryKey;
+    // 解答時間の起点は「問題が出た瞬間」。同じ問題の再描画では測り直さない。
+    if (!session.answered && isNewEntry) session.askedAt = Date.now();
 
     const box = el("section", { class: `quiz${session.answered ? " quiz--answered" : ""}${!session.answered && isNewEntry ? " is-entering" : ""}` },
       el("p", { class: "label" }, isMeaningExample ? "傍線部の意味として最も適当なものを選べ" : "空欄に入る語の基本形は？"),
@@ -1236,7 +1238,13 @@ const KobunVocabApp = (() => {
         const progress = entry?.progress || state.progress;
         const wordId = entry?.word.id || id;
         progress.items = progress.items || {};
-        progress.items[wordId] = KobunSrs.record(progress.items[wordId], isCorrect);
+        // 中断・再開で伸びた計測は measuredMs が捨てる。中央値はその回の正解ぶんだけで作る。
+        const elapsedMs = KobunSrs.measuredMs(Date.now() - (session.askedAt || 0));
+        progress.items[wordId] = KobunSrs.record(progress.items[wordId], isCorrect, new Date(), {
+          elapsedMs,
+          medianMs: KobunSrs.medianMs(session.rtLog || []),
+        });
+        if (isCorrect && elapsedMs !== null) (session.rtLog || (session.rtLog = [])).push(elapsedMs);
         appendHistory({ kind: "meaning", wordId, result: isCorrect ? "correct" : "wrong" }, progress);
         saveProgressFor(entry?.setId || state.setId, progress);
       } else if (session.mode === "final") {
