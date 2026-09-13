@@ -318,7 +318,6 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .doneBanner .label, .doneBanner .hint { color: rgba(250, 249, 246, .72); }
 .doneBanner .score { font-family: var(--serif); font-size: 40px; line-height: 1.1; }
 .doneBanner .score.is-settling { animation: kAnswerSuccess var(--motion-completion) var(--ease-spring-soft); }
-.doneBanner h2.firstClear::before { content: "✓ "; display: inline-block; animation: kStatusCheck var(--motion-completion) var(--ease-spring-soft); }
 .error { padding: 20px; border-left: 4px solid var(--ng); border-radius: var(--radius-control); background: var(--card); }
 .error:focus { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 .error p:last-of-type { margin-bottom: 16px; }

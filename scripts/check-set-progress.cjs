@@ -50,7 +50,7 @@ function words(n) {
   assert.equal(summary.detail, "要復習 1語");
 }
 
-// 5. 全語learned: trueかつ未CLEARなら最終チェック待ち
+// 5. 全語learned: trueかつ要復習0語ならCLEAR（最終チェックは廃止）
 {
   const set = { words: words(3) };
   const progress = {
@@ -58,20 +58,8 @@ function words(n) {
     finalCheck: {},
   };
   const summary = KobunSetProgress.summarize(set, progress);
-  assert.equal(summary.key, "final-pending");
-  assert.equal(summary.detail, "最終チェック未CLEAR");
-}
-
-// 5b. 最終チェック受験済み(未CLEAR)ならBEST N / Mを表示する
-{
-  const set = { words: words(3) };
-  const progress = {
-    units: { w1: { learned: true }, w2: { learned: true }, w3: { learned: true } },
-    finalCheck: { lastTriedAt: "2026-08-01T00:00:00.000Z", bestScore: 2 },
-  };
-  const summary = KobunSetProgress.summarize(set, progress);
-  assert.equal(summary.key, "final-pending");
-  assert.equal(summary.detail, "BEST 2 / 3");
+  assert.equal(summary.key, "cleared");
+  assert.equal(summary.detail, "全3語 学習済み");
 }
 
 // 6. finalCheck.cleared: trueなら他状態より CLEAR ✓ を優先する
@@ -85,7 +73,7 @@ function words(n) {
   const summary = KobunSetProgress.summarize(set, progress);
   assert.equal(summary.key, "cleared");
   assert.equal(summary.label, "CLEAR ✓");
-  assert.equal(summary.detail, "BEST 3 / 3");
+  assert.equal(summary.detail, "全3語 学習済み");
 }
 
 // 7. bestScoreがない場合も数値0を返す
@@ -111,7 +99,7 @@ function words(n) {
   assert.equal(summary.bestScore, 0);
 }
 
-// 境界: 全語learned: trueでも1語needsReview: trueなら最終チェック待ちではなく要復習になる
+// 境界: 全語learned: trueでも1語needsReview: trueならCLEARではなく要復習になる
 {
   const set = { words: words(3) };
   const progress = {

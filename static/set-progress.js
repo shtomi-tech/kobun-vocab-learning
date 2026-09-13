@@ -5,7 +5,6 @@ const KobunSetProgress = (() => {
     untouched: "未着手",
     "in-progress": "学習中",
     review: "要復習",
-    "final-pending": "最終チェック待ち",
     cleared: "CLEAR ✓",
   };
 
@@ -27,18 +26,18 @@ const KobunSetProgress = (() => {
     }
 
     let key;
+    // 旧最終チェックでCLEAR済みの記録はそのまま有効。現在は全語学習済みかつ要復習0語でCLEAR。
     if (finalCheck.cleared === true) key = "cleared";
     else if (reviewCount > 0) key = "review";
     else if (hasResume || (learnedCount > 0 && learnedCount < total)) key = "in-progress";
-    else if (total > 0 && learnedCount === total) key = "final-pending";
+    else if (total > 0 && learnedCount === total) key = "cleared";
     else key = "untouched";
 
     let detail;
     if (key === "untouched") detail = "まだ学習していません";
     else if (key === "in-progress") detail = hasResume ? "続きあり" : `残り${total - learnedCount}語`;
     else if (key === "review") detail = `要復習 ${reviewCount}語`;
-    else if (key === "final-pending") detail = finalCheck.lastTriedAt ? `BEST ${bestScore} / ${total}` : "最終チェック未CLEAR";
-    else detail = `BEST ${bestScore} / ${total}`;
+    else detail = `全${total}語 学習済み`;
 
     return {
       key,
