@@ -28,7 +28,6 @@ const KobunVocabApp = (() => {
   let studyPlan = null;
   let pendingCloudStudyPlan = null;
   let homeIntroduced = false;
-  let cloudPagehideBound = false;
   let lastQuizEntryKey = null;
   let lastStepKey = null;
   let shareStatusIntroduced = false;
@@ -391,7 +390,7 @@ const KobunVocabApp = (() => {
     slot.appendChild(el("span", { class: "shareStatusText" }, message));
   }
 
-  function applyCloudProgress(value) {
+  function applyCloudProgress(value, { reason } = {}) {
     if (!value || typeof value !== "object") return;
     const cloudPlan = value._meta && value._meta.studyPlanV1;
     pendingCloudStudyPlan = cloudPlan && typeof cloudPlan === "object" && !Array.isArray(cloudPlan) ? cloudPlan : null;
@@ -405,6 +404,12 @@ const KobunVocabApp = (() => {
       if (state.manifest.sets[setId] && progress && typeof progress === "object") {
         localStorage.setItem(PROGRESS_PREFIX + setId, JSON.stringify(progress));
       }
+    }
+    if (!reason || reason === "init" || !state.set) return;
+    // 他端末の保存を取り込んだ（タブ復帰・保存競合）。メモリ上の進捗も読み直す。
+    state.progress = loadProgressFor(state.setId, state.set);
+    if (!session && !$("#homePanel").classList.contains("hide")) {
+      loadReviewPool().then(() => renderHome()).catch((error) => console.error(error));
     }
   }
 
@@ -1439,7 +1444,7 @@ const KobunVocabApp = (() => {
         if (!response.ok) throw new Error(`manifest: HTTP ${response.status}`);
         return response.json();
       });
-      cloud = KobunCloud.create({
+      cloud = createCloud({
         appId: APP_ID,
         getPatch: () => ({
           datasetId: state.setId,
@@ -1449,10 +1454,6 @@ const KobunVocabApp = (() => {
         applyLoaded: applyCloudProgress,
         onStatus: setShareStatus,
       });
-      if (!cloudPagehideBound) {
-        window.addEventListener("pagehide", () => cloud?.flush({ keepalive: true }));
-        cloudPagehideBound = true;
-      }
       await cloud.init();
       const savedSetId = localStorage.getItem(SET_KEY);
       await loadSet(state.manifest.sets[savedSetId] ? savedSetId : state.manifest.defaultSetId);

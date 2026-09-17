@@ -34,7 +34,7 @@ function loadCloudApi(fetch) {
     setTimeout,
     clearTimeout,
   };
-  vm.runInNewContext(`${cloudSource}\nglobalThis.__cloud = KobunCloud;`, sandbox);
+  vm.runInNewContext(`${cloudSource}\nglobalThis.__cloud = { create: createCloud };`, sandbox);
   return sandbox.__cloud;
 }
 
@@ -216,14 +216,14 @@ assert.equal(secondHeroCount, 0, "学習語数0でも再描画時にヒーロー
 console.log("vocabulary runtime contract: T4 home hero once OK");
 
 // --- T2: 終了時 flush と既存RPC契約 ---
-assert.match(cloudSource, /async function rpc\(name, body, options = \{\}\)/, "RPCの追加オプション受け入れが必要です");
+// 共通 cloud.js（正本: portal/shared/cloud.js）が pagehide / 非表示時の keepalive 送信を受け持つ。
 assert.match(cloudSource, /function flush\(\{ keepalive = false \} = \{\}\)/, "flush APIが必要です");
-assert.match(cloudSource, /p_dataset_progress: item\.progress/, "進捗のRPC引数を維持する必要があります");
-assert.match(cloudSource, /p_meta: item\.meta \|\| \{\}/, "メタデータのRPC引数を維持する必要があります");
-assert.match(modeSource, /window\.addEventListener\("pagehide", \(\) => cloud\?\.flush\(\{ keepalive: true \}\)\)/, "pagehideからkeepalive flushを呼ぶ必要があります");
+assert.match(cloudSource, /addEventListener\("pagehide", \(\) => flush\(\{ keepalive: true \}\)\)/, "pagehideからkeepalive flushを呼ぶ必要があります");
+assert.match(modeSource, /cloud = createCloud\(\{/, "共通 createCloud を使う必要があります");
 
 const calls = [];
 let failNextSave = false;
+let saveRevision = 0;
 const response = (value, status = 200) => ({
   ok: status >= 200 && status < 300,
   status,
@@ -233,13 +233,14 @@ const fetchStub = async (url, init = {}) => {
   calls.push({ url, init });
   if (url === "static/config.json") return response({ supabaseUrl: "https://project.supabase.co", supabaseAnonKey: "anon-key" });
   if (url.endsWith("/app_auth_student")) return response([{ id: "student-1", display_name: "検査用生徒" }]);
-  if (url.endsWith("/app_load_progress")) return response([{ progress: {} }]);
-  if (url.endsWith("/app_save_progress_dataset")) {
+  if (url.endsWith("/app_load_progress_v2")) return response({ progress: {}, revision: 0 });
+  if (url.endsWith("/app_save_progress_dataset_v2")) {
     if (failNextSave) {
       failNextSave = false;
       return response({ error: "temporary" }, 503);
     }
-    return response(null, 204);
+    saveRevision += 1;
+    return response({ ok: true, revision: saveRevision });
   }
   throw new Error(`unexpected fetch: ${url}`);
 };
@@ -258,7 +259,7 @@ const fetchStub = async (url, init = {}) => {
 
   api.queueSave({ datasetId: "set-01", progress: { units: { "kv01-001": { learned: true } } }, meta: { lastDatasetId: "set-01" } });
   await api.flush({ keepalive: true });
-  const saveCalls = () => calls.filter(({ url }) => url.endsWith("/app_save_progress_dataset"));
+  const saveCalls = () => calls.filter(({ url }) => url.endsWith("/app_save_progress_dataset_v2"));
   assert.equal(saveCalls().length, 1, "flush直後に保存RPCを1回送信する必要があります");
   assert.equal(saveCalls()[0].init.keepalive, true, "終了時保存にはkeepaliveを指定する必要があります");
   const body = JSON.parse(saveCalls()[0].init.body);
