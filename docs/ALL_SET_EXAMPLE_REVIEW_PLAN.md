@@ -160,7 +160,7 @@ node scripts/check-vocab-goal-ui.cjs
 ## 追補: 全37セットの例文再監査（2026-09-05・第2回）
 
 444語の `example` / `translation` / `cloze` / `source` を通し読みし、**底本を再校合せずに判定できる誤り**に限って直した。
-反映は再実行可能な `scripts/fix-example-quality.mjs` で行う（既存の整形を崩さないよう値の文字列だけを置換する）。
+反映は再実行可能な `scripts/archive/fix-example-quality.mjs` で行う（既存の整形を崩さないよう値の文字列だけを置換する）。
 語ID、語順、`meanings`、`notes`、`dataVersion`、進捗キーは変更していない。
 
 ### 本文・訳・空欄（10語）
@@ -212,7 +212,7 @@ node scripts/check-vocab-goal-ui.cjs
 例文の重複、現代語彙の混入、空欄の答えの露出、1文字空欄の一覧）にかけ、そのうえで第38〜50セットの156語を通し読みした。
 
 直したのは、**NDLのインターネット公開資料で本文を確かめられた誤りだけ**（8語）。
-反映は再実行可能な `scripts/fix-example-quality-3.mjs` で行い、値の文字列だけを置換した。
+反映は再実行可能な `scripts/archive/fix-example-quality-3.mjs` で行い、値の文字列だけを置換した。
 語ID、語順、`meanings`、`notes`、`dataVersion`、進捗キーは変更していない。
 
 ### 本文・出典（8語）
@@ -252,7 +252,7 @@ node scripts/check-vocab-goal-ui.cjs
 `source: "学習用作例"` の**59語**を対象に、NDLデジタルコレクションの全文検索で
 「その語義・その活用形で使われている本文」を探せるかを1語ずつ当たった。
 本文と作品を特定できた**13語**を古典本文へ差し替え、残る46語は理由を付けて据え置いた。
-反映は再実行可能な `scripts/replace-generated-examples.mjs` で行う（置換前の値を全文一致で照合してから、
+反映は再実行可能な `scripts/archive/replace-generated-examples.mjs` で行う（置換前の値を全文一致で照合してから、
 `example` / `translation` / `cloze` / `source` の4フィールドだけを置換する）。
 語ID、語順、`headword`、`kanji`、`meanings`、`notes`、`dataVersion`、進捗キーは変更していない。
 
@@ -524,7 +524,7 @@ canvas24（p.34/35）の版面で本文を確認した。大伴大納言の段�
 
 ### 反映（2026-09-07・同日）
 
-`node scripts/fix-example-quality-4.mjs` で、値の文字列だけを raw テキスト上で置換した。
+`node scripts/archive/fix-example-quality-4.mjs` で、値の文字列だけを raw テキスト上で置換した。
 JSON を作り直していないので既存の整形（1要素配列のインライン表記）は崩れていない。
 スクリプトは冪等で、再実行すると「変更なし（適用済み）」になる。
 
@@ -573,7 +573,7 @@ JSON を作り直していないので既存の整形（1要素配列のイン�
 ## 追補: 保留の解消 — G1違反11語・kv12-134の底本照合・90字超（2026-09-07・第2回）
 
 ルーブリック §11 の保留のうち、優先度の高い3件を解消した。反映は
-`node scripts/fix-example-quality-5.mjs`（再実行可能・冪等、raw テキスト置換で整形を崩さない）。
+`node scripts/archive/fix-example-quality-5.mjs`（再実行可能・冪等、raw テキスト置換で整形を崩さない）。
 根拠と語ごとの記録は `SOURCE_EDITIONS.md` の「2026-09-07 保留の解消（第2回）」節にある。
 
 ### 1. 台帳に記録のない実出典11語（唯一のゲート違反 G1）
@@ -660,7 +660,7 @@ L204 で「本文（明順のぬし）が『枕草子』の可能性がある」
 版面の柱を canvas72（p.130／秋）・canvas76（p.138／「この春初瀬に詣でて」＝年明け後の春）・
 canvas84（p.154）の3か所で確認し、いずれも「手習」だった。
 採用本文は「雪深く…年もかへりぬ」と冬から年明けを述べるので、**秋と春の間**＝手習の範囲に収まる。
-`source` を「源氏物語」→「**源氏物語（手習）**」へ具体化した。反映は `node scripts/fix-example-quality-7.mjs`。
+`source` を「源氏物語」→「**源氏物語（手習）**」へ具体化した。反映は `node scripts/archive/fix-example-quality-7.mjs`。
 
 ### `kv04-042 さらぬわかれ` の和歌化 — 典拠は確定、**出題側の制約で見送り**
 
@@ -703,14 +703,14 @@ canvas84（p.154）の3か所で確認し、いずれも「手習」だった。
   `fix(data): 「〇〇といふも世の常なり」の傍線範囲を慣用句へ修正` に一緒に取り込まれた。
   同コミットで `kv05-058` の空欄が「めでたし」から慣用句全体へ移っている。データの欠落はない。
 - 切り出した別セッション（`kv05-049`）が**同じ作業ツリー**で動いており、
-  `scripts/fix-example-quality-6.mjs` を先に作成した。こちらの `kv05-056` 用スクリプトは
+  `scripts/archive/fix-example-quality-6.mjs` を先に作成した。こちらの `kv05-056` 用スクリプトは
   `fix-example-quality-7.mjs` へ名前を変えた。`kv05-049` は既に太平記の本文へ差し替わっている。
 
 ## 追補: `kv05-049 げきりん` の例文差し替え（2026-09-07）
 
 L179・L206 で保留していた「例文が『韓非子』説難の故事本文で、日本古典における
 『天皇のお怒り』の用例ではない」件（ルーブリック G3）を、**実例への差し替えで解消した。**
-反映は再実行可能な `scripts/fix-example-quality-6.mjs`（raw テキスト上の全文一致置換）。
+反映は再実行可能な `scripts/archive/fix-example-quality-6.mjs`（raw テキスト上の全文一致置換）。
 `id`・語順・`headword`・`kanji`・`meanings`・`notes`・`meta.dataVersion`・進捗キー・空欄の答えは変えていない。
 
 ### 差し替えた内容（1語・4フィールド）
@@ -803,6 +803,6 @@ NDL全文検索（`逆鱗` 500件）を活字翻刻の古典本文へ絞って�
 
 - 適用前後を全600語で突き合わせ、変わったのは `kv30-349` `kv30-351` `kv30-352` `kv30-358` `kv30-359` の
   5語だけであることを確認した。
-- `scripts/fix-example-quality-6.mjs` を2回続けて実行し、2回目が「変更なし（適用済み）」になることを確認した。
+- `scripts/archive/fix-example-quality-6.mjs` を2回続けて実行し、2回目が「変更なし（適用済み）」になることを確認した。
 - ルーブリック §10 の検証コマンド一覧と `check-set-choices.mjs kobun-set-30 --pairs`、`git diff --check` を通過。
 - 第30セットの他の見出し語を各 `cloze` へ入れ、変更した3語で別解が成立しないことを人手で確認した。

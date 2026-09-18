@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 
-const root = new URL("../", import.meta.url);
+const root = new URL("../../", import.meta.url);
 const readJson = (relativePath) => JSON.parse(fs.readFileSync(new URL(relativePath, root), "utf8"));
 const manifest = readJson("data/manifest.json");
 let markedCount = 0;
@@ -69,8 +69,8 @@ for (const [setId, entry] of Object.entries(manifest.sets)) {
     if (word.exampleForm === "prose") proseCount += 1;
   }
   const serialized = formatArrays(`${JSON.stringify(data, null, 2)}\n`, headArrayStyles(dataUrl));
-  const current = fs.readFileSync(new URL(`../${dataUrl}`, import.meta.url), "utf8");
-  if (serialized !== current) fs.writeFileSync(new URL(`../${dataUrl}`, import.meta.url), serialized, "utf8");
+  const current = fs.readFileSync(new URL(`../../${dataUrl}`, import.meta.url), "utf8");
+  if (serialized !== current) fs.writeFileSync(new URL(`../../${dataUrl}`, import.meta.url), serialized, "utf8");
   if (markedInFile) console.log(`OK: ${setId} / prose ${markedInFile}語`);
 }
 

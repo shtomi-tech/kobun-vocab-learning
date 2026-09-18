@@ -1,6 +1,6 @@
 # REFACTOR_PLAN_2026-09-18 — リファクタリング計画
 
-> 状態: 計画のみ（未着手）。作成 2026-09-18。
+> 状態: R1〜R4 実施済み（2026-09-18）。R4 は (a) `scripts/archive/` へ移動を採用。
 > 原則: 挙動・データ・保存キー・公開URLは変えない。各段階の後に全検査を通し、段階ごとにコミットする。
 
 ## 0. 現況（実測）
@@ -46,7 +46,7 @@
 | 新ファイル | 移す関数（現行の行） |
 |---|---|
 | `static/study-plan.js` | `isValidIsoDate`〜`vocabularyGoalForecast`、`migrateFirstAnsweredAt`（195〜283行付近） |
-| `static/example-view.js` | `isWaka` `wakaRefText` `contextMoraCount` `exampleTargetPart` `wakaBlankPart` `exampleBody` `exampleClass`（66〜135行） |
+| `static/example-parts.js`（実装時に改名。DOMを組む `exampleBody` `exampleClass` は mode-vocab.js に残した） | `isWaka` `wakaRefText` `contextMoraCount` `exampleTargetPart` `wakaBlankPart` `exampleBody` `exampleClass`（66〜135行） |
 | `static/choice-builder.js` | `choiceSet` `meaningChoicesAreSafe`（433〜494行）。`state` への依存は引数で渡す |
 
 - `index.html` に読み込み順を追加し、`mode-vocab.js` の `?v=` を上げる（キャッシュ対策）。
