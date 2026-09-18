@@ -11,6 +11,7 @@ const syntaxChecks = [
   "static/example-source.js",
   "static/meaning-guard.js",
   "static/study-plan.js",
+  "static/study-time.js",
   "static/example-parts.js",
   "static/choice-builder.js",
 ];

@@ -470,3 +470,11 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
   .vocabForecastRow:nth-child(odd) { border-left: 0; }
   .vocabForecastRow:nth-child(n + 3) { border-top: 1px solid var(--line); }
 }
+
+/* 学習時間カード */
+.studyTimeMetrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--grid-gap); margin: var(--space-3) 0 var(--space-2); }
+.studyTimeMetric { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; padding: var(--space-3); border-radius: var(--radius-container); background: var(--soft); }
+.studyTimeMetric strong { font-family: var(--serif); font-size: var(--numeric-secondary); font-variant-numeric: tabular-nums; }
+@media (max-width: 480px) {
+  .studyTimeMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

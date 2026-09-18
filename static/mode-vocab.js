@@ -16,6 +16,7 @@ const KobunVocabApp = (() => {
   // 学習目標（1日の単語目標）と到達予想。計算は static/study-plan.js、ここは保存と表示だけを持つ。
   // 常時表示は「今日 n / m語」1本に絞る。
   const STUDY_PLAN_KEY = `kobun_vocab_study_plan_v1${storageScope}`;
+  const STUDY_TIME_KEY = `kobun_vocab_study_time_v1${storageScope}`;
   const {
     GOAL_TOTAL: VOCAB_GOAL_TOTAL,
     DAILY_MAX: STUDY_PLAN_DAILY_MAX,
@@ -31,6 +32,7 @@ const KobunVocabApp = (() => {
   const state = { manifest: null, setId: null, set: null, progress: null, reviewPool: [] };
   let session = null;
   let cloud = null;
+  let studyTime = null;
   let studyPlan = null;
   let pendingCloudStudyPlan = null;
   let homeIntroduced = false;
@@ -165,6 +167,7 @@ const KobunVocabApp = (() => {
     return {
       lastDatasetId: state.setId,
       ...(studyPlan ? { studyPlanV1: studyPlan } : {}),
+      ...(studyTime ? studyTime.cloudMeta() : {}),
     };
   }
 
@@ -287,6 +290,7 @@ const KobunVocabApp = (() => {
 
   function applyCloudProgress(value, { reason } = {}) {
     if (!value || typeof value !== "object") return;
+    if (studyTime) studyTime.applyCloudMeta(value._meta);
     const cloudPlan = value._meta && value._meta.studyPlanV1;
     pendingCloudStudyPlan = cloudPlan && typeof cloudPlan === "object" && !Array.isArray(cloudPlan) ? cloudPlan : null;
     if (studyPlan && pendingCloudStudyPlan) {
@@ -409,6 +413,24 @@ const KobunVocabApp = (() => {
     return `${title}${block}・${stage}`;
   }
 
+  function studyTimeCard() {
+    const totals = studyTime.totals();
+    const metric = (label, sec) => el("div", { class: "studyTimeMetric" },
+      el("span", { class: "label" }, label),
+      el("strong", {}, KobunStudyTime.formatDuration(sec)),
+    );
+    return el("section", { class: "card studyTimeCard", "aria-labelledby": "studyTimeTitle" },
+      el("h2", { id: "studyTimeTitle" }, "学習時間"),
+      el("div", { class: "studyTimeMetrics" },
+        metric("今日", totals.today),
+        metric("前日", totals.yesterday),
+        metric("1日平均", totals.average),
+        metric("累計", totals.total),
+      ),
+      el("p", { class: "hint" }, "学習画面を開いている間に自動で記録します（3分操作がなければ停止）。"),
+    );
+  }
+
   function renderHome() {
     session = null;
     $(".wrap")?.classList.remove("sessionActive");
@@ -475,6 +497,10 @@ const KobunVocabApp = (() => {
     ));
     home.appendChild(card);
     home.appendChild(vocabGoalCard());
+    if (studyTime) {
+      studyTime.flush();
+      home.appendChild(studyTimeCard());
+    }
     home.appendChild(meaningMission());
     home.appendChild(el("section", { class: "card" }, setPicker()));
     home.appendChild(learningBlockMap());
@@ -1304,6 +1330,11 @@ const KobunVocabApp = (() => {
       state.manifest = await fetch(MANIFEST_URL, { cache: "no-store" }).then((response) => {
         if (!response.ok) throw new Error(`manifest: HTTP ${response.status}`);
         return response.json();
+      });
+      studyTime = KobunStudyTime.create({
+        storageKey: STUDY_TIME_KEY,
+        isActive: () => !$("#sessionPanel").classList.contains("hide"),
+        onFlush: () => { if (cloud) cloud.queueSave(); },
       });
       cloud = createCloud({
         appId: APP_ID,
