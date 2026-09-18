@@ -5,7 +5,8 @@ const read = (relativePath) => fs.readFileSync(relativePath, "utf8").replace(/\r
 const js = read("static/mode-vocab.js");
 const css = read("static/styles.css");
 
-assert.match(js, /const VOCAB_GOAL_TOTAL = 600;/, "語彙目標は600語で定義する必要がある");
+assert.match(read("static/study-plan.js"), /const GOAL_TOTAL = 600;/, "語彙目標は600語で定義する必要がある");
+assert.match(js, /GOAL_TOTAL: VOCAB_GOAL_TOTAL/, "画面側は study-plan.js の語彙目標を使う必要がある");
 
 const start = js.indexOf("  function vocabGoalCard() {");
 assert.ok(start !== -1, "vocabGoalCard() が見つからない");

@@ -10,6 +10,9 @@ const syntaxChecks = [
   "static/mode-vocab.js",
   "static/example-source.js",
   "static/meaning-guard.js",
+  "static/study-plan.js",
+  "static/example-parts.js",
+  "static/choice-builder.js",
 ];
 
 const scripts = [

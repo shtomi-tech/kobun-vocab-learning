@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { read, loadSets } from "./lib/data.mjs";
 
-const source = read("static/mode-vocab.js");
-const choiceSet = source.match(/function choiceSet\(word, kind\) \{(.*?)\n  \}\n\n  function meaningChoicesAreSafe/s)?.[1];
-assert.ok(choiceSet, "choiceSet must remain available for the waka-choice contract");
+const source = read("static/choice-builder.js");
+const choiceSet = source.match(/function buildChoices\(word, kind, candidates, fallback, deps\) \{(.*?)\n  \}\n/s)?.[1];
+assert.ok(choiceSet, "buildChoices must remain available for the waka-choice contract");
+assert.match(read("static/mode-vocab.js"), /KobunChoiceBuilder\.buildChoices\(/, "mode-vocab.js must build choices through choice-builder.js");
 assert.doesNotMatch(choiceSet, /kind !== "meaning"/, "context choices must not bypass meaning-overlap guards");
 assert.match(choiceSet, /kind === "context" && word\.exampleForm === "waka"/, "mora prioritization must be limited to waka context questions");
-assert.match(choiceSet, /contextMoraCount/, "waka context choices must count headword mora");
+assert.match(choiceSet, /moraCount/,"waka context choices must count headword mora");
 assert.match(choiceSet, /preferredCandidates/, "waka context choices must have a preferred candidate group");
 assert.match(choiceSet, /addCandidates\(preferredCandidates\)/, "preferred candidates must be added before fallback candidates");
 assert.match(choiceSet, /addCandidates\(distinctCandidates\)/, "safe candidates must remain the fallback group");

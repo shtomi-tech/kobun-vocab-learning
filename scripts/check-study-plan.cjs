@@ -1,13 +1,13 @@
 "use strict";
 
 // 学習目標（1日の単語目標）と到達予想の純ロジック契約。
-// mode-vocab.js の内部関数を __test で露出させ、DOMなしで計算だけを検証する。
+// 計算は static/study-plan.js を直接読み込んで検証し、保存・呼び出し順は mode-vocab.js の字面で見る。
 
 const assert = require("node:assert/strict");
-const vm = require("node:vm");
 const fs = require("node:fs");
 
 const js = fs.readFileSync("static/mode-vocab.js", "utf8").replace(/\r\n/g, "\n");
+const t = require("../static/study-plan.js");
 
 // 保存キー・クラウド同梱・語彙目標の定義がソースにあること（文字列契約）。
 assert.match(js, /const STUDY_PLAN_KEY = `kobun_vocab_study_plan_v1\$\{storageScope\}`;/, "学習目標の保存キーが必要");
@@ -16,35 +16,12 @@ assert.match(js, /studyPlanV1: studyPlan/, "学習目標をクラウドパッチ
 assert.match(js, /if \(!isValidIsoDate\(u\.firstAnsweredAt\)\) u\.firstAnsweredAt = answeredAt;/, "初回答時刻は1度だけ記録する必要がある");
 assert.match(js, /migrateStudyPlanFirstAnswers\(\);\n\s*loadStudyPlan\(\);/, "起動時に履歴移行→学習目標読み込みの順で呼ぶ必要がある");
 
-const exposed = [
-  "normalizeStudyPlan",
-  "isValidIsoDate",
-  "startOfLocalDay",
-  "studyPlanSummary",
-  "vocabularyForecast",
-  "vocabularyGoalForecast",
-  "migrateFirstAnsweredAt",
-];
-const source = js.replace(
-  "  return { mount };",
-  `  return { mount, __test: { ${exposed.join(", ")} } };`,
-);
-assert.ok(source.includes("__test:"), "内部関数の露出に失敗した");
-
-const sandbox = {
-  URLSearchParams,
-  location: { search: "" },
-  console,
-  KobunMeaningGuard: { meaningText: () => "", isSafePair: () => true },
-};
-vm.runInNewContext(`${source}\nglobalThis.__app = KobunVocabApp;`, sandbox);
-const t = sandbox.__app.__test;
+assert.match(js, /\} = KobunStudyPlan;/, "学習目標の計算は study-plan.js を使う必要がある");
 
 const localDate = (y, m, d, h = 12, min = 0) => new Date(y, m - 1, d, h, min);
 const iso = (date) => date.toISOString();
 
 // --- normalizeStudyPlan: 範囲・既定値・スリム形状 ---
-// vm 実行の返り値は別レルムのため deepStrictEqual を避け、フィールドを個別に確認する。
 const def = t.normalizeStudyPlan(null);
 assert.equal(def.version, 1, "既定 version は 1");
 assert.equal(def.dailyWordGoal, 12, "既定は1日12語");

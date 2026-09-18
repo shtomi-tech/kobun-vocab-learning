@@ -19,6 +19,9 @@ function loadModeApp(exposedNames, sandboxOverrides = {}) {
     location: { search: "" },
     console,
     KobunMeaningGuard: { meaningText: () => "", isSafePair: () => true },
+    KobunStudyPlan: require("../static/study-plan.js"),
+    KobunExampleParts: require("../static/example-parts.js"),
+    KobunChoiceBuilder: require("../static/choice-builder.js"),
     ...sandboxOverrides,
   };
   vm.runInNewContext(`${source}\nglobalThis.__app = KobunVocabApp;`, sandbox);

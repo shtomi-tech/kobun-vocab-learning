@@ -13,14 +13,20 @@ const KobunVocabApp = (() => {
   const MEANING_SESSION_SIZE = 20;
   const HISTORY_LIMIT = 500;
   const APP_ID = "kobun-vocab-learning";
-  // 古文単語の学習目標。全セット横断で「文中回答済み」になった語を積み上げる。
-  const VOCAB_GOAL_TOTAL = 600;
-  // 学習目標（1日の単語目標）と到達予想。常時表示は「今日 n / m語」1本に絞る。
+  // 学習目標（1日の単語目標）と到達予想。計算は static/study-plan.js、ここは保存と表示だけを持つ。
+  // 常時表示は「今日 n / m語」1本に絞る。
   const STUDY_PLAN_KEY = `kobun_vocab_study_plan_v1${storageScope}`;
-  const STUDY_PLAN_VERSION = 1;
-  const STUDY_PLAN_DEFAULT_DAILY = 12;
-  const STUDY_PLAN_DAILY_MAX = 60;
-  const STUDY_PLAN_FORECAST_DAYS = [7, 30, 90, 180, 365];
+  const {
+    GOAL_TOTAL: VOCAB_GOAL_TOTAL,
+    DAILY_MAX: STUDY_PLAN_DAILY_MAX,
+    isValidIsoDate,
+    normalizeStudyPlan,
+    defaultStudyPlan,
+    studyPlanSummary,
+    vocabularyForecast,
+    vocabularyGoalForecast,
+    migrateFirstAnsweredAt,
+  } = KobunStudyPlan;
 
   const state = { manifest: null, setId: null, set: null, progress: null, reviewPool: [] };
   let session = null;
@@ -63,44 +69,14 @@ const KobunVocabApp = (() => {
   const progressKey = (setId = state.setId) => PROGRESS_PREFIX + setId;
   const { meaningText, isSafePair: isMeaningSafePair } = KobunMeaningGuard;
   const wordById = (id) => state.set.words.find((word) => word.id === id);
-  const exampleBlank = "（　）";
-  const isWaka = (word) => word.exampleForm === "waka" && Array.isArray(word.waka?.phrases);
-  const wakaRefText = (word) => {
-    const ref = word.waka?.ref;
-    if (!ref) return "";
-    // 歌番号は任意。底本に通し番号がない歌集では巻・部立だけを出す。
-    return Number.isInteger(ref.number) ? `${ref.book}・${ref.number}番` : ref.book;
-  };
-  const contextSmallKana = new Set(["ゃ", "ゅ", "ょ", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ"]);
-  const contextMoraCount = (word) => [...word.headword.split("〜")[0]]
-    .filter((character) => !contextSmallKana.has(character)).length;
-
-  function exampleTargetPart(word) {
-    const blankIndex = word.cloze?.indexOf(exampleBlank) ?? -1;
-    if (blankIndex < 0) return null;
-    const prefix = word.cloze.slice(0, blankIndex);
-    const suffix = word.cloze.slice(blankIndex + exampleBlank.length);
-    const start = prefix.length;
-    const end = word.example.length - suffix.length;
-    if (end <= start || word.example.slice(0, start) !== prefix || word.example.slice(end) !== suffix) return null;
-    return { start, end };
-  }
-
-  function wakaBlankPart(word) {
-    const target = exampleTargetPart(word);
-    if (!target) return null;
-    const blankStart = target.start;
-    const blankEnd = target.end;
-    let offset = 0;
-    for (const [index, phrase] of word.waka.phrases.entries()) {
-      const nextOffset = offset + phrase.length;
-      if (blankStart >= offset && blankStart < nextOffset && blankEnd > offset && blankEnd <= nextOffset) {
-        return { index, start: blankStart - offset, end: blankEnd - offset };
-      }
-      offset = nextOffset;
-    }
-    return null;
-  }
+  const {
+    BLANK: exampleBlank,
+    isWaka,
+    wakaRefText,
+    contextMoraCount,
+    exampleTargetPart,
+    wakaBlankPart,
+  } = KobunExampleParts;
 
   function exampleBody(word, { blank = false, underline = false } = {}) {
     if (!isWaka(word)) {
@@ -192,93 +168,12 @@ const KobunVocabApp = (() => {
     };
   }
 
-  function isValidIsoDate(value) {
-    return typeof value === "string"
-      && /^\d{4}-\d{2}-\d{2}T/.test(value)
-      && Number.isFinite(new Date(value).getTime());
-  }
-
-  function startOfLocalDay(date = new Date()) {
-    const value = new Date(date);
-    value.setHours(0, 0, 0, 0);
-    return value;
-  }
-
-  function normalizeStudyPlan(candidate) {
-    const source = candidate && typeof candidate === "object" && !Array.isArray(candidate) ? candidate : {};
-    const daily = Number(source.dailyWordGoal);
-    return {
-      version: STUDY_PLAN_VERSION,
-      dailyWordGoal: Number.isInteger(daily) && daily >= 1 && daily <= STUDY_PLAN_DAILY_MAX
-        ? daily
-        : STUDY_PLAN_DEFAULT_DAILY,
-    };
-  }
-
-  function defaultStudyPlan() {
-    return normalizeStudyPlan(null);
-  }
-
   // 全セットの語について、初回答時刻つきの unit 状態だけを取り出す。
   function studyPlanUnitEntries() {
     return reviewPoolEntries().map((entry) => {
       const unitState = entry.progress && entry.progress.units && entry.progress.units[entry.word.id];
       return { unit: unitState && typeof unitState === "object" ? unitState : {} };
     });
-  }
-
-  // 「今日」の実績は firstAnsweredAt（再回答で上書きされない初回答時刻）をローカル日付へ戻して数える。
-  function studyPlanSummary(now = new Date(), plan = {}, entries = []) {
-    const safe = normalizeStudyPlan(plan);
-    const todayStart = startOfLocalDay(now);
-    const tomorrowStart = new Date(todayStart);
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-    const answeredToday = entries.filter((entry) => {
-      const value = entry && entry.unit && entry.unit.firstAnsweredAt;
-      if (!isValidIsoDate(value)) return false;
-      const at = new Date(value).getTime();
-      return at >= todayStart.getTime() && at < tomorrowStart.getTime();
-    }).length;
-    return {
-      dailyWordGoal: safe.dailyWordGoal,
-      answeredToday,
-      dailyRemaining: Math.max(0, safe.dailyWordGoal - answeredToday),
-    };
-  }
-
-  function vocabularyForecast(plan = {}) {
-    const daily = normalizeStudyPlan(plan).dailyWordGoal;
-    return STUDY_PLAN_FORECAST_DAYS.map((days) => ({ days, vocabulary: daily * days }));
-  }
-
-  function vocabularyGoalForecast(now = new Date(), plan = {}, learnedVocabulary = 0) {
-    const dailyVocabulary = normalizeStudyPlan(plan).dailyWordGoal;
-    const currentVocabulary = Math.min(VOCAB_GOAL_TOTAL, Math.max(0, Number(learnedVocabulary) || 0));
-    const remainingVocabulary = Math.max(0, VOCAB_GOAL_TOTAL - currentVocabulary);
-    const daysToGoal = remainingVocabulary > 0 ? Math.ceil(remainingVocabulary / dailyVocabulary) : 0;
-    const estimatedDate = startOfLocalDay(now);
-    estimatedDate.setDate(estimatedDate.getDate() + daysToGoal);
-    return { currentVocabulary, remainingVocabulary, dailyVocabulary, daysToGoal, estimatedDate };
-  }
-
-  // 旧データ救済: units[wordId].firstAnsweredAt が無い語へ、history の最古の文中回答時刻を1度だけ補完する。
-  function migrateFirstAnsweredAt(progress) {
-    if (!progress || typeof progress !== "object" || Array.isArray(progress)) return false;
-    if (progress.migrations && progress.migrations.studyPlanFirstAnsweredAtV1 === 1) return false;
-    const firstByWord = new Map();
-    (Array.isArray(progress.history) ? progress.history : []).forEach((event) => {
-      if (!event || event.kind !== "question" || typeof event.wordId !== "string" || !isValidIsoDate(event.at)) return;
-      const current = firstByWord.get(event.wordId);
-      if (!current || new Date(event.at).getTime() < new Date(current).getTime()) firstByWord.set(event.wordId, event.at);
-    });
-    if (!progress.units || typeof progress.units !== "object" || Array.isArray(progress.units)) progress.units = {};
-    Object.entries(progress.units).forEach(([wordId, unitState]) => {
-      if (!unitState || typeof unitState !== "object" || isValidIsoDate(unitState.firstAnsweredAt)) return;
-      const firstAnsweredAt = firstByWord.get(wordId);
-      if (firstAnsweredAt) unitState.firstAnsweredAt = firstAnsweredAt;
-    });
-    progress.migrations = { ...(progress.migrations || {}), studyPlanFirstAnsweredAtV1: 1 };
-    return true;
   }
 
   function readStudyPlanLocal() {
@@ -430,66 +325,32 @@ const KobunVocabApp = (() => {
     return reviewEntryByKey(id)?.word || wordById(id);
   }
 
+  // 候補の範囲（セット内か復習プール全体か）だけをここで決め、組み立ては static/choice-builder.js に任せる。
+  const choiceDeps = { isSafePair: isMeaningSafePair, meaningText, moraCount: contextMoraCount, shuffle };
+
   function choiceSet(word, kind) {
-    const correct = kind === "meaning" ? meaningText(word) : word.headword;
-    const source = kind === "meaning" && session?.mode === "meaningReview"
+    const isMeaningReview = kind === "meaning" && session?.mode === "meaningReview";
+    const source = isMeaningReview
       ? reviewPoolEntries().map((entry) => ({ key: entry.key, word: entry.word }))
       : state.set.words.map((other) => ({ key: other.id, word: other }));
-    const currentKey = kind === "meaning" && session?.mode === "meaningReview"
-      ? session.meaningOrder[session.meaningIndex]
-      : word.id;
+    const currentKey = isMeaningReview ? session.meaningOrder[session.meaningIndex] : word.id;
     const candidates = source.filter((other) => other.key !== currentKey);
-    const distinctCandidates = candidates
-      .filter(({ word: other }) => isMeaningSafePair(word, other));
-    const selectedCandidates = [];
-    const addCandidates = (items) => {
-      for (const candidate of shuffle(items)) {
-        if (selectedCandidates.every(({ word: other }) => isMeaningSafePair(candidate.word, other))) {
-          selectedCandidates.push(candidate);
-        }
-        if (selectedCandidates.length === 3) break;
-      }
-    };
-    const isWakaContextQuestion = kind === "context" && word.exampleForm === "waka";
-    const preferredCandidates = isWakaContextQuestion
-      ? distinctCandidates.filter(({ word: other }) => Math.abs(contextMoraCount(word) - contextMoraCount(other)) <= 1)
-      : [];
-    if (isWakaContextQuestion) {
-      const preferredIds = new Set(preferredCandidates.map(({ word: other }) => other.id));
-      addCandidates(preferredCandidates);
-      addCandidates(distinctCandidates.filter(({ word: other }) => !preferredIds.has(other.id)));
-    } else {
-      addCandidates(distinctCandidates);
-    }
-    if (kind === "meaning" && selectedCandidates.length < 3 && session?.mode !== "meaningReview") {
-      const currentIds = new Set(source.map(({ word: other }) => other.id));
-      addCandidates(reviewPoolEntries()
+    // 意味四択でセット内の安全な候補が足りないときは、他セットの既習語から補う。
+    const currentIds = new Set(source.map(({ word: other }) => other.id));
+    const fallback = kind === "meaning" && !isMeaningReview
+      ? reviewPoolEntries()
         .filter(({ word: other }) => !currentIds.has(other.id))
         .map((entry) => ({ key: entry.key, word: entry.word }))
-        .filter(({ word: other }) => isMeaningSafePair(word, other)));
-    }
-    const pool = selectedCandidates
-      .map(({ word: other }) => kind === "meaning" ? meaningText(other) : other.headword)
-      .filter((value, index, values) => value !== correct && values.indexOf(value) === index);
-    return shuffle([correct, ...shuffle(pool).slice(0, 3)]);
+      : [];
+    return KobunChoiceBuilder.buildChoices(word, kind, candidates, fallback, choiceDeps);
   }
 
   function meaningChoicesAreSafe(word, choices) {
-    const correct = meaningText(word);
-    if (!Array.isArray(choices) || choices.length !== 4 || new Set(choices).size !== 4 || !choices.includes(correct)) return false;
     const source = reviewPoolEntries().map((entry) => ({ key: entry.key, word: entry.word }));
     const currentKey = session?.mode === "meaningReview"
       ? session.meaningOrder[session.meaningIndex]
       : word.id;
-    const selected = choices.map((choice) => choice === correct
-      ? word
-      : source.find(({ key, word: other }) => key !== currentKey && meaningText(other) === choice)?.word);
-    if (!selected.every(Boolean)) return false;
-    const distractors = selected.filter((item) => item !== word);
-    return distractors.every((item) => isMeaningSafePair(word, item)) &&
-      selected.every((item, index) => selected.slice(index + 1).every((other) =>
-        isMeaningSafePair(item, other)
-      ));
+    return KobunChoiceBuilder.meaningChoicesAreSafe(word, choices, source, currentKey, choiceDeps);
   }
 
   function blockActionLabel(block, hasResume) {
