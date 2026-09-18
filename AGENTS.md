@@ -62,6 +62,8 @@ no API key, $0).
 Claude Code の `add-vocab-set` スキルと Codex の `kobun-vocab-set-authoring` スキルは
 どちらも上記の手順書を実体として参照する。手順を直すときは手順書を直す。
 
-一括の差し替えは `docs/waka-adoptions.json` に入力表を書いて
-`node scripts/apply-waka.mjs` で反映する。データJSONを直接手で編集すると、
-入力表からの再実行で変更が巻き戻る。
+一括の差し替えは `docs/waka-adoptions.json` に入力表を書いて反映する。
+`node scripts/apply-waka.mjs` は引数なしでは差分の一覧だけを出し、書き込まない。
+反映は `node scripts/apply-waka.mjs --write --only <id,...>` で対象を明示する
+（`--all` は入力表全体を正とする場合だけ）。入力表に載っている語のデータを直すときは
+入力表も同じ値に直す。ずれは `check-waka-data.mjs` が検出する。

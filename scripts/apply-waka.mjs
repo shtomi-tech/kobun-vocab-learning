@@ -20,7 +20,24 @@ for (const [setId, entry] of Object.entries(manifest.sets)) {
   });
 }
 
+// 入力表は過去の差し替えも全部残しているため、無条件に全件を書き戻すと、
+// 後からデータ側で直した例文を古い版へ巻き戻してしまう（kv05-049 で実際に発生）。
+// そこで既定は差分表示だけにし、書き込みは対象を明示したときに限る。
+//   node scripts/apply-waka.mjs                          … 差分の一覧（書き込まない）
+//   node scripts/apply-waka.mjs --write --only id1,id2   … 指定した語だけ反映
+//   node scripts/apply-waka.mjs --write --all            … 全件反映（入力表を正とする場合だけ）
+const argv = process.argv.slice(2);
+const write = argv.includes("--write");
+const all = argv.includes("--all");
+const onlyIndex = argv.indexOf("--only");
+const only = onlyIndex >= 0 ? new Set((argv[onlyIndex + 1] ?? "").split(",").filter(Boolean)) : null;
+if (write && !all && !only) {
+  console.error("書き込むには --only <id,...> か --all を指定する。まず引数なしで差分を確認すること。");
+  process.exit(2);
+}
+
 const changedFiles = new Map();
+const changedIds = [];
 const seenAdoptions = new Set();
 for (const adoption of adoptions) {
   assert.ok(adoption && typeof adoption === "object", "each adoption must be an object");
@@ -33,10 +50,24 @@ for (const adoption of adoptions) {
   for (const field of Object.keys(adoption)) {
     assert.ok(field === "id" || allowedFields.has(field), `${adoption.id}: unsupported adoption field ${field}`);
   }
-  for (const field of allowedFields) {
-    if (Object.prototype.hasOwnProperty.call(adoption, field)) location.data.words[location.index][field] = adoption[field];
-  }
+  const word = location.data.words[location.index];
+  const diffFields = [...allowedFields].filter((field) =>
+    Object.prototype.hasOwnProperty.call(adoption, field) && JSON.stringify(word[field]) !== JSON.stringify(adoption[field]));
+  if (!diffFields.length) continue;
+  changedIds.push(`${adoption.id} (${diffFields.join(", ")})`);
+  if (only && !only.has(adoption.id)) continue;
+  for (const field of diffFields) word[field] = adoption[field];
   changedFiles.set(location.dataUrl, location);
+}
+if (only) {
+  for (const id of only) assert.ok(seenAdoptions.has(id), `--only: not in adoptions: ${id}`);
+}
+
+if (!write) {
+  console.log(changedIds.length ? `データと異なる入力表の語: ${changedIds.length}件` : "OK: 入力表とデータは一致している");
+  for (const line of changedIds) console.log(`  ${line}`);
+  if (changedIds.length) console.log("意図した語だけを --write --only <id,...> で反映する。");
+  process.exit(0);
 }
 
 function collapseSelectedArrays(text, notesOneLine) {
@@ -82,4 +113,5 @@ for (const [dataUrl, location] of changedFiles) {
   fs.writeFileSync(new URL(`../${dataUrl}`, import.meta.url), serialized, "utf8");
 }
 
-console.log(`OK: applied ${adoptions.length} waka/prose adoptions across ${changedFiles.size} data files`);
+const appliedCount = only ? changedIds.filter((line) => only.has(line.split(" ")[0])).length : changedIds.length;
+console.log(`OK: applied ${appliedCount} waka/prose adoptions across ${changedFiles.size} data files`);

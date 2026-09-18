@@ -32,4 +32,15 @@ for (const word of words) {
   }
 }
 
+// 入力表とデータのずれを検出する。データだけを直すと、次の apply-waka.mjs で巻き戻る原因になる。
+const wordById = new Map(words.map((word) => [word.id, word]));
+for (const adoption of JSON.parse(read("docs/waka-adoptions.json")).adoptions) {
+  const word = wordById.get(adoption.id);
+  assert.ok(word, `${adoption.id}: adoption refers to unknown id`);
+  for (const [field, value] of Object.entries(adoption)) {
+    if (field === "id") continue;
+    assert.deepEqual(word[field], value, `${adoption.id}: docs/waka-adoptions.json の ${field} がデータと異なる（入力表かデータの一方だけを直した）`);
+  }
+}
+
 console.log(`OK: waka data / ${wakaWords.length}語`);

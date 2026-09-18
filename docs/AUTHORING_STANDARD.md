@@ -10,7 +10,7 @@
 2. 本文を底本から起こす（§2-2）。**日文研の和歌データベースは所在確認にだけ使い、本文の入力元にはしない。**
 3. 語のJSONを組み立てる（§3〜§5）。
 4. 底本を [SOURCE_EDITIONS.md](SOURCE_EDITIONS.md) の「語ごとの対応」へ追記する。
-5. 差し替え・一括追加は `docs/waka-adoptions.json` に入力表を書き、`node scripts/apply-waka.mjs` で反映する。**JSONを直接手で編集しない**（再実行で巻き戻るため）。
+5. 差し替え・一括追加は `docs/waka-adoptions.json` に入力表を書き、`node scripts/apply-waka.mjs` で差分を確認し、`--write --only <id,...>` で反映する。**入力表に載っている語のJSONだけを手で編集しない**（入力表とずれ、`check-waka-data.mjs` が落ちる）。
 6. §7の検証をすべて通す。
 
 ### 0-1. 例文候補の採用順
