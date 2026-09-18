@@ -131,17 +131,10 @@
 
 ## 7. 検証
 
-追加・変更後に次をすべて実行する。
+追加・変更後に次を実行する。CI（`pages.yml`）と同じ検査一覧を順に回し、最初の失敗で止まる。
 
 ```bash
-node --check static/mode-vocab.js
-node --check static/meaning-guard.js
-node scripts/check-data.mjs
-node scripts/check-waka-data.mjs
-node scripts/check-waka-choices.mjs
-node scripts/check-waka-display.mjs
-node scripts/check-context-choices.mjs
-node scripts/check-srs.cjs
+node scripts/check-all.mjs
 ```
 
 ### 自動で守られること

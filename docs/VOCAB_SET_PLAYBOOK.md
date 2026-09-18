@@ -103,16 +103,10 @@ JSONをプログラムで書き直すときは既存の体裁を保つ。`meanin
 
 ### 4. 検証
 
-`AUTHORING_STANDARD` §7 の7本に加えて、セット内プールの検査を回す。
+`AUTHORING_STANDARD` §7 の全検査に加えて、セット内プールの検査を回す。
 
 ```bash
-node --check static/mode-vocab.js
-node scripts/check-data.mjs
-node scripts/check-waka-data.mjs
-node scripts/check-waka-choices.mjs
-node scripts/check-waka-display.mjs
-node scripts/check-context-choices.mjs
-node scripts/check-srs.cjs
+node scripts/check-all.mjs
 
 # セット内プールで四択が成立するか（既存検査が見ていない範囲）
 node scripts/check-set-choices.mjs kobun-set-NN --pairs

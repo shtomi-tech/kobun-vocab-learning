@@ -31,28 +31,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       - name: Check data and SRS
-        run: |
-          node --check static/mode-vocab.js
-          node scripts/check-vocab-runtime.cjs
-          node --check static/example-source.js
-          node --check static/meaning-guard.js
-          node scripts/check-data.mjs
-          node scripts/check-set-choices.mjs
-          node scripts/check-waka-data.mjs
-          node scripts/check-waka-choices.mjs
-          node scripts/check-waka-display.mjs
-          node scripts/check-meaning-example-ui.cjs
-          node scripts/check-example-source.mjs
-          node scripts/check-srs.cjs
-          node scripts/check-fsrs-vendor.cjs
-          node scripts/check-study-plan.cjs
-          node scripts/check-set-06.mjs
-          node scripts/check-set-07.mjs
-          node scripts/check-set-08.mjs
-          node scripts/check-set-09.mjs
-          node scripts/check-set-10.mjs
-          node scripts/check-set-11.mjs
-          node scripts/check-vocab-goal-ui.cjs
+        # 検査一覧は scripts/check-all.mjs が正本。手元でも同じコマンドを実行する。
+        run: node scripts/check-all.mjs
       - uses: actions/configure-pages@v5
       - name: Prepare static files
         run: |
