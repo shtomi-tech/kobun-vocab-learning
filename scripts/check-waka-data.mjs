@@ -1,11 +1,7 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
+import { loadWords, loadAdoptions } from "./lib/data.mjs";
 
-const root = new URL("../", import.meta.url);
-const read = (relativePath) => fs.readFileSync(new URL(relativePath, root), "utf8");
-
-const manifest = JSON.parse(read("data/manifest.json"));
-const words = Object.values(manifest.sets).flatMap(({ dataUrl }) => JSON.parse(read(dataUrl)).words);
+const words = loadWords();
 const wakaWords = words.filter((word) => word.exampleForm === "waka");
 const wakaIds = new Set(wakaWords.map((word) => word.id));
 const wakaFieldIds = new Set(words.filter((word) => word.waka !== undefined).map((word) => word.id));
@@ -34,7 +30,7 @@ for (const word of words) {
 
 // 入力表とデータのずれを検出する。データだけを直すと、次の apply-waka.mjs で巻き戻る原因になる。
 const wordById = new Map(words.map((word) => [word.id, word]));
-for (const adoption of JSON.parse(read("docs/waka-adoptions.json")).adoptions) {
+for (const adoption of loadAdoptions().adoptions) {
   const word = wordById.get(adoption.id);
   assert.ok(word, `${adoption.id}: adoption refers to unknown id`);
   for (const [field, value] of Object.entries(adoption)) {

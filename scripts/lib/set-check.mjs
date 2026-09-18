@@ -2,24 +2,21 @@
 // 「語番号の開始」「cloze が復元する語形」「意味の実値」「同時に出してはいけない組」だけなので、
 // それだけを渡してもらい、残りの検査はここで一度だけ書く。
 import assert from "node:assert/strict";
-import fs from "node:fs";
 import { createRequire } from "node:module";
+import { read, readJson, loadManifest, loadWords } from "./data.mjs";
 
-const root = new URL("../../", import.meta.url);
+export { read, readJson };
 const require = createRequire(import.meta.url);
 
 export const guard = require("../../static/meaning-guard.js");
-// 改行コードはLFへ揃える。実装の字面を正規表現で見る検査が、CRLFの作業コピーでも同じ結果になる。
-export const read = (relativePath) => fs.readFileSync(new URL(relativePath, root), "utf8").replace(/\r\n/g, "\n");
-export const readJson = (relativePath) => JSON.parse(read(relativePath));
 
-export const manifest = readJson("data/manifest.json");
+export const manifest = loadManifest();
 
 // 誤答候補は全セットから探すため、毎回読み直さず一度だけ読む。
 let allWordsCache = null;
 export function allWords() {
   if (!allWordsCache) {
-    allWordsCache = Object.values(manifest.sets).flatMap(({ dataUrl }) => readJson(dataUrl).words);
+    allWordsCache = loadWords(manifest);
   }
   return allWordsCache;
 }

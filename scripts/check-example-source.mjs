@@ -1,12 +1,10 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
 import vm from "node:vm";
+import { read, loadSets } from "./lib/data.mjs";
 
-const read = (relativePath) => fs.readFileSync(new URL(`../${relativePath}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const source = read("static/example-source.js");
 const api = vm.runInNewContext(`${source}\nKobunExampleSource`, { window: {} });
 const mode = read("static/mode-vocab.js");
-const manifest = JSON.parse(read("data/manifest.json"));
 
 assert.deepEqual([...api.priority], ["attached", "waka", "prose", "generated"]);
 assert.match(mode, /KobunExampleSource\.select\(word\)/, "読み込み時に例文ソースの優先選択を適用する必要がある");
@@ -67,8 +65,7 @@ const invalidAttached = api.select({
 assert.equal(invalidAttached.example, "prose");
 
 let candidateCount = 0;
-for (const [setId, entry] of Object.entries(manifest.sets)) {
-  const data = JSON.parse(read(entry.dataUrl));
+for (const { setId, data } of loadSets()) {
   for (const word of data.words) {
     if (word.examples === undefined) continue;
     assert.ok(Array.isArray(word.examples), `${setId}: ${word.id}.examples must be an array`);

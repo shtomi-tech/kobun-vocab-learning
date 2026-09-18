@@ -1,22 +1,21 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const root = new URL("../", import.meta.url);
-const readJson = (relativePath) => JSON.parse(fs.readFileSync(new URL(relativePath, root), "utf8"));
-const manifest = readJson("data/manifest.json");
-const input = readJson("docs/waka-adoptions.json");
+import { loadManifest, loadSets, loadAdoptions, resolve } from "./lib/data.mjs";
+
+const manifest = loadManifest();
+const input = loadAdoptions();
 const adoptions = input.adoptions;
 const allowedFields = new Set(["example", "translation", "source", "cloze", "exampleForm", "waka"]);
 
 assert.ok(Array.isArray(adoptions), "docs/waka-adoptions.json must contain an adoptions array");
 
 const locations = new Map();
-for (const [setId, entry] of Object.entries(manifest.sets)) {
-  const data = readJson(entry.dataUrl);
+for (const { setId, dataUrl, data } of loadSets(manifest)) {
   assert.equal(data.meta.id, setId, `${setId}: meta.id mismatch`);
   data.words.forEach((word, index) => {
     assert.ok(!locations.has(word.id), `duplicate data id: ${word.id}`);
-    locations.set(word.id, { data, dataUrl: entry.dataUrl, index, setId });
+    locations.set(word.id, { data, dataUrl, index, setId });
   });
 }
 
@@ -110,7 +109,7 @@ for (const [dataUrl, location] of changedFiles) {
     "data/set-11.json",
   ]).has(dataUrl);
   const serialized = collapseSelectedArrays(`${JSON.stringify(location.data, null, 2)}\n`, notesOneLine);
-  fs.writeFileSync(new URL(`../${dataUrl}`, import.meta.url), serialized, "utf8");
+  fs.writeFileSync(resolve(dataUrl), serialized, "utf8");
 }
 
 const appliedCount = only ? changedIds.filter((line) => only.has(line.split(" ")[0])).length : changedIds.length;

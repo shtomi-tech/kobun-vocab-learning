@@ -17,23 +17,19 @@
 // 判定は static/meaning-guard.js をそのまま使うので、実装を変えればこの
 // スクリプトの結果も自動で追従する。
 
-import fs from "node:fs";
-import path from "node:path";
 import { createRequire } from "node:module";
+import { loadSets } from "./lib/data.mjs";
 
 const { isSafePair, hasThreeMutuallySafe } = createRequire(import.meta.url)("../static/meaning-guard.js");
 
-const root = process.env.KOBUN_ROOT || process.cwd();
-const readJson = (relativePath) => JSON.parse(fs.readFileSync(path.join(root, relativePath), "utf8"));
 
 const args = process.argv.slice(2);
 const wantPairs = args.includes("--pairs");
 const onlySetId = args.find((arg) => !arg.startsWith("--"));
 
-const manifest = readJson("data/manifest.json");
-const sets = Object.entries(manifest.sets)
-  .filter(([setId]) => !onlySetId || setId === onlySetId)
-  .map(([setId, entry]) => [setId, readJson(entry.dataUrl).words]);
+const sets = loadSets()
+  .filter(({ setId }) => !onlySetId || setId === onlySetId)
+  .map(({ setId, data }) => [setId, data.words]);
 
 if (!sets.length) {
   console.error(`セットが見つからない: ${onlySetId}`);

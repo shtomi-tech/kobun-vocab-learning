@@ -1,8 +1,5 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-
-const root = new URL("../", import.meta.url);
-const read = (relativePath) => fs.readFileSync(new URL(relativePath, root), "utf8").replace(/\r\n/g, "\n");
+import { read, loadSets } from "./lib/data.mjs";
 
 const source = read("static/mode-vocab.js");
 const choiceSet = source.match(/function choiceSet\(word, kind\) \{(.*?)\n  \}\n\n  function meaningChoicesAreSafe/s)?.[1];
@@ -39,11 +36,7 @@ const hasMeaningFamilyOverlap = (left, right) => meaningFamilies.some((family) =
 );
 const isSafePair = (left, right) => !hasMeaningOverlap(left, right) && !hasMeaningFamilyOverlap(left, right);
 
-const manifest = JSON.parse(read("data/manifest.json"));
-const sets = Object.entries(manifest.sets).map(([setId, { dataUrl }]) => ({
-  setId,
-  words: JSON.parse(read(dataUrl)).words,
-}));
+const sets = loadSets().map(({ setId, data }) => ({ setId, words: data.words }));
 const allWords = sets.flatMap(({ words }) => words);
 const wakaWords = allWords.filter((word) => word.exampleForm === "waka");
 assert.ok(wakaWords.length >= 6, "the six phase1 waka words must remain in the data");

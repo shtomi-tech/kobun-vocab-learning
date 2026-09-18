@@ -1,6 +1,6 @@
-import fs from "node:fs";
+import { loadManifest, loadSets } from "./lib/data.mjs";
 
-const manifest = JSON.parse(fs.readFileSync(new URL("../data/manifest.json", import.meta.url)));
+const manifest = loadManifest();
 if (!manifest.sets?.[manifest.defaultSetId]) throw new Error("defaultSetId is not registered");
 
 const idsAcrossSets = new Set();
@@ -103,8 +103,7 @@ function validateWaka(setId, word) {
   }
 }
 
-for (const [setId, entry] of Object.entries(manifest.sets)) {
-  const data = JSON.parse(fs.readFileSync(new URL(`../${entry.dataUrl}`, import.meta.url)));
+for (const { setId, data } of loadSets(manifest)) {
   if (data.meta.id !== setId) throw new Error(`${setId}: meta.id mismatch`);
   if (data.meta.count !== data.words.length) throw new Error(`${setId}: count mismatch`);
   if (!Number.isInteger(data.meta.dataVersion) || data.meta.dataVersion < 1) throw new Error(`${setId}: invalid dataVersion`);

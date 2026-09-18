@@ -47,9 +47,10 @@ assert.match(
   /cp\s+static\/vendor\/fsrs\/index\.umd\.js[^\n]*_site\/static\/vendor\/fsrs\//,
   "pages.yml が vendor/fsrs/index.umd.js を _site へコピーする必要がある（漏れると本番だけ404）",
 );
+// CIは scripts/check-all.mjs の一覧を実行する。その一覧にSRS契約検査が入っていることを見る。
 assert.ok(
-  workflow.includes("node scripts/check-srs.cjs"),
-  "pages.yml がSRS契約検査を実行する必要がある",
+  workflow.includes("node scripts/check-all.mjs") && read("scripts/check-all.mjs").includes('"check-srs.cjs"'),
+  "pages.yml が check-all.mjs 経由でSRS契約検査を実行する必要がある",
 );
 
 // --- 読み込み順（vendor が srs.js より前） ---
