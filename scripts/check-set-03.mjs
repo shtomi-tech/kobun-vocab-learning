@@ -29,9 +29,9 @@ checkSet({
     assert.equal(word26.example, "山里は冬ぞさびしさまさりける人目も草もかれぬと思へば");
 
     const word27 = wordsById.get("kv03-027");
-    assert.equal(word27.source, "狭衣物語（巻第一之下）");
-    assert.equal(word27.example, "あやしく物恐ろしきに、衣を引きかづきて臥したるに、こはいかなる事ぞと唯かきくらす心地すれば…。");
-    assert.equal(word27.cloze, "あやしく物恐ろしきに、衣を引きかづきて臥したるに、こはいかなる事ぞと唯（　）心地すれば…。");
+    assert.equal(word27.source, "古今和歌集");
+    assert.equal(word27.example, "かきくらす心の闇にまどひにき夢うつつとは世人さだめよ");
+    assert.equal(word27.cloze, "（　）心の闇にまどひにき夢うつつとは世人さだめよ");
 
     const word28 = wordsById.get("kv03-028");
     assert.equal(word28.source, "源氏物語（明石）");

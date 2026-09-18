@@ -37,9 +37,9 @@ checkSet({
     assert.equal(word80.cloze, "「（　）」と侍れば、如何がはせん。");
 
     const word83 = wordsById.get("kv07-083");
-    assert.equal(word83.source, "枕草子（木の花は）");
-    assert.equal(word83.example, "桐の花、紫に咲きたるは、なほをかしきを、葉のひろごり、さまうたてあれども、又他木どもとひとしう言ふべきにあらず。");
-    assert.equal(word83.cloze, "桐の花、紫に咲きたるは、（　）をかしきを、葉のひろごり、さまうたてあれども、又他木どもとひとしう言ふべきにあらず。");
+    assert.equal(word83.source, "後拾遺和歌集");
+    assert.equal(word83.example, "明けぬれば暮るるものとは知りながらなほ恨めしき朝ぼらけかな");
+    assert.equal(word83.cloze, "明けぬれば暮るるものとは知りながら（　）恨めしき朝ぼらけかな");
 
     const word84 = wordsById.get("kv07-084");
     assert.equal(word84.source, "今鏡（第六・ふぢなみの下）");

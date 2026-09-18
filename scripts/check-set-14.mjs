@@ -22,7 +22,7 @@ checkSet({
     assert.equal(wordsById.get("kv14-157").source, "源氏物語（若紫）");
     assert.equal(wordsById.get("kv14-158").source, "更級日記");
     assert.equal(wordsById.get("kv14-161").source, "徒然草");
-    assert.equal(wordsById.get("kv14-160").source, "源氏物語（葵）");
+    assert.equal(wordsById.get("kv14-160").source, "新古今和歌集");
     assert.equal(wordsById.get("kv14-162").source, "源氏物語（末摘花）");
     assert.equal(wordsById.get("kv14-163").source, "竹取物語（燕の子安貝）");
     assert.equal(wordsById.get("kv14-164").source, "源氏物語（帚木）");
