@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { loadSets, resolve } from "./lib/data.mjs";
-import { corpusSummary, findCandidates, loadHachidaishu } from "./lib/waka-candidates.mjs";
+import { corpusSummary, findCandidates, HACHIDAISHU_COLLECTIONS, loadHachidaishu } from "./lib/waka-candidates.mjs";
 import { selectExample } from "./lib/example-source.mjs";
 
 const argv = process.argv.slice(2);
@@ -21,12 +21,22 @@ const corpusPath = valueAfter("--corpus");
 const words = loadSets()
   .filter(({ setId }) => !setFilter || setId === setFilter)
   .flatMap(({ data }) => data.words.map(selectExample))
+  .filter((word) => idFilter || word.exampleForm !== "waka")
   .filter((word) => !idFilter || word.id === idFilter);
 const records = await loadHachidaishu({ corpusPath });
+const summary = corpusSummary(records);
 const results = findCandidates(words, records, { top: Number.isInteger(top) && top > 0 ? top : 5, collection });
 const report = {
   generatedAt: new Date().toISOString(),
-  corpus: { name: "Hachidaishu", url: "https://github.com/yamagen/hachidaishu", ...corpusSummary(records) },
+  corpus: {
+    name: "Hachidaishu",
+    url: "https://github.com/yamagen/hachidaishu",
+    ...summary,
+    coverage: {
+      collections: HACHIDAISHU_COLLECTIONS,
+      excluded: ["Manyoshu (万葉集)"],
+    },
+  },
   scannedWords: words.length,
   wordsWithCandidates: results.filter((result) => result.candidates.length > 0).length,
   results,

@@ -1,22 +1,33 @@
 import assert from "node:assert/strict";
 
-import { read, loadSets } from "./lib/data.mjs";
-import { findCandidates, parseCorpusJsonl } from "./lib/waka-candidates.mjs";
-import { selectExample } from "./lib/example-source.mjs";
+import { read } from "./lib/data.mjs";
+import { corpusSummary, findCandidates, parseCorpusJsonl } from "./lib/waka-candidates.mjs";
 
 const fixture = parseCorpusJsonl(read("scripts/fixtures/waka/hachidaishu.jsonl"));
-const words = loadSets()
-  .flatMap(({ data }) => data.words)
-  .filter((word) => ["kv03-025", "kv26-306"].includes(word.id))
-  .map(selectExample);
+const words = [
+  { id: "fixture-yononaka", headword: "よ・よのなか", kanji: "世・世の中", exampleForm: "prose" },
+  { id: "fixture-kiyoshi", headword: "きよし", kanji: "清し", exampleForm: "prose" },
+  { id: "fixture-hito", headword: "ひと", kanji: "人", exampleForm: "prose" },
+];
 const results = findCandidates(words, fixture, { top: 3 });
-const kokin = results.find((result) => result.wordId === "kv03-025");
-const manyo = results.find((result) => result.wordId === "kv26-306");
+const kokin = results.find((result) => result.wordId === "fixture-yononaka");
+const kiyoshi = results.find((result) => result.wordId === "fixture-kiyoshi");
+const shinkokin = results.find((result) => result.wordId === "fixture-hito");
+const summary = corpusSummary(fixture);
+assert.equal(summary.records, 7);
+assert.equal(summary.poems, 3);
+assert.deepEqual(summary.anthologies, ["Kokinshu", "Shinkokinshu"]);
+assert.ok(!fixture.some((record) => record.anthology === "Manyoshu"));
 assert.equal(kokin.candidates[0].collection, "古今和歌集");
-assert.equal(kokin.candidates[0].poem, "797");
+assert.equal(kokin.candidates[0].poem, 797);
 assert.ok(kokin.candidates[0].matchedVariants.includes("よのなか"));
-assert.equal(manyo.candidates[0].collection, "万葉集");
-assert.equal(manyo.candidates[0].poem, "605");
-assert.ok(manyo.candidates[0].matchedVariants.includes("ことわり"));
-assert.equal(kokin.candidates[0].likelyTanka, true);
+assert.equal(kiyoshi.candidates[0].surface, "きよき");
+assert.equal(kiyoshi.candidates[0].matches[0].field, "lemma_reading");
+assert.equal(kiyoshi.candidates[0].matches[0].exact, true);
+assert.equal(shinkokin.candidates[0].collection, "新古今和歌集");
+assert.equal(shinkokin.candidates[0].poem, 1);
+assert.throws(
+  () => parseCorpusJsonl('{"Anthology":"Kokinshu","Poem":"1","Surface":"年"}'),
+  /Hachidaishu schema mismatch/,
+);
 console.log(`OK: waka candidate finder fixture / ${results.length}語`);
