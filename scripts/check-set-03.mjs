@@ -5,7 +5,7 @@ checkSet({
   setId: "kobun-set-03",
   firstNumber: 25,
   expectedForms: new Map([
-    ["kv03-025", "よのなか"],
+    ["kv03-025", "世の中"],
     ["kv03-026", "かれ"],
     ["kv03-027", "かきくらす"],
     ["kv03-028", "しほたれ"],
@@ -20,9 +20,9 @@ checkSet({
   ]),
   expect(wordsById) {
     const word25 = wordsById.get("kv03-025");
-    assert.equal(word25.source, "和泉式部日記");
-    assert.equal(word25.example, "女は、雲間なきながめに「よのなかいかになりぬるならむ」とつきせずのみ眺めて…。");
-    assert.equal(word25.cloze, "女は、雲間なきながめに「（　）いかになりぬるならむ」とつきせずのみ眺めて…。");
+    assert.equal(word25.source, "古今和歌集");
+    assert.equal(word25.example, "色見えでうつろふものは世の中の人の心の花にぞありける");
+    assert.equal(word25.cloze, "色見えでうつろふものは（　）の人の心の花にぞありける");
 
     const word26 = wordsById.get("kv03-026");
     assert.equal(word26.source, "古今和歌集");

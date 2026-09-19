@@ -101,9 +101,11 @@ py -3 -m http.server 8062 --bind 127.0.0.1
 - `data/set-49.json`: 第49セット「音信・限度・身分の名詞表現」12語
 - `data/set-50.json`: 第50セット「心・情趣・由緒の名詞表現」12語
 
-新しいセットは、同じ形式のJSONを追加し、manifestへ登録します。各語には `example`、`translation`、`source`、`cloze`、`notes`（空でない解説・補足の文字列配列。1件以上必須）に加え、`exampleForm`（`"waka"` か `"prose"`）を必ず収録します。和歌には5句の表記・読み・作者・出典箇所を持つ `waka` を添えます。複数の候補例文を登録する場合は任意の `examples` に `sourceType` を付け、添付資料 → 和歌 → 古典作品の文章 → 生成した学習用作例の順で主例文を選びます。
+新しいセットは、同じ形式のJSONを追加し、manifestへ登録します。各語には `example`、`translation`、`source`、`cloze`、`notes`（空でない解説・補足の文字列配列。1件以上必須）に加え、`exampleForm`（`"waka"` か `"prose"`）を必ず収録します。和歌には5句の表記・読み・作者・出典箇所を持つ `waka` を添えます。複数の候補例文を登録する場合は任意の `examples` に `sourceType` を付け、採用可能性を確認できた候補を、和歌 → 添付資料 → 古典作品の文章 → 生成した学習用作例の順で主例文に選びます。
 
 語やセットを追加するときの作成基準は [docs/AUTHORING_STANDARD.md](docs/AUTHORING_STANDARD.md) を正本とします。例文の典拠と底本の決め方、`source` の表記、空欄の作り方、和歌のフィールド、検証手順をまとめています。採用した底本は [docs/SOURCE_EDITIONS.md](docs/SOURCE_EDITIONS.md) に記録します。
+
+和歌候補の探索は [docs/WAKA_CANDIDATE_FINDER.md](docs/WAKA_CANDIDATE_FINDER.md) の手順で行います。外部コーパスは `.cache/waka/` にだけキャッシュし、採用前にNDL等の底本で確認します。
 
 ## 匿名利用・生徒別同期
 

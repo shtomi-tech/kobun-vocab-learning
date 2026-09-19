@@ -320,7 +320,7 @@
 - 付属語を空欄へ不適切に含めていないこと（例外は `headwordOwnedSuffixesById`）
 - 和歌の5句、読み、モーラ、句またぎ、`ref` の構造
 - `source` の書式（和歌は括弧なし、`出典未詳`／`学習用例文`／`単語解説` の禁止）
-- 例文候補の選択順（attached ＞ waka ＞ prose ＞ generated）
+- 例文候補の選択順（waka ＞ attached ＞ prose ＞ generated）。いずれも採用可能性の確認済み候補に限る
 - 同じセットから四択候補を構成できること
 
 ### 自動検査では確認できないこと

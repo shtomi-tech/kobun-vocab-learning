@@ -1,12 +1,10 @@
 import assert from "node:assert/strict";
-import vm from "node:vm";
-import { read, loadSets } from "./lib/data.mjs";
+import { loadSets, read } from "./lib/data.mjs";
+import { exampleSource as api } from "./lib/example-source.mjs";
 
-const source = read("static/example-source.js");
-const api = vm.runInNewContext(`${source}\nKobunExampleSource`, { window: {} });
 const mode = read("static/mode-vocab.js");
 
-assert.deepEqual([...api.priority], ["attached", "waka", "prose", "generated"]);
+assert.deepEqual([...api.priority], ["waka", "attached", "prose", "generated"]);
 assert.match(mode, /KobunExampleSource\.select\(word\)/, "読み込み時に例文ソースの優先選択を適用する必要がある");
 
 const candidate = (sourceType, value, exampleForm = "prose") => ({
@@ -35,7 +33,7 @@ const base = {
   ...candidate("generated", "legacy"),
 };
 
-const attachedFirst = api.select({
+const wakaFirst = api.select({
   ...base,
   examples: [
     candidate("generated", "generated"),
@@ -44,19 +42,28 @@ const attachedFirst = api.select({
     candidate("attached", "attached"),
   ],
 });
-assert.equal(attachedFirst.example, "attached");
+assert.equal(wakaFirst.example, "あいうえお");
 
-const wakaFallback = api.select({
+const attachedFallback = api.select({
   ...base,
-  examples: [candidate("generated", "generated"), candidate("prose", "prose"), candidate("waka", "あいうえお", "waka")],
+  examples: [candidate("generated", "generated"), candidate("prose", "prose"), candidate("attached", "attached")],
 });
-assert.equal(wakaFallback.example, "あいうえお");
+assert.equal(attachedFallback.example, "attached");
 
-const proseFallback = api.select({ ...base, examples: [candidate("generated", "generated"), candidate("prose", "prose")] });
+const proseFallback = api.select({
+  ...base,
+  examples: [candidate("generated", "generated"), candidate("prose", "prose")],
+});
 assert.equal(proseFallback.example, "prose");
 
 const generatedFallback = api.select({ ...base, examples: [candidate("generated", "generated")] });
 assert.equal(generatedFallback.example, "generated");
+
+const invalidWaka = api.select({
+  ...base,
+  examples: [{ ...candidate("waka", "invalid", "waka"), waka: undefined }, candidate("attached", "attached")],
+});
+assert.equal(invalidWaka.example, "attached");
 
 const invalidAttached = api.select({
   ...base,

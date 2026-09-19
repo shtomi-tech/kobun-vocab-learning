@@ -1,4 +1,5 @@
 import { loadManifest, loadSets } from "./lib/data.mjs";
+import { validateExample } from "./lib/example-validation.mjs";
 
 const manifest = loadManifest();
 if (!manifest.sets?.[manifest.defaultSetId]) throw new Error("defaultSetId is not registered");
@@ -137,6 +138,7 @@ for (const { setId, data } of loadSets(manifest)) {
       throw new Error(`${setId}: ${word.id} cloze blank includes attached suffix ${attachedSuffix}`);
     }
     validateWaka(setId, word);
+    validateExample(setId, word);
     if (word.example.endsWith(`（${word.source}）`)) throw new Error(`${setId}: ${word.id} source is duplicated in example`);
     // 出典が特定できない例文は「学習用作例」として作例と明示する（実出典を装わない）。
     if (legacySourceLabels.has(word.source)) throw new Error(`${setId}: ${word.id} source must name a real text or 学習用作例`);

@@ -23,6 +23,8 @@ const scripts = [
   "check-context-choices.mjs",
   "check-waka-data.mjs",
   "check-waka-choices.mjs",
+  "check-effective-examples.mjs",
+  "check-waka-candidates.mjs",
   "check-waka-display.mjs",
   "check-meaning-example-ui.cjs",
   "check-example-source.mjs",

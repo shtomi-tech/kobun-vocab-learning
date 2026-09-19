@@ -6,7 +6,7 @@ import { loadManifest, loadSets, loadAdoptions, resolve } from "./lib/data.mjs";
 const manifest = loadManifest();
 const input = loadAdoptions();
 const adoptions = input.adoptions;
-const allowedFields = new Set(["example", "translation", "source", "cloze", "exampleForm", "waka"]);
+const allowedFields = new Set(["example", "translation", "source", "cloze", "exampleForm", "waka", "examples"]);
 
 assert.ok(Array.isArray(adoptions), "docs/waka-adoptions.json must contain an adoptions array");
 

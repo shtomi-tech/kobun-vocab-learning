@@ -8,3 +8,4 @@ _site/
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 graft/
+.cache/waka/

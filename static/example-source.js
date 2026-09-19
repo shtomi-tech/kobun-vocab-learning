@@ -1,7 +1,7 @@
 "use strict";
 
 const KobunExampleSource = (() => {
-  const priority = Object.freeze(["attached", "waka", "prose", "generated"]);
+  const priority = Object.freeze(["waka", "attached", "prose", "generated"]);
   const priorityIndex = new Map(priority.map((sourceType, index) => [sourceType, index]));
   const exampleFields = ["example", "translation", "source", "cloze", "exampleForm", "waka"];
   const requiredFields = ["example", "translation", "source", "cloze", "exampleForm"];

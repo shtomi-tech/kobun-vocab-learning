@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { read, loadSets } from "./lib/data.mjs";
+import { selectExample } from "./lib/example-source.mjs";
 
 const source = read("static/choice-builder.js");
 const choiceSet = source.match(/function buildChoices\(word, kind, candidates, fallback, deps\) \{(.*?)\n  \}\n/s)?.[1];
@@ -37,7 +38,7 @@ const hasMeaningFamilyOverlap = (left, right) => meaningFamilies.some((family) =
 );
 const isSafePair = (left, right) => !hasMeaningOverlap(left, right) && !hasMeaningFamilyOverlap(left, right);
 
-const sets = loadSets().map(({ setId, data }) => ({ setId, words: data.words }));
+const sets = loadSets().map(({ setId, data }) => ({ setId, words: data.words.map(selectExample) }));
 const allWords = sets.flatMap(({ words }) => words);
 const wakaWords = allWords.filter((word) => word.exampleForm === "waka");
 assert.ok(wakaWords.length >= 6, "the six phase1 waka words must remain in the data");
