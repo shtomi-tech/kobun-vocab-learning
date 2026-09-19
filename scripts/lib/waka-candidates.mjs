@@ -31,7 +31,39 @@ const smallKana = new Set(["ゃ", "ゅ", "ょ", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ
 const normalize = (value) => String(value ?? "").normalize("NFKC").replace(/[・･〜～（）()\s]/gu, "");
 const moraCount = (reading) => [...reading].filter((character) => !smallKana.has(character)).length;
 
-export function validateHachidaishuRecord(record) {
+export function normalizeHachidaishuRecord(record) {
+  if (!record || typeof record !== "object" || Array.isArray(record)) {
+    throw new Error("Hachidaishu schema mismatch: record must be an object");
+  }
+
+  if ("Anthology" in record || "Poem" in record || "Surface" in record) {
+    return {
+      anthology: record.Anthology,
+      poem: Number(record.Poem),
+      surface: record.Surface,
+      lemma: record.Lemma,
+      lemma_reading: record.LemmaReading,
+      kanji: record.Kanji,
+      kanji_reading: record.KanjiReading,
+    };
+  }
+
+  if ("anthology" in record || "poem" in record || "surface" in record) {
+    return {
+      anthology: record.anthology,
+      poem: Number(record.poem),
+      surface: record.surface,
+      lemma: record.lemma,
+      lemma_reading: record.lemma_reading,
+      kanji: record.kanji,
+      kanji_reading: record.kanji_reading,
+    };
+  }
+
+  throw new Error("Hachidaishu schema mismatch: unsupported record schema");
+}
+
+export function validateCanonicalHachidaishuRecord(record) {
   if (!record || typeof record !== "object" || Array.isArray(record)) {
     throw new Error("Hachidaishu schema mismatch: record must be an object");
   }
@@ -40,8 +72,21 @@ export function validateHachidaishuRecord(record) {
       throw new Error(`Hachidaishu schema mismatch: missing \"${field}\"`);
     }
   }
+  if (typeof record.anthology !== "string" || !record.anthology.trim()) {
+    throw new Error("Hachidaishu schema mismatch: invalid anthology");
+  }
+  if (!Number.isFinite(Number(record.poem))) {
+    throw new Error("Hachidaishu schema mismatch: invalid poem");
+  }
+  for (const field of ["surface", "lemma", "lemma_reading", "kanji", "kanji_reading"]) {
+    if (typeof record[field] !== "string") {
+      throw new Error(`Hachidaishu schema mismatch: invalid ${field}`);
+    }
+  }
   return record;
 }
+
+export const validateHachidaishuRecord = validateCanonicalHachidaishuRecord;
 
 export function parseCorpusJsonl(text) {
   return text
@@ -50,7 +95,8 @@ export function parseCorpusJsonl(text) {
     .filter(({ text }) => text && !text.startsWith("#"))
     .map(({ line, text }) => {
       try {
-        return validateHachidaishuRecord(JSON.parse(text));
+        const normalized = normalizeHachidaishuRecord(JSON.parse(text));
+        return validateCanonicalHachidaishuRecord(normalized);
       } catch (error) {
         if (error.message.startsWith("Hachidaishu schema mismatch")) {
           throw new Error(`${error.message} (line ${line})`);

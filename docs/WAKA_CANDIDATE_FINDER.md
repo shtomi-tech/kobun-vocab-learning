@@ -2,9 +2,23 @@
 
 `scripts/find-waka-candidates.mjs` は、古文単語の見出し語を Hachidaishu の JSONL コーパスに照合し、和歌候補を調査用 JSON に出力する。候補の発見だけを行い、データ本体や `docs/waka-adoptions.json` は変更しない。
 
-## コーパスのスキーマ
+## schema adapter
 
-入力は Hachidaishu の実データと同じ小文字の token-level schema を使う。1行が1トークンで、次の7フィールドを必須とする。
+公開 `hachidaishu.jsonl` は、`Anthology`、`Poem`、`Surface`、`Lemma`、`LemmaReading`、`Kanji`、`KanjiReading` などの大文字キーを使う。`hachidaishu.py` の `to_json()` 系で得られる小文字 schema も受け付ける。
+
+読み込み時に次の境界で公開形式を内部 canonical schema へ正規化する。
+
+```text
+External corpus format
+        ↓
+normalizeHachidaishuRecord()
+        ↓
+Canonical Hachidaishu record
+        ↓
+findCandidates()
+```
+
+canonical record の必須キーは次の7つである。
 
 ```json
 {
@@ -18,15 +32,15 @@
 }
 ```
 
-`anthology` と `poem` が同じトークンを歌単位にまとめ、入力順を保ったまま `surface` と `kanji_reading ?? lemma_reading` を連結する。大文字の旧 schema や、歌全体を1行に詰めた phrase-level データは受け付けず、JSONL 読み込み時に `Hachidaishu schema mismatch` として停止する。
+`Poem` / `poem` は数値へ統一する。`POS`、`UPosTag`、`WLSPH` など探索に使わない公開JSONLの追加フィールドは adapter で破棄する。不正な外部形式や必須フィールド欠損は、候補0件として扱わず `Hachidaishu schema mismatch` で停止する。
 
-なお、2026-09-19 時点の upstream `main` の raw JSONL は先頭レコードから大文字 schema を返すため、この validator で停止する。小文字 schema の実データを取得できる状態、または別途承認された adapter が必要である。
+`anthology` と `poem` が同じ token を歌単位にまとめ、入力順を保ったまま `surface` と `kanji_reading ?? lemma_reading` を連結する。Hachidaishu は1行1 token のデータであり、歌全体を1行に詰めた phrase-level データは受け付けない。
 
-語形照合は `lemma_reading`、`kanji_reading`、`lemma`、`kanji`、`surface` の順に行い、結果には一致した `field` と、フィールド全体との完全一致かどうかを示す `exact` を記録する。たとえば見出し語 `きよし` は、トークンの `surface: きよき` ではなく `lemma_reading: きよし` による完全一致として記録される。長い語形、読み・lemma の完全一致を優先し、同じ歌内での重複一致には減点する。
+語形照合は `lemma_reading`、`kanji_reading`、`lemma`、`kanji`、`surface` の順に行い、結果には一致した `field` と、フィールド全体との完全一致かどうかを示す `exact` を記録する。たとえば見出し語 `きよし` は、`surface: きよき` でも `lemma: 清し` でもなく、`lemma_reading: きよし` による完全一致として記録される。長い語形、読み・lemma の完全一致を優先し、同じ歌内の重複一致には減点する。
 
 ## 実行
 
-初回実行時だけ、外部コーパスを `.cache/waka/hachidaishu.jsonl` に保存する。キャッシュと詳細結果は `.gitignore` 対象で、リポジトリや公開バンドルには入らない。
+初回実行時だけ、公開コーパスを `.cache/waka/hachidaishu.jsonl` に保存する。キャッシュと詳細結果は `.gitignore` 対象で、リポジトリや公開バンドルには入らない。
 
 ```powershell
 node scripts/find-waka-candidates.mjs
@@ -44,6 +58,8 @@ node scripts/find-waka-candidates.mjs --collection 古今和歌集
 
 標準出力は走査語数と候補語数に抑え、詳細は既定で `.cache/waka/candidates.json` に保存する。レポートには歌集、歌番号、表記、読み、語形一致箇所、`field`、`exact`、推定総モーラ数、短歌らしさの目安を含める。五句境界や本文の採否は自動確定せず、NDL 等の底本で確認してから `docs/waka-adoptions.json` へ登録する。
 
+## 対象範囲
+
 対象は八代集の次の8コレクションで、万葉集（Manyoshu）は対象外である。
 
 - 古今和歌集（Kokinshu）
@@ -55,10 +71,19 @@ node scripts/find-waka-candidates.mjs --collection 古今和歌集
 - 千載和歌集（Senzaishu）
 - 新古今和歌集（Shinkokinshu）
 
-Hachidaishu の JSONL は [yamagen/hachidaishu](https://github.com/yamagen/hachidaishu) のデータを使用し、ライセンス表示は同リポジトリの記載に従う。
+万葉集は将来、別コーパス adapter として扱う。Hachidaishu の JSONL は [yamagen/hachidaishu](https://github.com/yamagen/hachidaishu) のデータを使用し、ライセンス表示は同リポジトリの記載に従う。
 
-外部取得を行わずに検査する場合は、合成 fixture を使う。
+## 検証
+
+外部取得を行わずに、canonical 小文字 schema と公開大文字 schema の両方を検査できる。
 
 ```powershell
 node scripts/check-waka-candidates.mjs
+```
+
+実公開 JSONL をキャッシュなしで確認する場合は、次のようにキャッシュを削除してから実行する。
+
+```powershell
+Remove-Item .cache/waka/hachidaishu.jsonl -ErrorAction SilentlyContinue
+node scripts/find-waka-candidates.mjs --top 5
 ```
