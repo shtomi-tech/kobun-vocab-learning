@@ -34,7 +34,7 @@ checkSet({
     const word80 = wordsById.get("kv07-080");
     assert.equal(word80.source, "枕草子（巻二）");
     assert.equal(word80.example, "「一事な落としそ」と侍れば、如何がはせん。");
-    assert.equal(word80.cloze, "「（　）」と侍れば、如何がはせん。");
+    assert.equal(word80.cloze, "「一事（　）」と侍れば、如何がはせん。");
 
     const word83 = wordsById.get("kv07-083");
     assert.equal(word83.source, "後拾遺和歌集");
