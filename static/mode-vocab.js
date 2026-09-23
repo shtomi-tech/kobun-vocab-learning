@@ -973,7 +973,11 @@ const KobunVocabApp = (() => {
   }
 
   function freshRecallQuestion() {
-    return { phase: "ask", confidence: null, hintUsed: false, typed: "", recallRating: null, confidentMiss: false, confidenceMs: null, askedAt: null };
+    return {
+      phase: "ask", confidence: null, hintUsed: false, typed: "", recallRating: null, confidentMiss: false, confidenceMs: null, askedAt: null,
+      // Jev の自動採点。ai は判定結果、aiAutoGrade は自動採用して「次へ」で記録する予定の採点。
+      aiPending: false, ai: null, aiFailed: false, aiAutoGrade: null, aiOverridden: false,
+    };
   }
 
   const isPoolReview = () => session?.mode === "meaningReview" || session?.mode === "recallReview";
@@ -1345,11 +1349,22 @@ const KobunVocabApp = (() => {
     }
     answer.appendChild(wordCard(word));
     if (session.phase === "revealed") {
+      // 途中保存から戻ったときは通信が残っていないので、採点中の表示を出さない。
+      if (session.aiPending && recallAiToken !== recallToken()) session.aiPending = false;
       box.appendChild(el("p", { class: "label" }, "答え合わせ"));
       box.appendChild(answer);
+      const aiNote = recallAiNote();
+      if (aiNote) box.appendChild(aiNote);
       box.appendChild(el("p", { class: "recallPrompt" }, "自分の答えと比べて、当てはまるものを選んでください。"));
       box.appendChild(el("div", { class: "choices recallSelfGrade" },
-        ...RECALL_SELF_GRADE.map(([value, label], index) => recallChoiceButton("selfGradeChoice", index + 1, label, () => answerRecall(value))),
+        ...RECALL_SELF_GRADE.map(([value, label], index) => {
+          const button = recallChoiceButton("selfGradeChoice", index + 1, label, () => answerRecall(value));
+          if (session.ai?.grade === value) {
+            button.classList.add("is-aiSuggested");
+            button.appendChild(el("span", { class: "aiSuggestedTag" }, "Jev"));
+          }
+          return button;
+        }),
       ));
       panel.appendChild(box);
       return;
@@ -1365,6 +1380,12 @@ const KobunVocabApp = (() => {
       session.confidentMiss
         ? el("p", { class: "recallConfidentMiss" }, "自信があったのに違った語です。解説をもう一度読みましょう。")
         : null,
+      session.aiAutoGrade
+        ? el("div", { class: "recallAiGraded" },
+          el("p", {}, `Jev が「${recallSelfGradeLabel(session.aiAutoGrade)}」と採点しました。`),
+          el("button", { class: "ghost recallRegrade", type: "button", onclick: overrideAiGrade }, "採点を直す"),
+        )
+        : null,
       el("div", { class: "quizNextAction" },
         el("button", { class: "cta next", onclick: nextRecall }, session.meaningIndex === session.meaningOrder.length - 1 ? "次へ →" : "次の問題 →"),
       ),
@@ -1378,15 +1399,96 @@ const KobunVocabApp = (() => {
     session.confidence = confidence;
     session.confidenceMs = KobunSrs.measuredMs(Date.now() - (session.askedAt || 0));
     if (confidence === "blank") return answerRecall(null);
+    const typed = session.typed?.trim() || "";
+    // 「わからない」などは Jev に送らず、違った扱いで自動採点する。
+    if (typed && KobunRecallGrade.isNoAnswer(typed)) {
+      session.ai = { grade: "wrong", confidence: 1, source: "rule" };
+      return applyAiAutoGrade("wrong");
+    }
+    session.phase = "revealed";
+    if (typed) requestAiGrade(typed);
+    renderSession();
+    $(".recallSelfGrade .choice")?.focus({ preventScroll: true });
+  }
+
+  // --- Jev の自動採点（試験版の Worker `/api/grade-recall`。無い環境では自己採点のまま） ---
+  const RECALL_GRADE_URL = "api/grade-recall";
+  const RECALL_GRADE_TIMEOUT_MS = 6000;
+  let recallAiToken = null;
+  const recallToken = () => session ? `${session.meaningIndex}:${session.meaningOrder[session.meaningIndex]}` : null;
+  const recallSelfGradeLabel = (value) => RECALL_SELF_GRADE.find(([key]) => key === value)?.[1] || value;
+
+  function recallAiNote() {
+    if (session.aiPending) return el("p", { class: "recallAiNote", role: "status" }, "Jev が採点しています…（先に自分で選んでもかまいません）");
+    if (session.aiOverridden) return el("p", { class: "recallAiNote" }, "自分で採点し直してください。");
+    if (session.ai) return el("p", { class: "recallAiNote" }, `Jev の判定は「${recallSelfGradeLabel(session.ai.grade)}」ですが、確信が低いため自分で選んでください。`);
+    if (session.aiFailed) return el("p", { class: "recallAiNote" }, "自動採点が使えなかったため、自分で選んでください。");
+    return null;
+  }
+
+  async function requestAiGrade(typed) {
+    if (typeof fetch !== "function") return;
+    const token = recallToken();
+    const key = session.meaningOrder[session.meaningIndex];
+    const wordId = reviewEntryByKey(key)?.word.id || wordForSession(key)?.id || key;
+    recallAiToken = token;
+    session.aiPending = true;
+    let result = null;
+    try {
+      const response = await fetch(RECALL_GRADE_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ wordId, answer: typed }),
+        signal: typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(RECALL_GRADE_TIMEOUT_MS) : undefined,
+      });
+      if (response.ok) result = await response.json();
+    } catch {
+      result = null;
+    }
+    // 返ってくる前に次の語へ進んだ・自分で採点した場合は捨てる。
+    if (recallAiToken !== token || recallToken() !== token || session.phase !== "revealed") return;
+    recallAiToken = null;
+    session.aiPending = false;
+    const decision = KobunRecallGrade.decideAiGrade(result);
+    if (!decision.selfGrade) {
+      session.aiFailed = true;
+      return renderSession();
+    }
+    session.ai = { grade: result.grade, confidence: result.confidence, probabilities: result.probabilities, model: result.model, source: "jev" };
+    if (decision.auto) return applyAiAutoGrade(decision.selfGrade);
+    renderSession();
+  }
+
+  // 自動採点は画面に出すだけにして、記録は「次へ」で行う。「採点を直す」で取り消しても FSRS を巻き戻さずに済む。
+  function applyAiAutoGrade(selfGrade) {
+    session.aiAutoGrade = selfGrade;
+    showRecallGrade(gradeForRecall(selfGrade));
+  }
+
+  function overrideAiGrade() {
+    if (session.phase !== "graded" || !session.aiAutoGrade) return;
+    session.aiAutoGrade = null;
+    session.aiOverridden = true;
     session.phase = "revealed";
     renderSession();
     $(".recallSelfGrade .choice")?.focus({ preventScroll: true });
   }
 
+  function gradeForRecall(selfGrade) {
+    return KobunRecallGrade.gradeRecall({ confidence: session.confidence, selfGrade, hintUsed: session.hintUsed });
+  }
+
   function answerRecall(selfGrade) {
     if (session.phase === "graded") return;
+    recallAiToken = null;
+    session.aiPending = false;
+    const grade = commitRecall(selfGrade, "self");
+    showRecallGrade(grade);
+  }
+
+  function commitRecall(selfGrade, gradedBy) {
     const key = session.meaningOrder[session.meaningIndex];
-    const grade = KobunRecallGrade.gradeRecall({ confidence: session.confidence, selfGrade, hintUsed: session.hintUsed });
+    const grade = gradeForRecall(selfGrade);
     const entry = reviewEntryByKey(key);
     const progress = entry?.progress || state.progress;
     const wordId = entry?.word.id || key;
@@ -1396,12 +1498,26 @@ const KobunVocabApp = (() => {
       recall: true,
       confidentMiss: grade.confidentMiss,
     });
-    appendHistory({ kind: "recall", wordId, result: grade.rating, confidence: session.confidence, hintUsed: session.hintUsed === true }, progress);
+    // 自動採点のしきい値を後で見直せるよう、Jev の判定と自己採点の食い違いも残す。
+    const aiFields = session.ai ? {
+      answer: session.typed?.trim() || "",
+      gradedBy,
+      selfGrade,
+      aiGrade: session.ai.grade,
+      aiConfidence: Math.round(session.ai.confidence * 1000) / 1000,
+      aiSource: session.ai.source,
+      overridden: session.aiOverridden === true,
+    } : {};
+    appendHistory({ kind: "recall", wordId, result: grade.rating, confidence: session.confidence, hintUsed: session.hintUsed === true, ...aiFields }, progress);
     saveProgressFor(entry?.setId || state.setId, progress);
 
     if (grade.rating !== "again") session.meaningCorrect++;
     if (grade.toWrongReview && !session.wrongMeaningIds.includes(key)) session.wrongMeaningIds.push(key);
     if (grade.confidentMiss && !session.confidentMissIds.includes(key)) session.confidentMissIds.push(key);
+    return grade;
+  }
+
+  function showRecallGrade(grade) {
     session.recallRating = grade.rating;
     session.confidentMiss = grade.confidentMiss;
     session.phase = "graded";
@@ -1412,6 +1528,7 @@ const KobunVocabApp = (() => {
   }
 
   function nextRecall() {
+    if (session.aiAutoGrade) commitRecall(session.aiAutoGrade, "ai");
     const last = session.meaningIndex === session.meaningOrder.length - 1;
     Object.assign(session, freshRecallQuestion());
     if (!last) session.meaningIndex++;

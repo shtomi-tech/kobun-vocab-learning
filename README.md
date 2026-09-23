@@ -6,6 +6,8 @@
 
 試験版（新機能）: https://kobun-vocab-learning.shtomi0913.workers.dev/ 。`next` ブランチへの push で Cloudflare Workers Builds がビルドして出す（Worker `kobun-vocab-learning`）。ビルドは `node scripts/build-site.mjs`、配信設定は `wrangler.jsonc`。Supabase の値は Cloudflare 側のビルド変数 `SUPABASE_URL`・`SUPABASE_ANON_KEY` に登録する。本番の GitHub Pages は `main` のまま。
 
+試験版の自動採点: 「選択肢なしで思い出す」で意味を書いた場合、答え合わせの時点で Worker の `/api/grade-recall`（`worker/index.js`）が Jev（TypeSafe、`jev-1.13.0` に固定）へ問い合わせ、「合っていた・一部だけ・違った」を判定する。ブラウザから送るのは語IDと答えだけで、正解の意味は Worker が配信中の `data/*.json` から引く。生徒IDは送らない。確信度が `AI_AUTO_THRESHOLD`（`static/recall-grade.js`）以上なら自動採点し、「次へ」を押した時点で記録する（それまでは「採点を直す」で自己採点に切り替えられる）。確信度が低いとき・通信に失敗したとき・API が無い本番では、判定を参考表示して今までどおり自己採点する。「わからない」などは Jev に送らず違った扱いにする。履歴の recall 行に `gradedBy`・`aiGrade`・`aiConfidence`・`overridden` を残すので、しきい値の見直しに使う。API キーは Worker の Secret `TYPESAFE_API_KEY`（ダッシュボードの Settings → Variables and Secrets。ビルド変数とは別）。検査は `scripts/check-grade-recall-worker.mjs` と `scripts/check-vocab-runtime.cjs`。
+
 ## 起動
 
 ```powershell

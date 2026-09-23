@@ -366,3 +366,126 @@ const fetchStub = async (url, init = {}) => {
   assert.equal(recallTest.getSession().stage, "wrongReview", "again があれば誤答確認へ進む");
   console.log("vocabulary runtime contract: recall review OK");
 }
+
+// --- 思い出す復習の Jev 自動採点（fetch を差し替えて、採用・確信度不足・採点を直す・答えなしを見る） ---
+(async () => {
+  const aiDom = createDomStub();
+  const aiStorage = new Map();
+  const replies = [];
+  const requests = [];
+  const fakeFetch = async (url, init) => {
+    requests.push({ url, body: JSON.parse(init.body) });
+    const reply = replies.shift();
+    return { ok: Boolean(reply), json: async () => reply };
+  };
+  const aiTest = loadModeApp(
+    ["startRecallReview", "chooseRecallConfidence", "answerRecall", "nextRecall", "overrideAiGrade", "state", "getSession: () => session"],
+    {
+      document: aiDom.document,
+      localStorage: {
+        getItem: (key) => aiStorage.has(key) ? aiStorage.get(key) : null,
+        setItem: (key, value) => aiStorage.set(key, String(value)),
+      },
+      fetch: fakeFetch,
+      KobunSrs: require("../static/srs.js"),
+      KobunRecallGrade: require("../static/recall-grade.js"),
+      KobunMeaningGuard: require("../static/meaning-guard.js"),
+      KobunSetProgress: require("../static/set-progress.js"),
+      Date,
+    },
+  );
+  const aiSet = JSON.parse(read("data/set-01.json"));
+  const aiWords = aiSet.words.slice(0, 4);
+  aiTest.state.set = { meta: aiSet.meta, words: aiWords };
+  aiTest.state.setId = "kobun-set-01";
+  aiTest.state.manifest = { sets: { "kobun-set-01": { label: "第1セット" } } };
+  aiTest.state.reviewPool = [];
+  aiTest.state.progress = {
+    units: Object.fromEntries(aiWords.map((word) => [word.id, { learned: true }])),
+    finalCheck: {},
+    items: {},
+    history: [],
+  };
+  const flush = () => new Promise((resolve) => setImmediate(resolve));
+  const currentWordId = () => {
+    const s = aiTest.getSession();
+    return String(s.meaningOrder[s.meaningIndex]).split("::").pop();
+  };
+  const lastHistory = () => aiTest.state.progress.history.at(-1);
+
+  aiTest.startRecallReview();
+
+  // 1. 確信度が高い → 自動採点。記録は「次へ」まで保留する。
+  let wordId = currentWordId();
+  aiTest.getSession().typed = "出歩く";
+  replies.push({ grade: "correct", confidence: 0.95, probabilities: { correct: 0.95, partial: 0.05, wrong: 0 }, model: "jev-1.13.0" });
+  aiTest.chooseRecallConfidence("sure");
+  assert.equal(aiTest.getSession().aiPending, true, "書いた答えがあれば Jev に問い合わせる");
+  assert.deepEqual(requests.at(-1).body, { wordId, answer: "出歩く" }, "送るのは語IDと答えだけ");
+  await flush();
+  let current = aiTest.getSession();
+  assert.equal(current.phase, "graded", "確信度が高ければ自動採点で結果へ進む");
+  assert.equal(current.aiAutoGrade, "correct");
+  assert.equal(current.recallRating, "good");
+  assert.equal(aiTest.state.progress.items[wordId], undefined, "自動採点は次へ進むまで記録しない");
+  aiTest.nextRecall();
+  assert.equal(aiTest.state.progress.items[wordId].recallCount, 1, "次へで記録する");
+  assert.equal(lastHistory().gradedBy, "ai");
+  assert.equal(lastHistory().aiGrade, "correct");
+
+  // 2. 確信度が低い → 判定を参考表示して自己採点。
+  wordId = currentWordId();
+  aiTest.getSession().typed = "なにか";
+  replies.push({ grade: "partial", confidence: 0.4, probabilities: { correct: 0.3, partial: 0.4, wrong: 0.3 }, model: "jev-1.13.0" });
+  aiTest.chooseRecallConfidence("maybe");
+  await flush();
+  current = aiTest.getSession();
+  assert.equal(current.phase, "revealed", "確信度が低ければ自己採点に戻す");
+  assert.equal(current.ai.grade, "partial");
+  aiTest.answerRecall("wrong");
+  assert.equal(lastHistory().gradedBy, "self");
+  assert.equal(lastHistory().aiGrade, "partial");
+  assert.equal(lastHistory().result, "again");
+  aiTest.nextRecall();
+
+  // 3. 自動採点のあと「採点を直す」→ 自己採点で記録し、直したことを残す。
+  wordId = currentWordId();
+  aiTest.getSession().typed = "歩く";
+  replies.push({ grade: "correct", confidence: 0.9, probabilities: { correct: 0.9, partial: 0.1, wrong: 0 }, model: "jev-1.13.0" });
+  aiTest.chooseRecallConfidence("sure");
+  await flush();
+  aiTest.overrideAiGrade();
+  current = aiTest.getSession();
+  assert.equal(current.phase, "revealed", "採点を直すと自己採点へ戻る");
+  assert.equal(aiTest.state.progress.items[wordId], undefined, "直す前の自動採点は記録されていない");
+  aiTest.answerRecall("wrong");
+  assert.equal(lastHistory().overridden, true);
+  assert.equal(lastHistory().result, "again");
+  assert.equal(aiTest.state.progress.history.filter((event) => event.wordId === wordId).length, 1, "記録は1回だけ");
+  aiTest.nextRecall();
+
+  // 4. 「わからない」は Jev に送らず、違った扱い。
+  const before = requests.length;
+  aiTest.getSession().typed = "わからない";
+  aiTest.chooseRecallConfidence("maybe");
+  current = aiTest.getSession();
+  assert.equal(requests.length, before, "答えなしは Jev に送らない");
+  assert.equal(current.aiAutoGrade, "wrong");
+  assert.equal(current.recallRating, "again");
+  aiTest.nextRecall();
+  assert.equal(lastHistory().aiSource, "rule");
+
+  // 5. 通信に失敗したら自己採点のまま。（全語を採点済みなので記録を空にして出題し直す）
+  aiTest.state.progress.items = {};
+  aiTest.startRecallReview();
+  aiTest.getSession().typed = "移動する";
+  aiTest.chooseRecallConfidence("sure");
+  await flush();
+  current = aiTest.getSession();
+  assert.equal(current.phase, "revealed");
+  assert.equal(current.aiFailed, true, "失敗は自己採点に戻す");
+  console.log("vocabulary runtime contract: recall AI grading OK");
+})().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

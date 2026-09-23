@@ -16,6 +16,8 @@ const syntaxChecks = [
   "static/choice-builder.js",
   "static/recall-grade.js",
   "static/waka-gallery.js",
+  "worker/index.js",
+  "worker/grade-recall.js",
 ];
 
 const scripts = [
@@ -33,6 +35,7 @@ const scripts = [
   "check-example-source.mjs",
   "check-srs.cjs",
   "check-recall-grade.cjs",
+  "check-grade-recall-worker.mjs",
   "check-fsrs-vendor.cjs",
   "check-study-plan.cjs",
   "check-set-progress.cjs",

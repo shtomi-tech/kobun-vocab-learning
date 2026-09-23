@@ -1,10 +1,14 @@
-// 試験版（next ブランチ）を Cloudflare Workers の静的アセットとして出す。
-// ビルドは Workers Builds が `node scripts/build-site.mjs` で行い、ここでは _site を配るだけ。
+// 試験版（next ブランチ）を Cloudflare Workers で出す。
+// ビルドは Workers Builds が `node scripts/build-site.mjs` で行い、_site を静的アセットとして配る。
+// /api/* だけ worker/index.js が処理する（思い出す復習の自動採点）。Secret `TYPESAFE_API_KEY` が必要。
 // 本番（main → GitHub Pages）はこの設定を使わない。
 {
   "name": "kobun-vocab-learning",
+  "main": "worker/index.js",
   "compatibility_date": "2026-09-01",
   "assets": {
-    "directory": "./_site"
+    "directory": "./_site",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
   }
 }
