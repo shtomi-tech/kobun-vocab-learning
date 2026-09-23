@@ -4,7 +4,7 @@
 
 公開版: https://shtomi-tech.github.io/kobun-vocab-learning/
 
-試験版（新機能）: https://kobun-vocab-learning-next.shtomi0913.workers.dev/ 。`next` ブランチへの push で Cloudflare Workers Builds がビルドして出す（Worker `kobun-vocab-learning-next`）。ビルドは `node scripts/build-site.mjs`、配信設定は `wrangler.jsonc`。Supabase の値は Cloudflare 側のビルド変数 `SUPABASE_URL`・`SUPABASE_ANON_KEY` に登録する。本番の GitHub Pages は `main` のまま。
+試験版（新機能）: https://kobun-vocab-learning.shtomi0913.workers.dev/ 。`next` ブランチへの push で Cloudflare Workers Builds がビルドして出す（Worker `kobun-vocab-learning`）。ビルドは `node scripts/build-site.mjs`、配信設定は `wrangler.jsonc`。Supabase の値は Cloudflare 側のビルド変数 `SUPABASE_URL`・`SUPABASE_ANON_KEY` に登録する。本番の GitHub Pages は `main` のまま。
 
 ## 起動
 
