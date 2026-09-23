@@ -1,0 +1,10 @@
+// 試験版（next ブランチ）を Cloudflare Workers の静的アセットとして出す。
+// ビルドは Workers Builds が `node scripts/build-site.mjs` で行い、ここでは _site を配るだけ。
+// 本番（main → GitHub Pages）はこの設定を使わない。
+{
+  "name": "kobun-vocab-learning-next",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./_site"
+  }
+}
