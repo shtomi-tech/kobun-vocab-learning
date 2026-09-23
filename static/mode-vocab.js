@@ -435,6 +435,7 @@ const KobunVocabApp = (() => {
     session = null;
     $(".wrap")?.classList.remove("sessionActive");
     $("#sessionPanel").classList.add("hide");
+    $("#wakaPanel")?.classList.add("hide");
     const home = $("#homePanel");
     home.classList.remove("hide");
     home.removeAttribute("aria-busy");
@@ -502,6 +503,8 @@ const KobunVocabApp = (() => {
       home.appendChild(studyTimeCard());
     }
     home.appendChild(meaningMission());
+    const wakaTeaser = hasWakaGallery() ? KobunWakaGallery.teaserCard(wakaPoems(), { onOpen: openWakaGallery }) : null;
+    if (wakaTeaser) home.appendChild(wakaTeaser);
     home.appendChild(el("section", { class: "card" }, setPicker()));
     home.appendChild(learningBlockMap());
 
@@ -758,6 +761,32 @@ const KobunVocabApp = (() => {
     return section;
   }
 
+  // 歌の間（試験公開）。読み込み済みの全セットから、例文として表示される和歌を集める。
+  // 試験機能なので、モジュールや表示先が無い環境（検査用の擬似DOMなど）では入口を出さない。
+  const hasWakaGallery = () => typeof KobunWakaGallery !== "undefined" && Boolean($("#wakaPanel"));
+
+  function wakaPoems() {
+    return KobunWakaGallery.collect(setSources()
+      .filter((source) => source.set)
+      .map((source) => ({ setId: source.setId, set: source.set, label: source.entry.label })));
+  }
+
+  function openWakaGallery(initialKey = null) {
+    $("#homePanel").classList.add("hide");
+    $("#sessionPanel").classList.add("hide");
+    const panel = $("#wakaPanel");
+    panel.classList.remove("hide");
+    KobunWakaGallery.render(panel, wakaPoems(), {
+      initialKey,
+      onClose: () => {
+        renderHome();
+        $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
+        $("#homePanel .wgTeaser .wgButton--gold")?.focus({ preventScroll: true });
+      },
+    });
+    window.scrollTo({ top: 0 });
+  }
+
   function setSources() {
     const poolBySetId = new Map(state.reviewPool.map((source) => [source.setId, source]));
     return Object.entries(state.manifest.sets).map(([setId, entry]) => {
@@ -912,6 +941,7 @@ const KobunVocabApp = (() => {
     saveResume();
     $(".wrap")?.classList.add("sessionActive");
     $("#homePanel").classList.add("hide");
+    $("#wakaPanel")?.classList.add("hide");
     const panel = $("#sessionPanel");
     panel.classList.remove("hide");
     panel.innerHTML = "";

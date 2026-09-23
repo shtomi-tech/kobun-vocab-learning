@@ -1,0 +1,394 @@
+/*
+ * 歌の間（試験公開）。DESIGN.md「試験公開：歌の間」を参照。
+ * 既存画面の暖色紙面とは別に、藍の夜地・金砂子・和紙の短冊で構成する。
+ * トークンは .wgRoom / .wgTeaser / .wgDialog の中だけで使い、既存の --color-* を上書きしない。
+ */
+.wgRoom, .wgTeaser, .wgDialog {
+  --wg-ai: #141b31;
+  --wg-ai-2: #1f2947;
+  --wg-ai-3: #2c3862;
+  --wg-gold: #d9b76e;
+  --wg-gold-strong: #e8cc8c;
+  --wg-gold-line: rgba(217, 183, 110, .55);
+  --wg-washi: #f5eedd;
+  --wg-washi-2: #ece2c9;
+  --wg-sumi: #211c16;
+  --wg-sumi-soft: #62553f;
+  --wg-shu: #b8432a;
+  --wg-text: #f3ead6;
+  --wg-text-muted: rgba(243, 234, 214, .74);
+  --wg-mincho: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", serif;
+  --wg-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --wg-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .14 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --wg-dust:
+    radial-gradient(1.5px 1.5px at 12% 18%, rgba(232, 204, 140, .8), transparent 60%),
+    radial-gradient(1px 1px at 28% 72%, rgba(232, 204, 140, .6), transparent 60%),
+    radial-gradient(2px 2px at 64% 30%, rgba(232, 204, 140, .5), transparent 60%),
+    radial-gradient(1px 1px at 82% 64%, rgba(232, 204, 140, .7), transparent 60%),
+    radial-gradient(1.5px 1.5px at 46% 88%, rgba(232, 204, 140, .45), transparent 60%),
+    radial-gradient(1px 1px at 92% 12%, rgba(232, 204, 140, .6), transparent 60%);
+}
+
+.wgRoom :focus-visible, .wgTeaser :focus-visible, .wgDialog :focus-visible {
+  outline: 3px solid var(--wg-gold-strong);
+  outline-offset: 3px;
+}
+
+/* ---------- 縦書きの和歌本文 ---------- */
+.wgVerse {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  writing-mode: vertical-rl;
+  font-family: var(--wg-mincho);
+  font-weight: 500;
+  color: var(--wg-sumi);
+  line-height: 1.5;
+  letter-spacing: .14em;
+}
+.wgKu { display: flex; flex-direction: column; }
+/* 下の句は一段下げて、上の句との間を広げる（散らし書きの気配） */
+.wgKu--shimo { padding-inline-start: 1.6em; }
+.wgKu:nth-child(4) { margin-block-start: .9em; }
+.wgKuText { white-space: nowrap; }
+.wgKuYomi {
+  white-space: nowrap;
+  font-size: .5em;
+  letter-spacing: .1em;
+  color: var(--wg-sumi-soft);
+  margin-block-start: .15em;
+}
+.wgTarget {
+  background: none;
+  color: inherit;
+  text-decoration: underline 2px var(--wg-shu);
+  text-underline-offset: .28em;
+}
+.wgVerse--teaser { font-size: 17px; gap: .35em; }
+.wgVerse--card { font-size: 16px; gap: .3em; }
+.wgVerse--detail { font-size: clamp(22px, 3.4vw, 30px); gap: .45em; }
+
+/* ---------- 共通部品 ---------- */
+.wgEyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  color: var(--wg-gold);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.wgBadge {
+  padding: 2px 8px;
+  border: 1px solid var(--wg-gold-line);
+  border-radius: 999px;
+  color: var(--wg-gold-strong);
+  letter-spacing: .08em;
+}
+.wgButton {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--wg-gold-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--wg-text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--motion-release) ease, color var(--motion-release) ease, border-color var(--motion-release) ease, transform var(--motion-press) ease;
+}
+.wgButton:hover { background: rgba(217, 183, 110, .14); border-color: var(--wg-gold); }
+.wgButton:active { transform: scale(.98); }
+.wgButton--gold { background: var(--wg-gold); border-color: var(--wg-gold); color: var(--wg-ai); }
+.wgButton--gold:hover { background: var(--wg-gold-strong); border-color: var(--wg-gold-strong); }
+.wgButton--toggle::before { content: "○"; margin-right: 8px; color: var(--wg-gold); }
+.wgButton--toggle[aria-pressed="true"] { background: rgba(217, 183, 110, .16); border-color: var(--wg-gold); }
+.wgButton--toggle[aria-pressed="true"]::before { content: "●"; }
+
+.wgChips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.wgChip {
+  padding: 2px 10px;
+  border: 1px solid var(--wg-gold-line);
+  border-radius: 999px;
+  color: var(--wg-gold-strong);
+  font-family: var(--wg-mincho);
+  font-size: 13px;
+}
+
+/* ---------- ホームの入口カード ---------- */
+.card.wgTeaser {
+  position: relative;
+  overflow: hidden;
+  background: var(--wg-dust), radial-gradient(120% 90% at 100% 0%, var(--wg-ai-3), transparent 60%), linear-gradient(160deg, var(--wg-ai-2), var(--wg-ai));
+  color: var(--wg-text);
+  border: 1px solid rgba(217, 183, 110, .35);
+}
+.card.wgTeaser::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--wg-noise);
+  opacity: .12;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+.wgTeaserBody { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: center; }
+.wgTeaser h2 { margin: 0 0 6px; font-family: var(--wg-mincho); font-size: 30px; font-weight: 700; letter-spacing: .2em; color: var(--wg-text); }
+.wgTeaserLead { margin: 0 0 12px; color: var(--wg-text-muted); }
+.wgTeaserMeta { margin: 0 0 10px; font-family: var(--wg-mincho); color: var(--wg-text); }
+.wgTeaserActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.wgTeaserShikishi {
+  display: grid;
+  place-items: center;
+  min-width: 200px;
+  min-height: 230px;
+  padding: 22px 20px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--wg-paper), linear-gradient(180deg, rgba(217, 183, 110, .28), transparent 22%), var(--wg-washi);
+  background-blend-mode: multiply, normal, normal;
+  box-shadow: 0 0 0 1px rgba(217, 183, 110, .6), 0 0 0 6px rgba(20, 27, 49, .6), 0 0 0 7px rgba(217, 183, 110, .35), 0 18px 40px rgba(0, 0, 0, .45);
+  cursor: pointer;
+  transform: rotate(1.2deg);
+  transition: transform var(--motion-progress) ease;
+}
+.wgTeaserShikishi:hover { transform: rotate(0deg) translateY(-3px); }
+
+/* ---------- 歌の間（一覧画面） ---------- */
+.wgRoom {
+  position: relative;
+  overflow: hidden;
+  padding: 28px 28px 40px;
+  border-radius: 12px;
+  background: var(--wg-dust), radial-gradient(90% 60% at 85% 0%, var(--wg-ai-3), transparent 70%), linear-gradient(180deg, var(--wg-ai-2), var(--wg-ai) 55%);
+  background-size: 220px 220px, 220px 220px, 220px 220px, 220px 220px, 220px 220px, 220px 220px, auto, auto;
+  color: var(--wg-text);
+}
+.wgRoom::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--wg-noise);
+  opacity: .1;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+.wgRoom > :not(dialog) { position: relative; }
+.wgHeader { margin-bottom: 24px; }
+.wgMoon {
+  position: absolute;
+  top: -8px;
+  right: 8px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 36%, #fff7df, var(--wg-gold-strong) 45%, #b8924a 100%);
+  box-shadow: 0 0 60px rgba(232, 204, 140, .45);
+  opacity: .9;
+}
+.wgBack {
+  min-height: 44px;
+  margin: 0 0 18px;
+  padding: 8px 14px 8px 0;
+  border: 0;
+  background: none;
+  color: var(--wg-text-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+.wgBack:hover { color: var(--wg-gold-strong); }
+.wgTitle { margin: 0 0 8px; font-family: var(--wg-mincho); font-size: 40px; font-weight: 700; letter-spacing: .3em; color: var(--wg-text); }
+.wgLead { max-width: 34rem; margin: 0; color: var(--wg-text-muted); }
+
+.wgToolbar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 16px 0; border-top: 1px solid rgba(217, 183, 110, .3); border-bottom: 1px solid rgba(217, 183, 110, .3); }
+.wgFilters { display: flex; flex-wrap: wrap; gap: 8px; }
+.wgFilter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 14px;
+  border: 1px solid rgba(243, 234, 214, .28);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--wg-text);
+  font-family: var(--wg-mincho);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color var(--motion-release) ease, border-color var(--motion-release) ease, color var(--motion-release) ease;
+}
+.wgFilter:hover { border-color: var(--wg-gold); }
+.wgFilter[aria-pressed="true"] { background: var(--wg-gold); border-color: var(--wg-gold); color: var(--wg-ai); }
+.wgFilterCount { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; opacity: .8; }
+.wgCount { margin: 14px 0 16px; color: var(--wg-text-muted); font-family: var(--mono); font-size: 12px; letter-spacing: .12em; }
+
+.wgGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 28px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wgItem { display: flex; flex-direction: column; gap: 10px; animation: wgRise 560ms cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i) * 32ms); }
+.wgItem .wgChips { justify-content: center; }
+.wgTanzaku {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 300px;
+  padding: 30px 12px 14px;
+  border: 0;
+  border-radius: 3px;
+  background:
+    var(--wg-paper),
+    linear-gradient(180deg, rgba(64, 86, 150, .55), rgba(64, 86, 150, 0) 16%),
+    linear-gradient(0deg, rgba(184, 67, 42, .22), rgba(184, 67, 42, 0) 12%),
+    var(--wg-washi);
+  background-blend-mode: multiply, normal, normal, normal;
+  box-shadow: 0 0 0 1px rgba(217, 183, 110, .5), 0 14px 30px rgba(0, 0, 0, .38);
+  cursor: pointer;
+  transition: transform var(--motion-progress) cubic-bezier(.2, .7, .2, 1), box-shadow var(--motion-progress) ease;
+}
+.wgTanzaku::before {
+  /* 短冊の上端の金砂子 */
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 18%;
+  background: var(--wg-dust);
+  background-size: 60px 40px;
+  opacity: .9;
+  pointer-events: none;
+}
+.wgTanzaku:hover { transform: translateY(-6px) rotate(-.6deg); box-shadow: 0 0 0 1px var(--wg-gold), 0 22px 40px rgba(0, 0, 0, .5); }
+.wgTanzaku .wgVerse { flex: 1; }
+.wgTanzakuFoot { display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: var(--wg-mincho); }
+.wgAuthor { color: var(--wg-sumi); font-size: 13px; font-weight: 700; }
+.wgCollection { color: var(--wg-sumi-soft); font-size: 12px; }
+
+/* ---------- 詳細（dialog） ---------- */
+.wgDialog {
+  width: min(960px, calc(100% - 24px));
+  max-height: calc(100dvh - 24px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid rgba(217, 183, 110, .45);
+  border-radius: 12px;
+  background: var(--wg-dust), radial-gradient(80% 60% at 0% 0%, var(--wg-ai-3), transparent 70%), var(--wg-ai);
+  color: var(--wg-text);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .6);
+}
+.wgDialog::backdrop { background: rgba(10, 13, 26, .72); backdrop-filter: blur(4px); }
+.wgDialog[open] { animation: wgOpen 320ms cubic-bezier(.2, .7, .2, 1); }
+.wgDetail { padding: 20px 28px 24px; }
+.wgDetailTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.wgDetailTop .wgEyebrow { margin: 0; font-variant-numeric: tabular-nums; }
+.wgClose {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--wg-gold-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--wg-text);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.wgClose:hover { background: rgba(217, 183, 110, .16); }
+.wgDetailBody { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 32px; align-items: start; margin-top: 12px; }
+.wgShikishi {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 300px;
+  min-height: 400px;
+  margin: 0;
+  padding: 36px 30px 36px 72px;
+  border-radius: 4px;
+  background:
+    var(--wg-paper),
+    radial-gradient(70% 40% at 20% 100%, rgba(184, 67, 42, .14), transparent 70%),
+    linear-gradient(180deg, rgba(217, 183, 110, .35), transparent 18%),
+    var(--wg-washi);
+  background-blend-mode: multiply, normal, normal, normal;
+  box-shadow: 0 0 0 1px rgba(217, 183, 110, .7), 0 0 0 8px var(--wg-ai-2), 0 0 0 9px rgba(217, 183, 110, .4), 0 24px 50px rgba(0, 0, 0, .5);
+}
+.wgShikishi .wgKu { animation: wgInk 700ms ease both; animation-delay: calc(var(--ku) * 110ms); }
+.wgSignature {
+  position: absolute;
+  left: 22px;
+  bottom: 22px;
+  writing-mode: vertical-rl;
+  font-family: var(--wg-mincho);
+  font-size: 14px;
+  letter-spacing: .2em;
+  color: var(--wg-sumi-soft);
+}
+.wgSignature::after {
+  /* 落款風の朱印 */
+  content: "";
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin-block-start: 8px;
+  border-radius: 2px;
+  background: var(--wg-shu);
+  opacity: .85;
+}
+.wgInfoTitle { margin: 4px 0 2px; font-family: var(--wg-mincho); font-size: 26px; font-weight: 700; letter-spacing: .12em; color: var(--wg-text); }
+.wgRef { margin: 0 0 18px; color: var(--wg-gold); font-family: var(--wg-mincho); font-size: 14px; }
+.wgBlock { padding: 14px 0; border-top: 1px solid rgba(217, 183, 110, .25); }
+.wgBlock h4 { margin: 0 0 8px; color: var(--wg-gold); font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .16em; }
+.wgTranslation { margin: 0; font-family: var(--wg-mincho); font-size: 17px; line-height: 1.9; color: var(--wg-text); }
+.wgYomiList { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.wgYomiList li { display: grid; grid-template-columns: 3.2em minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.wgYomiLabel { color: var(--wg-text-muted); font-size: 12px; }
+.wgYomiPhrase { font-family: var(--wg-mincho); font-size: 16px; }
+.wgYomiPhrase .wgTarget { text-decoration-color: var(--wg-gold); }
+.wgYomiKana { color: var(--wg-text-muted); font-size: 13px; }
+.wgWords { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.wgWord { display: grid; gap: 2px; padding: 10px 14px; border-left: 3px solid var(--wg-gold); background: rgba(243, 234, 214, .06); border-radius: 0 8px 8px 0; }
+.wgWordHead { font-family: var(--wg-mincho); font-size: 19px; font-weight: 700; }
+.wgWordKanji { font-size: 15px; font-weight: 500; color: var(--wg-text-muted); }
+.wgWordMeaning { font-size: 15px; }
+.wgWordSet { color: var(--wg-text-muted); font-size: 12px; }
+.wgDetailNav { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(217, 183, 110, .25); }
+
+@keyframes wgRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes wgInk { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@keyframes wgOpen { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 720px) {
+  .wgDetailBody { grid-template-columns: minmax(0, 1fr); }
+  .wgShikishi { min-width: 0; min-height: 360px; }
+}
+@media (max-width: 640px) {
+  .wgRoom { padding: 20px 16px 32px; }
+  .wgMoon { width: 64px; height: 64px; }
+  .wgTitle { font-size: 32px; }
+  .wgTeaserBody { grid-template-columns: minmax(0, 1fr); }
+  .wgTeaserShikishi { justify-self: center; transform: none; }
+  .wgGrid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px 12px; }
+  .wgVerse--card { font-size: 14px; }
+  .wgTanzaku { min-height: 260px; }
+  .wgDetail { padding: 16px 16px 20px; }
+  .wgShikishi { min-height: 320px; padding: 24px 10px 24px 40px; overflow-x: auto; }
+  .wgVerse--detail { font-size: 17px; gap: .3em; }
+  .wgKu:nth-child(4) { margin-block-start: .6em; }
+  .wgSignature { left: 12px; bottom: 16px; font-size: 12px; }
+  .wgYomiList li { grid-template-columns: 3.2em minmax(0, 1fr); }
+  .wgYomiKana { grid-column: 2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wgItem, .wgShikishi .wgKu, .wgDialog[open] { animation: none; }
+  .wgTanzaku, .wgTeaserShikishi, .wgButton, .wgFilter { transition: none; }
+  .wgTanzaku:hover, .wgTeaserShikishi:hover { transform: none; }
+  .wgTeaserShikishi { transform: none; }
+}
