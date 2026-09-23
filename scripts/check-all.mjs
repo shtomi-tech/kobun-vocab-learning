@@ -14,6 +14,7 @@ const syntaxChecks = [
   "static/study-time.js",
   "static/example-parts.js",
   "static/choice-builder.js",
+  "static/waka-gallery.js",
 ];
 
 const scripts = [
@@ -26,6 +27,7 @@ const scripts = [
   "check-effective-examples.mjs",
   "check-waka-candidates.mjs",
   "check-waka-display.mjs",
+  "check-waka-grammar.mjs",
   "check-meaning-example-ui.cjs",
   "check-example-source.mjs",
   "check-srs.cjs",

@@ -2,6 +2,7 @@
 
 const KobunVocabApp = (() => {
   const MANIFEST_URL = "data/manifest.json";
+  const WAKA_GRAMMAR_URL = "data/waka-grammar.json";
   const sharedStudentId = (() => {
     const params = new URLSearchParams(location.search);
     return (params.get("s") || params.get("student") || "").trim();
@@ -771,13 +772,32 @@ const KobunVocabApp = (() => {
       .map((source) => ({ setId: source.setId, set: source.set, label: source.entry.label })));
   }
 
-  function openWakaGallery(initialKey = null) {
+  // 文法解説（試作）は歌の間を開いたときに一度だけ読む。読めなければ文法の層を出さずに開く。
+  let wakaGrammar;
+  async function loadWakaGrammar() {
+    if (wakaGrammar !== undefined) return wakaGrammar;
+    try {
+      const data = await fetch(WAKA_GRAMMAR_URL, { cache: "no-store" }).then((response) => {
+        if (!response.ok) throw new Error(`waka grammar: HTTP ${response.status}`);
+        return response.json();
+      });
+      wakaGrammar = { rules: data.rules || {}, byKey: new Map(data.poems.map((poem) => [poem.key, poem])) };
+    } catch (error) {
+      console.error(error);
+      wakaGrammar = null;
+    }
+    return wakaGrammar;
+  }
+
+  async function openWakaGallery(initialKey = null) {
+    const grammar = await loadWakaGrammar();
     $("#homePanel").classList.add("hide");
     $("#sessionPanel").classList.add("hide");
     const panel = $("#wakaPanel");
     panel.classList.remove("hide");
     KobunWakaGallery.render(panel, wakaPoems(), {
       initialKey,
+      grammar,
       onClose: () => {
         renderHome();
         $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
