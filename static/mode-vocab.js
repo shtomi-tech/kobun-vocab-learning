@@ -407,6 +407,7 @@ const KobunVocabApp = (() => {
     const stage = {
       flash: `STEP 1 覚える ${Number(resume.index || 0) + 1}/${batchLength}`,
       meaning: resume.mode === "meaningReview" ? "意味だけ復習" : "STEP 2 確かめる",
+      recall: `思い出して復習 ${Number(resume.meaningIndex || 0) + 1}/${(resume.meaningOrder || []).length}`,
       wrongReview: "誤答確認",
       context: resume.mode === "review" ? "誤答復習" : "STEP 3 文中で解く",
       done: "完了",
@@ -759,6 +760,9 @@ const KobunVocabApp = (() => {
     );
     if (state.progress.resume) button.className = "ghost secondaryCta";
     section.appendChild(button);
+    section.appendChild(el("button", { class: "ghost secondaryCta recallCta", disabled: !due.length, onclick: startRecallReview },
+      `選択肢なしで思い出す（最大${MEANING_SESSION_SIZE}語）`,
+    ));
     return section;
   }
 
@@ -951,6 +955,29 @@ const KobunVocabApp = (() => {
     renderSession();
   }
 
+  // 思い出して書く復習。出題対象・並べ方・FSRSの記録は意味だけ復習と共用する。
+  // meaningOrder などの名前を流用するのは、wordForSession と renderWrongReview をそのまま使うため。
+  function startRecallReview() {
+    const ids = shuffle(dueMeaningEntries())
+      .sort((a, b) => (b.progress.items?.[b.word.id]?.wrongCount || 0) - (a.progress.items?.[a.word.id]?.wrongCount || 0))
+      .slice(0, MEANING_SESSION_SIZE)
+      .map((entry) => entry.key);
+    if (!ids.length) return renderHome();
+    session = {
+      mode: "recallReview", stage: "recall", meaningOrder: ids, meaningIndex: 0,
+      meaningCorrect: 0, wrongMeaningIds: [], reviewedIds: [], confidentMissIds: [],
+      ...freshRecallQuestion(),
+    };
+    lastStepKey = stepKey();
+    renderSession();
+  }
+
+  function freshRecallQuestion() {
+    return { phase: "ask", confidence: null, hintUsed: false, typed: "", recallRating: null, confidentMiss: false, confidenceMs: null, askedAt: null };
+  }
+
+  const isPoolReview = () => session?.mode === "meaningReview" || session?.mode === "recallReview";
+
   function restoreSession() {
     session = JSON.parse(JSON.stringify(state.progress.resume));
     lastStepKey = stepKey();
@@ -978,6 +1005,7 @@ const KobunVocabApp = (() => {
 
     if (session.stage === "flash") renderFlash(panel);
     else if (session.stage === "meaning") renderQuiz(panel, "meaning");
+    else if (session.stage === "recall") renderRecall(panel);
     else if (session.stage === "wrongReview") renderWrongReview(panel);
     else if (session.stage === "context") renderQuiz(panel, "context");
     else renderDone(panel);
@@ -990,6 +1018,7 @@ const KobunVocabApp = (() => {
       const block = session.mode === "learn" ? `・第${session.batchIndex + 1} / ${session.batchCount}ブロック` : "";
       return `意味確認 ${session.meaningIndex + 1} / ${session.meaningOrder.length}${block}`;
     }
+    if (session.stage === "recall") return `思い出して復習 ${session.meaningIndex + 1} / ${session.meaningOrder.length}`;
     if (session.stage === "context") return `文中問題 ${session.contextIndex + 1} / ${session.contextOrder.length}`;
     if (session.stage === "wrongReview") {
       const total = session.wrongMeaningIds.length;
@@ -1001,6 +1030,7 @@ const KobunVocabApp = (() => {
   function stageTitle() {
     if (session.mode === "review") return "間違えた語を解き直す";
     if (session.mode === "meaningReview") return session.stage === "done" ? "意味だけ復習完了" : session.stage === "wrongReview" ? "間違えた語を確認" : "意味だけ復習";
+    if (session.mode === "recallReview") return session.stage === "done" ? "思い出して復習完了" : session.stage === "wrongReview" ? "間違えた語を確認" : "選択肢なしで思い出す";
     return {
       flash: `STEP 1　覚える（第${session.batchIndex + 1}ブロック）`,
       meaning: `STEP 2　確かめる（第${session.batchIndex + 1}ブロック）`,
@@ -1017,9 +1047,10 @@ const KobunVocabApp = (() => {
   function stepBar() {
     const steps = session.mode === "learn" ? ["flash", "meaning", "wrongReview", "context"]
       : session.mode === "meaningReview" ? ["meaning", "wrongReview"]
-        : ["context"];
+        : session.mode === "recallReview" ? ["recall", "wrongReview"]
+          : ["context"];
     const block = session.mode === "learn" ? ` ${session.batchIndex + 1}/${session.batchCount}` : "";
-    const labels = { flash: `1 覚える${block}`, meaning: session.mode === "meaningReview" ? "意味だけ復習" : `2 確かめる${block}`, wrongReview: "必要なら復習", context: "3 解く" };
+    const labels = { flash: `1 覚える${block}`, meaning: session.mode === "meaningReview" ? "意味だけ復習" : `2 確かめる${block}`, wrongReview: "必要なら復習", context: "3 解く", recall: "思い出す" };
     const current = steps.indexOf(session.stage);
     const key = stepKey();
     const changed = key !== lastStepKey;
@@ -1235,8 +1266,198 @@ const KobunVocabApp = (() => {
     $(".askWord, .meaningExample, .cloze")?.focus({ preventScroll: true });
   }
 
+  const RECALL_CONFIDENCE = [
+    ["sure", "言える（自信あり）"],
+    ["maybe", "たぶん"],
+    ["blank", "思い出せない"],
+  ];
+  const RECALL_SELF_GRADE = [
+    ["correct", "合っていた"],
+    ["partial", "一部だけ"],
+    ["wrong", "違った"],
+  ];
+  const RECALL_RESULT = {
+    good: "思い出せました。次の復習日を大きく延ばします。",
+    hard: "あいまいでした。次の復習日は控えめに延ばします。",
+    again: "要再確認に戻しました。このあと誤答確認で読み直します。",
+  };
+
+  function recallChoiceButton(className, number, label, onclick) {
+    return el("button", { class: `choice ${className}`, type: "button", onclick },
+      el("span", { class: "choiceNo" }, number),
+      el("span", {}, label),
+    );
+  }
+
+  function renderRecall(panel) {
+    const key = session.meaningOrder[session.meaningIndex];
+    const word = wordForSession(key);
+    const entryKey = `recallReview:recall:${key}`;
+    const isNewEntry = entryKey !== lastQuizEntryKey;
+    lastQuizEntryKey = entryKey;
+    // 解答時間の起点は問題が出た瞬間。同じ問題の再描画（ヒント表示など）では測り直さない。
+    if (session.phase === "ask" && (isNewEntry || !session.askedAt)) session.askedAt = Date.now();
+
+    const box = el("section", { class: `quiz recall${session.phase !== "ask" ? " quiz--answered" : ""}${session.phase === "ask" && isNewEntry ? " is-entering" : ""}` });
+    if (session.phase === "ask") {
+      box.appendChild(el("p", { class: "label" }, "この語の意味を思い出してください"));
+      // 漢字表記は意味の手掛かりになりすぎるため、答えを見るまで出さない。
+      box.appendChild(el("p", { class: "askWord recallHeadword", tabindex: "-1" }, word.headword));
+      const input = el("input", {
+        class: "recallInput",
+        type: "text",
+        id: "recallInput",
+        autocomplete: "off",
+        placeholder: "書かずに思い浮かべるだけでもよい",
+      });
+      input.value = session.typed || "";
+      input.addEventListener("input", () => { session.typed = input.value; });
+      input.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" || event.isComposing || event.keyCode === 229) return;
+        event.preventDefault();
+        $(".recallConfidence .choice")?.focus();
+      });
+      box.appendChild(el("label", { class: "recallInputLabel", for: "recallInput" }, "意味を書いてみる（任意）"));
+      box.appendChild(input);
+      if (session.hintUsed) {
+        box.appendChild(el("div", { class: "recallHint" },
+          el("p", { class: "label" }, `ヒント：『${word.source}』`),
+          el("p", { class: exampleClass(word, "meaningExample") }, exampleBody(word, { underline: true })),
+        ));
+      } else {
+        box.appendChild(el("button", { class: "ghost recallHintButton", type: "button", onclick: () => {
+          session.hintUsed = true;
+          renderSession();
+          $(".recallConfidence .choice")?.focus({ preventScroll: true });
+        } }, "例文をヒントに見る"));
+      }
+      box.appendChild(el("p", { class: "recallPrompt" }, "答えを見る前に、どのくらい言えるかを選んでください。"));
+      box.appendChild(el("div", { class: "choices recallConfidence" },
+        ...RECALL_CONFIDENCE.map(([value, label], index) => recallChoiceButton("confidenceChoice", index + 1, label, () => chooseRecallConfidence(value))),
+      ));
+      panel.appendChild(box);
+      return;
+    }
+
+    const answer = el("div", { class: "recallAnswer" });
+    if (session.typed?.trim()) {
+      answer.appendChild(el("p", { class: "recallTyped" }, el("span", { class: "label" }, "あなたの答え"), el("span", {}, session.typed.trim())));
+    }
+    answer.appendChild(wordCard(word));
+    if (session.phase === "revealed") {
+      box.appendChild(el("p", { class: "label" }, "答え合わせ"));
+      box.appendChild(answer);
+      box.appendChild(el("p", { class: "recallPrompt" }, "自分の答えと比べて、当てはまるものを選んでください。"));
+      box.appendChild(el("div", { class: "choices recallSelfGrade" },
+        ...RECALL_SELF_GRADE.map(([value, label], index) => recallChoiceButton("selfGradeChoice", index + 1, label, () => answerRecall(value))),
+      ));
+      panel.appendChild(box);
+      return;
+    }
+
+    // graded
+    const isOk = session.recallRating !== "again";
+    box.appendChild(el("div", { class: `feedback ${isOk ? "ok" : "ng"}`, role: "status", "aria-live": "polite", "aria-atomic": "true", tabindex: "-1" },
+      el("div", { class: "feedbackSummary" },
+        el("h3", {}, isOk ? (session.recallRating === "good" ? "○ 思い出せた" : "△ あいまい") : "× 思い出せなかった"),
+        el("p", {}, RECALL_RESULT[session.recallRating] || RECALL_RESULT.again),
+      ),
+      session.confidentMiss
+        ? el("p", { class: "recallConfidentMiss" }, "自信があったのに違った語です。解説をもう一度読みましょう。")
+        : null,
+      el("div", { class: "quizNextAction" },
+        el("button", { class: "cta next", onclick: nextRecall }, session.meaningIndex === session.meaningOrder.length - 1 ? "次へ →" : "次の問題 →"),
+      ),
+    ));
+    box.appendChild(answer);
+    panel.appendChild(box);
+  }
+
+  function chooseRecallConfidence(confidence) {
+    if (session.phase !== "ask") return;
+    session.confidence = confidence;
+    session.confidenceMs = KobunSrs.measuredMs(Date.now() - (session.askedAt || 0));
+    if (confidence === "blank") return answerRecall(null);
+    session.phase = "revealed";
+    renderSession();
+    $(".recallSelfGrade .choice")?.focus({ preventScroll: true });
+  }
+
+  function answerRecall(selfGrade) {
+    if (session.phase === "graded") return;
+    const key = session.meaningOrder[session.meaningIndex];
+    const grade = KobunRecallGrade.gradeRecall({ confidence: session.confidence, selfGrade, hintUsed: session.hintUsed });
+    const entry = reviewEntryByKey(key);
+    const progress = entry?.progress || state.progress;
+    const wordId = entry?.word.id || key;
+    progress.items = progress.items || {};
+    progress.items[wordId] = KobunSrs.recordRating(progress.items[wordId], grade.rating, new Date(), {
+      elapsedMs: session.confidenceMs,
+      recall: true,
+      confidentMiss: grade.confidentMiss,
+    });
+    appendHistory({ kind: "recall", wordId, result: grade.rating, confidence: session.confidence, hintUsed: session.hintUsed === true }, progress);
+    saveProgressFor(entry?.setId || state.setId, progress);
+
+    if (grade.rating !== "again") session.meaningCorrect++;
+    if (grade.toWrongReview && !session.wrongMeaningIds.includes(key)) session.wrongMeaningIds.push(key);
+    if (grade.confidentMiss && !session.confidentMissIds.includes(key)) session.confidentMissIds.push(key);
+    session.recallRating = grade.rating;
+    session.confidentMiss = grade.confidentMiss;
+    session.phase = "graded";
+    renderSession();
+    const feedback = $(".feedback");
+    feedback?.focus({ preventScroll: true });
+    feedback?.scrollIntoView({ block: "nearest" });
+  }
+
+  function nextRecall() {
+    const last = session.meaningIndex === session.meaningOrder.length - 1;
+    Object.assign(session, freshRecallQuestion());
+    if (!last) session.meaningIndex++;
+    else session.stage = session.wrongMeaningIds.length ? "wrongReview" : "done";
+    renderSession();
+    $(last ? ".reviewCard, .doneBanner h2" : ".recallHeadword")?.focus({ preventScroll: true });
+  }
+
+  function handleRecallKeydown(event) {
+    if (event.repeat || event.isComposing || event.keyCode === 229) return;
+    if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+    // 入力欄の Enter は入力欄側で扱う。数字は入力に任せる。
+    if (event.target instanceof Element && event.target.closest("input, textarea, select, a, [contenteditable]")) return;
+    const sessionPanel = $("#sessionPanel");
+    if (!sessionPanel || sessionPanel.classList.contains("hide")) return;
+    if (session.phase === "graded") {
+      if (event.key !== "Enter") return;
+      if (event.target instanceof Element && event.target.closest("button")) return; // ボタン自身の Enter に任せる
+      const next = $(".quiz .next");
+      if (!next) return;
+      event.preventDefault();
+      pressFlash(next, () => next.click());
+      return;
+    }
+    const index = { "1": 0, "2": 1, "3": 2 }[event.key];
+    if (index == null) return;
+    const group = session.phase === "ask" ? ".recallConfidence" : ".recallSelfGrade";
+    const button = document.querySelectorAll(`${group} .choice`)[index];
+    if (!button) return;
+    event.preventDefault();
+    pressFlash(button, () => button.click());
+  }
+
+  function confidentMissList(keys) {
+    return el("section", { class: "card recallMissList" },
+      el("p", { class: "label" }, "自信があったのに違った語"),
+      el("ul", {}, ...keys.map((key) => {
+        const word = wordForSession(key);
+        return el("li", {}, `${word.headword}【${word.kanji}】：${meaningText(word)}`);
+      })),
+    );
+  }
+
   function handleQuizKeydown(event) {
     if (!session) return;
+    if (session.stage === "recall") return handleRecallKeydown(event);
     if (session.stage !== "meaning" && session.stage !== "context") return;
     if (event.repeat || event.isComposing || event.keyCode === 229) return;
     if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
@@ -1265,7 +1486,7 @@ const KobunVocabApp = (() => {
     const reviewedCount = session.reviewedIds.length;
     const remainingIds = session.wrongMeaningIds.filter((id) => !session.reviewedIds.includes(id));
     const nextId = remainingIds[0];
-    const isFinalStage = session.mode === "meaningReview";
+    const isFinalStage = isPoolReview();
     panel.appendChild(el("p", { class: "reviewProgress" }, `未確認 ${remainingIds.length} / 全${total}語・確認済み ${reviewedCount}語`));
     const list = el("div", { class: "reviewList" });
     if (nextId) {
@@ -1311,19 +1532,21 @@ const KobunVocabApp = (() => {
 
   function renderDone(panel) {
     clearResume();
-    const isMeaningReview = session.mode === "meaningReview";
+    const isMeaningReview = isPoolReview();
+    const isRecall = session.mode === "recallReview";
     const score = isMeaningReview ? session.meaningCorrect : session.contextCorrect;
     const total = isMeaningReview ? session.meaningOrder.length : session.contextOrder.length;
     const cleared = !isMeaningReview && KobunSetProgress.summarize(state.set, state.progress).key === "cleared";
     panel.appendChild(el("section", { class: `doneBanner${cleared ? " doneBanner--success" : ""}` },
       el("p", { class: "label" }, "学習結果"),
       el("div", { class: "score" }, `${score} / ${total}`),
-      el("h2", {}, isMeaningReview ? "意味だけ復習が完了しました" : cleared ? `${state.set.meta.title} CLEAR` : (session.mode === "review" ? "誤答復習が完了しました" : "通常学習が完了しました")),
-      el("p", { class: "hint" }, isMeaningReview ? "正解した語は次の復習日へ、誤答した語は要再確認へ戻りました。" : (reviewIds().length ? `復習対象があと${reviewIds().length}語あります。` : "全語の文中問題に正解しました。")),
+      el("h2", {}, isRecall ? "思い出して復習が完了しました" : isMeaningReview ? "意味だけ復習が完了しました" : cleared ? `${state.set.meta.title} CLEAR` : (session.mode === "review" ? "誤答復習が完了しました" : "通常学習が完了しました")),
+      el("p", { class: "hint" }, isRecall ? "思い出せた語は次の復習日へ、思い出せなかった語は要再確認へ戻りました。" : isMeaningReview ? "正解した語は次の復習日へ、誤答した語は要再確認へ戻りました。" : (reviewIds().length ? `復習対象があと${reviewIds().length}語あります。` : "全語の文中問題に正解しました。")),
     ));
+    if (isRecall && session.confidentMissIds?.length) panel.appendChild(confidentMissList(session.confidentMissIds));
     const actions = el("div", { class: "actions doneActions" });
     if (!isMeaningReview && reviewIds().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startReview }, `間違えた${reviewIds().length}語を復習する →`));
-    else if (isMeaningReview && dueMeaningEntries().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startMeaningReview }, `要再確認の${Math.min(dueMeaningEntries().length, MEANING_SESSION_SIZE)}語をもう一度解く →`));
+    else if (isMeaningReview && dueMeaningEntries().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: isRecall ? startRecallReview : startMeaningReview }, `要再確認の${Math.min(dueMeaningEntries().length, MEANING_SESSION_SIZE)}語をもう一度解く →`));
     else if (cleared) {
       const nextId = nextSetId(state.setId);
       if (nextId) {

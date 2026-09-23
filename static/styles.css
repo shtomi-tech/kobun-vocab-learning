@@ -307,6 +307,21 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .feedback.ng h3 { color: var(--ng); }
 .questionTranslation { margin: -4px 0 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--soft); }
 .next { display: block; }
+/* 思い出して書く復習 */
+.recallCta { display: block; margin-top: 12px; }
+.recall .recallHeadword { margin: 6px 0 16px; font-size: 38px; }
+.recallInputLabel { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
+.recallInput { box-sizing: border-box; width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid var(--color-control-border); border-radius: var(--radius-control); background: var(--canvas); color: var(--ink); font: inherit; }
+.recallInput:focus { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+.recallHintButton { margin-top: 12px; }
+.recallHint { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--soft); }
+.recallHint .meaningExample { margin: 4px 0 0; }
+.recallPrompt { margin: 20px 0 10px; font-weight: 700; }
+.recallAnswer { display: grid; gap: 12px; margin-top: 12px; }
+.recallTyped { display: grid; gap: 4px; margin: 0; padding: 12px 14px; border: 1px dashed var(--color-control-border); border-radius: var(--radius-control); background: var(--canvas); }
+.recallConfidentMiss { margin: 0 0 8px; padding-left: 10px; border-left: 3px solid var(--color-accent); color: var(--clay-dark); font-weight: 700; }
+.recallMissList { margin-top: 16px; border-left: 4px solid var(--color-accent); }
+.recallMissList ul { margin: 8px 0 0; padding-left: 1.2em; }
 .quiz--answered { margin-bottom: var(--quiz-next-action-height); }
 .quizNextAction { position: fixed; left: 50%; bottom: 0; z-index: 20; display: flex; justify-content: flex-end; width: min(var(--container-max), calc(100% - var(--page-gutter))); padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--card); transform: translateX(-50%); }
 .reviewList { display: grid; gap: 16px; }

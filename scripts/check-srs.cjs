@@ -24,7 +24,7 @@ const srs = loadSrs({ withFsrs: true });
 assert.equal(srs.params.request_retention, 0.9, "目標保持率は0.9");
 assert.equal(srs.params.maximum_interval, 180, "上限間隔は180日");
 assert.equal(srs.params.enable_short_term, true, "当日ステップを使う");
-// Easy(4) は自己申告UIが無いため使わない。
+// Easy(4) は使わない（思い出して書く復習の自己申告でも使わない方針）。
 assert.deepEqual(Object.keys(srs.ratings).sort(), ["again", "good", "hard"], "使うRatingはAgain/Hard/Good");
 
 /* ---- 解答時間の判定 ---- */
@@ -152,6 +152,38 @@ assert.deepEqual(bounds, [...bounds].sort((a, b) => a - b), "バケットの上�
 assert.equal(srs.label({}), "未実施", "未実施の判定");
 assert.equal(srs.label({ lastAnsweredAt: start.toISOString(), nextReviewAt: null }), "要再確認", "期限なしは要再確認");
 
+/* ---- 評価を指定する記録（思い出して書く復習） ---- */
+{
+  const seed = { wrongCount: 0, stage: 3, lastAnsweredAt: "2026-09-01T00:00:00.000Z", nextReviewAt: "2026-09-15T00:00:00.000Z" };
+  const answeredAt = new Date("2026-09-15T00:00:00.000Z");
+  // fuzz は due にだけ乗るため、安定性・難易度・状態で record と比べる。
+  const same = (left, right, message) => {
+    for (const key of ["stability", "difficulty", "state", "reps", "lapses", "learning_steps"]) {
+      assert.equal(left.fsrs[key], right.fsrs[key], `${message}（${key}）`);
+    }
+    assert.equal(left.wrongCount, right.wrongCount, `${message}（wrongCount）`);
+  };
+  same(srs.recordRating(seed, "good", answeredAt), srs.record(seed, true, answeredAt, { elapsedMs: 3000, medianMs: 4000 }), "good は速い正解と同じ");
+  same(srs.recordRating(seed, "hard", answeredAt), srs.record(seed, true, answeredAt, { elapsedMs: 30000, medianMs: 4000 }), "hard は遅い正解と同じ");
+  same(srs.recordRating(seed, "again", answeredAt), srs.record(seed, false, answeredAt), "again は誤答と同じ");
+  same(srs.recordRating(seed, "easy", answeredAt), srs.record(seed, false, answeredAt), "想定外の評価は again として扱う");
+
+  const recalled = srs.recordRating(seed, "good", answeredAt, { recall: true, elapsedMs: 5000 });
+  assert.equal(recalled.recallCount, 1, "recall を数える");
+  assert.equal(recalled.confidentMissCount, 0, "取り違えでなければ数えない");
+  assert.equal(recalled.lastMs, 5000, "正解側の評価では解答時間を保存する");
+  const missed = srs.recordRating(recalled, "again", answeredAt, { recall: true, confidentMiss: true, elapsedMs: 2000 });
+  assert.equal(missed.recallCount, 2, "recall を積み上げる");
+  assert.equal(missed.confidentMissCount, 1, "自信ありの取り違えを数える");
+  assert.equal(missed.lastMs, 5000, "again では解答時間を更新しない");
+  const revivedCounts = srs.normalize(JSON.parse(JSON.stringify(missed)));
+  assert.equal(revivedCounts.recallCount, 2, "recallCount は normalize で消えない");
+  assert.equal(revivedCounts.confidentMissCount, 1, "confidentMissCount は normalize で消えない");
+  // 4択の記録は回数を変えない
+  assert.equal(srs.record(missed, true, answeredAt).recallCount, 2, "record は recallCount を保持する");
+  assert.equal(srs.normalize({}).recallCount, 0, "既定値は0");
+}
+
 /* ---- FSRSが読み込めない環境（配信漏れ・ネットワーク失敗）でも学習を止めない ---- */
 const offline = loadSrs({ withFsrs: false });
 let fallback = {};
@@ -169,6 +201,14 @@ for (const days of offline.intervals) {
   slow = offline.record(slow, true, start, { elapsedMs: 30000, medianMs: 4000 });
   assert.equal(slow.stage, 0, "フォールバックでも遅い正解は段を進めない");
   assert.equal(Math.round((new Date(slow.nextReviewAt) - start) / DAY), 1, "段は進まないが同じ間隔で出す");
+}
+{
+  const hard = offline.recordRating({}, "hard", start);
+  assert.equal(hard.stage, 0, "フォールバックの hard は段を進めない");
+  const good = offline.recordRating({}, "good", start);
+  assert.equal(good.stage, 1, "フォールバックの good は段を進める");
+  const again = offline.recordRating(good, "again", start);
+  assert.equal(again.nextReviewAt, null, "フォールバックの again は即座に対象へ戻す");
 }
 fallback = offline.record(fallback, false, start);
 assert.equal(fallback.stage, 0, "フォールバックの誤答は stage を戻す");
