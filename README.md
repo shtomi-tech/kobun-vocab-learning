@@ -4,6 +4,8 @@
 
 公開版: https://shtomi-tech.github.io/kobun-vocab-learning/
 
+試験版（新機能）: `next` ブランチへの push で Cloudflare Pages（プロジェクト `kobun-vocab-learning-next`）へ出す。手順は `.github/workflows/cloudflare-next.yml`。Secrets `CLOUDFLARE_API_TOKEN`・`CLOUDFLARE_ACCOUNT_ID` が必要。本番の GitHub Pages は `main` のまま。
+
 ## 起動
 
 ```powershell
