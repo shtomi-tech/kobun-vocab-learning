@@ -3,8 +3,7 @@
 /* 意味復習の間隔算出。FSRS-6（static/vendor/fsrs の ts-fsrs UMD, グローバル名 FSRS）で
    語ごとの安定性・難易度から次回を決める。固定はしご [1,3,7,14] は、ライブラリが
    読み込めなかったときのフォールバックとしてのみ残す。
-   公開API（normalize / record / isDue / label / labels）は変えていない。
-   recordRating は思い出して書く復習の自己採点用に追加した。 */
+   公開API（normalize / record / isDue / label / labels）は変えていない。 */
 const KobunSrs = (() => {
   const intervals = [1, 3, 7, 14]; // フォールバック専用
   const DAY_MS = 86400000;
@@ -27,7 +26,7 @@ const KobunSrs = (() => {
     enable_short_term: true, // 1m/10m の当日ステップを使う
     enable_fuzz: true,       // 同じ日に大量の語が固まるのを防ぐ（乱数を含む）
   };
-  // Easy(4) は使わない。思い出して書く復習の自己申告は甘くなりやすく、上限180日の方針とも合わないため。
+  // Easy(4) は自己申告UIが無く根拠を作れないため使わない。
   const ratings = { again: 1, hard: 2, good: 3 };
 
   /* 解答時間の判定。閾値はこの4つだけ。初期値は実データを見て調整する前提。
@@ -86,9 +85,6 @@ const KobunSrs = (() => {
       lastMs: Number.isFinite(source.lastMs) ? source.lastMs : null,
       avgMs: Number.isFinite(source.avgMs) ? source.avgMs : null,
       fsrs: source.fsrs && typeof source.fsrs === "object" ? source.fsrs : null,
-      // 思い出して書く復習の回数と、自信ありで違った回数。
-      recallCount: Number.isInteger(source.recallCount) && source.recallCount > 0 ? source.recallCount : 0,
-      confidentMissCount: Number.isInteger(source.confidentMissCount) && source.confidentMissCount > 0 ? source.confidentMissCount : 0,
     };
   }
 
@@ -163,28 +159,12 @@ const KobunSrs = (() => {
   /* options.elapsedMs: その問題の解答時間（ms）。options.medianMs: その回の中央値。
      速い正解は Good、遅い正解は Hard、誤答は Again として FSRS へ渡す。 */
   function record(value, correct, now = new Date(), options = {}) {
-    const ms = measuredMs(options.elapsedMs);
-    const grade = correct ? rtGrade(ms, options.medianMs) : null;
-    const rating = !correct ? "again" : grade === "hard" ? "hard" : "good";
-    return applyRating(normalize(value), rating, now, ms);
-  }
-
-  /* 評価を外から指定して記録する（思い出して書く復習の自己採点用）。
-     rating: "again" | "hard" | "good"。options.elapsedMs は表示用の平均にだけ使う。
-     options.recall / options.confidentMiss が true なら、それぞれの回数を数える。 */
-  function recordRating(value, rating, now = new Date(), options = {}) {
     const state = normalize(value);
-    const safeRating = Object.prototype.hasOwnProperty.call(ratings, rating) ? rating : "again";
-    if (options.recall === true) state.recallCount++;
-    if (options.confidentMiss === true) state.confidentMissCount++;
-    return applyRating(state, safeRating, now, measuredMs(options.elapsedMs));
-  }
-
-  function applyRating(state, rating, now, ms) {
-    const correct = rating !== "again";
     const scheduled = fsrs();
     // カードは「前回の解答時刻」を持つ必要があるため、lastAnsweredAt を更新する前に作る。
     const card = scheduled ? toCard(state, now) : null;
+    const ms = measuredMs(options.elapsedMs);
+    const grade = correct ? rtGrade(ms, options.medianMs) : "good";
     state.lastAnsweredAt = now.toISOString();
     if (!correct) state.wrongCount++;
     if (correct && ms !== null) {
@@ -192,7 +172,8 @@ const KobunSrs = (() => {
       state.avgMs = nextAverageMs(state.avgMs, ms);
     }
     if (scheduled && card) {
-      const next = scheduled.next(card, now, ratings[rating]).card;
+      const rating = correct ? (grade === "hard" ? ratings.hard : ratings.good) : ratings.again;
+      const next = scheduled.next(card, now, rating).card;
       state.fsrs = fromCard(next);
       // nextReviewAt は due の写し。期限判定・内訳・クラウド同期はこの値だけを見る。
       state.nextReviewAt = state.fsrs.due;
@@ -209,8 +190,8 @@ const KobunSrs = (() => {
     const next = new Date(now);
     next.setDate(next.getDate() + days);
     state.nextReviewAt = next.toISOString();
-    // 遅い正解（Hard）は段を進めず、同じ間隔でもう一度出す。
-    if (rating !== "hard") state.stage = Math.min(state.stage + 1, intervals.length - 1);
+    // 遅い正解は段を進めず、同じ間隔でもう一度出す。
+    if (grade !== "hard") state.stage = Math.min(state.stage + 1, intervals.length - 1);
     return state;
   }
 
@@ -231,7 +212,7 @@ const KobunSrs = (() => {
 
   return {
     intervals, buckets, labels, params, ratings,
-    normalize, record, recordRating, isDue, label,
+    normalize, record, isDue, label,
     rtGrade, medianMs, measuredMs, nextAverageMs,
   };
 })();
