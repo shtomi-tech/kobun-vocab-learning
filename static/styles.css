@@ -315,6 +315,8 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .recallHintButton { margin-top: 12px; }
 .recallHint { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--soft); }
 .recallHint .meaningExample { margin: 4px 0 0; }
+.recallHomograph { margin: 0 0 16px; }
+.recallQuotaStatus { margin: 0 0 12px; font-weight: 700; }
 .recallPrompt { margin: 20px 0 10px; font-weight: 700; }
 .recallAnswer { display: grid; gap: 12px; margin-top: 12px; }
 .recallTyped { display: grid; gap: 4px; margin: 0; padding: 12px 14px; border: 1px dashed var(--color-control-border); border-radius: var(--radius-control); background: var(--canvas); }

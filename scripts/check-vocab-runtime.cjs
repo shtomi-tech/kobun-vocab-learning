@@ -367,16 +367,48 @@ const fetchStub = async (url, init = {}) => {
   assert.equal(recallTest.getSession().stage, "wrongReview", "again があれば誤答確認へ進む");
   assert.equal(recallTest.state.progress.recall[secondKey.split("::").pop()].lastRating, "again");
 
-  // 今日のノルマ（20問）を数える。達成後も追加で解ける。
-  recallTest.state.progress.history.push(...Array.from({ length: 19 }, () => ({ at: new Date().toISOString(), kind: "recall", wordId: firstWord.id, result: "good" })));
-  recallTest.state.progress.history.push({ at: "2000-01-01T00:00:00.000Z", kind: "recall", wordId: firstWord.id, result: "good" });
+  const homeText = () => texts(recallDom.document.querySelector("#homePanel")).join("\n");
+
+  // 思い出す問題の途中保存があれば、ノルマのカードは新しく始めずに続きへつなぐ。
+  recallTest.renderHome();
+  assert.equal(recallTest.state.progress.resume.mode, "recallReview");
+  assert.ok(homeText().includes("続きから再開する（誤答確認）"), "途中保存があれば続きへつなぐ");
+  assert.ok(!homeText().includes("問を解く"), "途中保存があるときは新しく始めるボタンを出さない");
+  assert.ok(homeText().includes("全セット共通・誤答確認"), "途中保存の説明をセット名に結び付けない");
+
+  // 残りの数は1か所。ボタンは1回の問題数で、学習済みが少ない理由を添える。
   delete recallTest.state.progress.resume;
   recallTest.renderHome();
-  const homeText = texts(recallDom.document.querySelector("#homePanel")).join("\n");
-  assert.ok(homeText.includes("ノルマ達成"), "今日20問答えたらノルマ達成と出す（昨日以前の回答は数えない）");
+  assert.ok(homeText().includes("今日の残り 18問"), "今日の残りは20から答えた数を引く");
+  assert.ok(homeText().includes("2問を解く"), "ボタンは1回の問題数");
+  assert.ok(homeText().includes("学習済みが2語のため、1回2問です。"));
+
+  // 別の学習の途中保存があるときは、始めると消えることを先に書く。
+  recallTest.state.progress.resume = { mode: "learn", stage: "flash", order: recallWords.map((word) => word.id), index: 0, batchIndex: 0, batchCount: 1 };
+  recallTest.renderHome();
+  assert.ok(homeText().includes("別の学習の途中保存があります。ここで始めると、その途中保存は消えます。"), "上書きの前に知らせる");
+  delete recallTest.state.progress.resume;
+
+  // 今日のノルマ（20問）を数える。達成後も追加で解ける。
+  recallTest.state.progress.history.push(...Array.from({ length: 18 }, () => ({ at: new Date().toISOString(), kind: "recall", wordId: firstWord.id, result: "good" })));
+  recallTest.state.progress.history.push({ at: "2000-01-01T00:00:00.000Z", kind: "recall", wordId: firstWord.id, result: "good" });
+  recallTest.renderHome();
+  assert.ok(homeText().includes("今日のノルマを達成しました"), "今日20問答えたら達成と出す（昨日以前の回答は数えない）");
+  assert.ok(homeText().includes("追加で2問解く"));
   recallTest.startRecallReview();
   assert.equal(recallTest.getSession().meaningOrder.length, 2, "達成後も追加で出題できる");
   assert.equal(recallTest.getSession().meaningOrder[0], secondKey, "前回思い出せなかった語から出す");
+  assert.equal(recallTest.getSession().extraAfterQuota, true, "達成後に始めた回は追加の回として完了画面を出す");
+
+  // 同じ読みの語（ゐる：率る・居る）は、例文を最初から出してヒント扱いにしない。
+  const homographs = recallSet.words.filter((word) => word.headword === "ゐる");
+  assert.equal(homographs.length, 2, "検査の前提：第1セットに同じ読みの語が2語ある");
+  recallTest.state.set = { meta: recallSet.meta, words: homographs };
+  recallTest.state.progress = { units: Object.fromEntries(homographs.map((word) => [word.id, { learned: true }])), finalCheck: {}, items: {}, history: [] };
+  recallTest.startRecallReview();
+  assert.ok(panelText().includes("同じ読みの語があります"), "同じ読みの語は例文を出す");
+  assert.ok(!panelText().includes("例文をヒントに見る"), "ヒントのボタンは出さない");
+  assert.equal(recallTest.getSession().hintUsed, false, "ヒントを使った扱いにしない");
   console.log("vocabulary runtime contract: recall review OK");
 }
 
