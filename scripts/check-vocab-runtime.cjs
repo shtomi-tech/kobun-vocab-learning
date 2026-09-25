@@ -397,7 +397,6 @@ const fetchStub = async (url, init = {}) => {
   assert.ok(homeText().includes("追加で2問解く"));
   recallTest.startRecallReview();
   assert.equal(recallTest.getSession().meaningOrder.length, 2, "達成後も追加で出題できる");
-  assert.equal(recallTest.getSession().meaningOrder[0], secondKey, "前回思い出せなかった語から出す");
   assert.equal(recallTest.getSession().extraAfterQuota, true, "達成後に始めた回は追加の回として完了画面を出す");
 
   // 同じ読みの語（ゐる：率る・居る）は、例文を最初から出してヒント扱いにしない。

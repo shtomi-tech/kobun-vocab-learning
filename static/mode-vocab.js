@@ -776,7 +776,7 @@ const KobunVocabApp = (() => {
     const section = el("section", { class: "card recallMission" },
       el("p", { class: "label" }, "毎日のノルマ"),
       el("h2", {}, "選択肢なしで思い出す"),
-      el("p", { class: "lead" }, `学習済みの語から、毎日${RECALL_DAILY_QUOTA}問を4択なしで出します。間隔復習とは別枠で、結果は次の復習日に影響しません。前回思い出せなかった語から優先して出します。`),
+      el("p", { class: "lead" }, `学習済みの語から、毎日${RECALL_DAILY_QUOTA}問を4択なしで出します。間隔復習とは別枠で、結果は次の復習日に影響しません。学習済みの語からランダムに出し、今日まだ出していない語を先に出します。`),
       el("div", { class: "meaningMetrics" },
         stat(Math.min(today, RECALL_DAILY_QUOTA), RECALL_DAILY_QUOTA, remaining ? "今日の回答" : "今日の回答（達成）"),
         stat(learned.length, reviewPoolEntries().length, "出題対象"),
@@ -1329,8 +1329,8 @@ const KobunVocabApp = (() => {
   ];
   const RECALL_RESULT = {
     good: "思い出せました。",
-    hard: "あいまいでした。次に出すときは少し先に回します。",
-    again: "思い出せなかった語として、次回から優先して出します。このあと誤答確認で読み直します。",
+    hard: "あいまいでした。",
+    again: "このあと誤答確認で読み直します。",
   };
 
   function recallChoiceButton(className, number, label, onclick) {
@@ -1714,7 +1714,6 @@ const KobunVocabApp = (() => {
     const remaining = recallRemaining();
     return [
       remaining ? `今日 ${recallTodayCount()} / ${RECALL_DAILY_QUOTA}問・残り${remaining}問。` : `今日 ${recallTodayCount()}問（ノルマ${RECALL_DAILY_QUOTA}問）。`,
-      session.wrongMeaningIds.length ? "思い出せなかった語は次回から優先して出します。" : "",
       "間隔復習の復習日は変わりません。",
     ].join("");
   }

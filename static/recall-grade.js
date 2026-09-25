@@ -92,21 +92,17 @@ const KobunRecallGrade = (() => {
   }
 
   /**
-   * 出題する語を選ぶ。entries は { key, stat }。
-   * 前回思い出せなかった語 → まだ出していない語 → あいまいだった語 → 思い出せた語の順。
-   * 今日すでに出した語は最後に回し、同じ段では前回が古い語から出す。
+   * 出題する語を選ぶ。entries は { key, stat }。学習済みの語からランダムに出す。
+   * 同じ日に同じ語が重ならないよう、今日まだ出していない語を先にし、今日出した語はその後に回す。
    */
   function pickWords(entries, size, now = new Date(), random = Math.random) {
     const start = startOfLocalDay(now);
-    const tier = { again: 0, null: 1, hard: 2, good: 3 };
     return (Array.isArray(entries) ? entries : [])
       .map((entry) => {
-        const stat = normalizeStat(entry.stat);
-        const lastAt = stat.lastAt ? new Date(stat.lastAt).getTime() : NaN;
-        const today = Number.isFinite(lastAt) && lastAt >= start;
-        return { key: entry.key, rank: (today ? 10 : 0) + tier[stat.lastRating], lastAt: Number.isFinite(lastAt) ? lastAt : 0, tie: random() };
+        const lastAt = new Date(normalizeStat(entry.stat).lastAt).getTime();
+        return { key: entry.key, today: Number.isFinite(lastAt) && lastAt >= start ? 1 : 0, tie: random() };
       })
-      .sort((a, b) => a.rank - b.rank || a.lastAt - b.lastAt || a.tie - b.tie)
+      .sort((a, b) => a.today - b.today || a.tie - b.tie)
       .slice(0, Math.max(0, size))
       .map((entry) => entry.key);
   }

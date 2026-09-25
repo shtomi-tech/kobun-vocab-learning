@@ -66,7 +66,12 @@ console.log("OK: 思い出して書く復習の評価表");
     { key: "new", stat: undefined },
     { key: "again", stat: { lastRating: "again", lastAt: at(10, 9) } },
   ];
-  assert.deepEqual(pickWords(entries, 10, now, () => 0), ["again", "new", "hard", "good-old", "again-today"], "思い出せなかった語→未出題→あいまい→思い出せた、今日出した語は最後");
-  assert.deepEqual(pickWords(entries, 2, now, () => 0), ["again", "new"], "問題数で切る");
+  // 乱数を固定すると、今日出していない語は元の並びのまま、今日出した語が最後になる。
+  assert.deepEqual(pickWords(entries, 10, now, () => 0), ["good-old", "hard", "new", "again", "again-today"], "前回の評価では並べず、今日出した語は最後");
+  assert.deepEqual(pickWords(entries, 2, now, () => 0), ["good-old", "hard"], "問題数で切る");
+  const seen = new Set();
+  for (let i = 0; i < 200; i++) seen.add(pickWords(entries, 1, now)[0]);
+  assert.ok(!seen.has("again-today"), "今日出した語は、まだ出していない語があるうちは出さない");
+  assert.equal(seen.size, 4, "今日出していない語はどれも先頭に来うる（ランダム）");
   console.log("OK: 思い出す問題の毎日のノルマ");
 }
