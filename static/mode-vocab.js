@@ -505,6 +505,7 @@ const KobunVocabApp = (() => {
       home.appendChild(studyTimeCard());
     }
     home.appendChild(meaningMission());
+    home.appendChild(recallMission());
     const wakaTeaser = hasWakaGallery() ? KobunWakaGallery.teaserCard(wakaPoems(), { onOpen: openWakaGallery }) : null;
     if (wakaTeaser) home.appendChild(wakaTeaser);
     home.appendChild(el("section", { class: "card" }, setPicker()));
@@ -760,9 +761,38 @@ const KobunVocabApp = (() => {
     );
     if (state.progress.resume) button.className = "ghost secondaryCta";
     section.appendChild(button);
-    section.appendChild(el("button", { class: "ghost secondaryCta recallCta", disabled: !due.length, onclick: startRecallReview },
-      `選択肢なしで思い出す（最大${MEANING_SESSION_SIZE}語）`,
-    ));
+    return section;
+  }
+
+  // 選択肢なしで思い出す。間隔復習とは別に、学習済みの語から毎日 RECALL_DAILY_QUOTA 問を出す。
+  const RECALL_DAILY_QUOTA = KobunRecallGrade.DAILY_QUOTA;
+  const recallTodayCount = () => KobunRecallGrade.countToday(progressSources().map(({ progress }) => progress.history));
+  const recallRemaining = () => Math.max(0, RECALL_DAILY_QUOTA - recallTodayCount());
+
+  function recallMission() {
+    const learned = learnedMeaningEntries();
+    const today = recallTodayCount();
+    const remaining = Math.max(0, RECALL_DAILY_QUOTA - today);
+    const section = el("section", { class: "card recallMission" },
+      el("p", { class: "label" }, "毎日のノルマ"),
+      el("h2", {}, "選択肢なしで思い出す"),
+      el("p", { class: "lead" }, `学習済みの語から、毎日${RECALL_DAILY_QUOTA}問を4択なしで出します。間隔復習とは別枠で、結果は次の復習日に影響しません。前回思い出せなかった語から優先して出します。`),
+      el("div", { class: "meaningMetrics" },
+        stat(Math.min(today, RECALL_DAILY_QUOTA), RECALL_DAILY_QUOTA, remaining ? "今日の回答" : "今日の回答（達成）"),
+        stat(learned.length, reviewPoolEntries().length, "出題対象"),
+      ),
+    );
+    if (!learned.length) {
+      section.appendChild(el("p", { class: "hint" }, "通常学習で文中問題まで解いた語が対象になります。"));
+      section.appendChild(el("button", { class: "cta reviewCta", disabled: true }, "出題できる語はまだありません"));
+      return section;
+    }
+    const size = Math.min(remaining || RECALL_DAILY_QUOTA, learned.length);
+    const button = el("button", { class: "cta reviewCta", onclick: startRecallReview },
+      remaining ? `今日の残り${size}問を解く` : `ノルマ達成。追加で${size}問解く`,
+    );
+    if (state.progress.resume || !remaining) button.className = "ghost secondaryCta";
+    section.appendChild(button);
     return section;
   }
 
@@ -955,13 +985,15 @@ const KobunVocabApp = (() => {
     renderSession();
   }
 
-  // 思い出して書く復習。出題対象・並べ方・FSRSの記録は意味だけ復習と共用する。
+  // 思い出して書く復習。間隔復習（FSRS）とは独立で、期限に関係なく学習済みの語から出す。
+  // 1回の問題数は今日のノルマの残り（達成後は追加の1回分）。記録は progress.recall に分けて持つ。
   // meaningOrder などの名前を流用するのは、wordForSession と renderWrongReview をそのまま使うため。
   function startRecallReview() {
-    const ids = shuffle(dueMeaningEntries())
-      .sort((a, b) => (b.progress.items?.[b.word.id]?.wrongCount || 0) - (a.progress.items?.[a.word.id]?.wrongCount || 0))
-      .slice(0, MEANING_SESSION_SIZE)
-      .map((entry) => entry.key);
+    const size = recallRemaining() || RECALL_DAILY_QUOTA;
+    const ids = KobunRecallGrade.pickWords(
+      learnedMeaningEntries().map((entry) => ({ key: entry.key, stat: entry.progress.recall?.[entry.word.id] })),
+      size,
+    );
     if (!ids.length) return renderHome();
     session = {
       mode: "recallReview", stage: "recall", meaningOrder: ids, meaningIndex: 0,
@@ -1281,9 +1313,9 @@ const KobunVocabApp = (() => {
     ["wrong", "違った"],
   ];
   const RECALL_RESULT = {
-    good: "思い出せました。次の復習日を大きく延ばします。",
-    hard: "あいまいでした。次の復習日は控えめに延ばします。",
-    again: "要再確認に戻しました。このあと誤答確認で読み直します。",
+    good: "思い出せました。",
+    hard: "あいまいでした。次に出すときは少し先に回します。",
+    again: "思い出せなかった語として、次回から優先して出します。このあと誤答確認で読み直します。",
   };
 
   function recallChoiceButton(className, number, label, onclick) {
@@ -1492,12 +1524,9 @@ const KobunVocabApp = (() => {
     const entry = reviewEntryByKey(key);
     const progress = entry?.progress || state.progress;
     const wordId = entry?.word.id || key;
-    progress.items = progress.items || {};
-    progress.items[wordId] = KobunSrs.recordRating(progress.items[wordId], grade.rating, new Date(), {
-      elapsedMs: session.confidenceMs,
-      recall: true,
-      confidentMiss: grade.confidentMiss,
-    });
+    // 間隔復習の記録（progress.items）には触れない。
+    progress.recall = progress.recall && typeof progress.recall === "object" && !Array.isArray(progress.recall) ? progress.recall : {};
+    progress.recall[wordId] = KobunRecallGrade.recordStat(progress.recall[wordId], grade, new Date());
     // 自動採点のしきい値を後で見直せるよう、Jev の判定と自己採点の食い違いも残す。
     const aiFields = session.ai ? {
       answer: session.typed?.trim() || "",
@@ -1658,12 +1687,17 @@ const KobunVocabApp = (() => {
       el("p", { class: "label" }, "学習結果"),
       el("div", { class: "score" }, `${score} / ${total}`),
       el("h2", {}, isRecall ? "思い出して復習が完了しました" : isMeaningReview ? "意味だけ復習が完了しました" : cleared ? `${state.set.meta.title} CLEAR` : (session.mode === "review" ? "誤答復習が完了しました" : "通常学習が完了しました")),
-      el("p", { class: "hint" }, isRecall ? "思い出せた語は次の復習日へ、思い出せなかった語は要再確認へ戻りました。" : isMeaningReview ? "正解した語は次の復習日へ、誤答した語は要再確認へ戻りました。" : (reviewIds().length ? `復習対象があと${reviewIds().length}語あります。` : "全語の文中問題に正解しました。")),
+      el("p", { class: "hint" }, isRecall ? `今日のノルマ ${Math.min(recallTodayCount(), RECALL_DAILY_QUOTA)} / ${RECALL_DAILY_QUOTA}問。思い出せなかった語は次回から優先して出します（間隔復習の復習日は変わりません）。` : isMeaningReview ? "正解した語は次の復習日へ、誤答した語は要再確認へ戻りました。" : (reviewIds().length ? `復習対象があと${reviewIds().length}語あります。` : "全語の文中問題に正解しました。")),
     ));
     if (isRecall && session.confidentMissIds?.length) panel.appendChild(confidentMissList(session.confidentMissIds));
     const actions = el("div", { class: "actions doneActions" });
     if (!isMeaningReview && reviewIds().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startReview }, `間違えた${reviewIds().length}語を復習する →`));
-    else if (isMeaningReview && dueMeaningEntries().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: isRecall ? startRecallReview : startMeaningReview }, `要再確認の${Math.min(dueMeaningEntries().length, MEANING_SESSION_SIZE)}語をもう一度解く →`));
+    else if (isRecall) {
+      // ノルマが残っていれば続きを出す。達成後の追加はホームから。
+      const remaining = Math.min(recallRemaining(), learnedMeaningEntries().length);
+      if (remaining) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startRecallReview }, `今日の残り${remaining}問を解く →`));
+    }
+    else if (isMeaningReview && dueMeaningEntries().length) actions.appendChild(el("button", { class: "cta reviewCta", onclick: startMeaningReview }, `要再確認の${Math.min(dueMeaningEntries().length, MEANING_SESSION_SIZE)}語をもう一度解く →`));
     else if (cleared) {
       const nextId = nextSetId(state.setId);
       if (nextId) {

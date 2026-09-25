@@ -226,7 +226,7 @@ button:disabled { cursor: default; opacity: .55; }
 .blockCardState--done { color: var(--ok); }
 .blockCardState--done::before { content: "✓ "; }
 .blockCardArrow { grid-column: 2; justify-self: end; color: var(--muted); font-size: 13px; font-weight: 700; }
-.meaningMission { border-left: 4px solid var(--clay); }
+.meaningMission, .recallMission { border-left: 4px solid var(--clay); }
 .meaningMission--empty .hint { margin-bottom: 0; }
 .meaningMissionEmptyCount { margin: 8px 0 0; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .meaningMetrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--grid-gap); margin: 20px 0; }
@@ -308,7 +308,6 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .questionTranslation { margin: -4px 0 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--soft); }
 .next { display: block; }
 /* 思い出して書く復習 */
-.recallCta { display: block; margin-top: 12px; }
 .recall .recallHeadword { margin: 6px 0 16px; font-size: 38px; }
 .recallInputLabel { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
 .recallInput { box-sizing: border-box; width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid var(--color-control-border); border-radius: var(--radius-control); background: var(--canvas); color: var(--ink); font: inherit; }

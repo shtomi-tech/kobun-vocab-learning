@@ -22,6 +22,7 @@ function loadModeApp(exposedNames, sandboxOverrides = {}) {
     KobunStudyPlan: require("../static/study-plan.js"),
     KobunExampleParts: require("../static/example-parts.js"),
     KobunChoiceBuilder: require("../static/choice-builder.js"),
+    KobunRecallGrade: require("../static/recall-grade.js"),
     ...sandboxOverrides,
   };
   vm.runInNewContext(`${source}\nglobalThis.__app = KobunVocabApp;`, sandbox);
@@ -325,7 +326,7 @@ const fetchStub = async (url, init = {}) => {
   recallTest.startRecallReview();
   let current = recallTest.getSession();
   assert.equal(current.mode, "recallReview", "補助ボタンの処理で recallReview が始まる");
-  assert.equal(current.meaningOrder.length, 2, "期限の語だけを出題する");
+  assert.equal(current.meaningOrder.length, 2, "学習済みの語を今日のノルマの残りまで出題する");
   const firstKey = current.meaningOrder[0];
   const firstWord = recallWords.find((word) => `kobun-set-01::${word.id}` === firstKey) || recallWords.find((word) => word.id === firstKey);
   assert.ok(panelText().includes(firstWord.headword), "問う画面に見出し語を出す");
@@ -345,10 +346,10 @@ const fetchStub = async (url, init = {}) => {
   assert.equal(current.meaningOrder[current.meaningIndex], firstKey, "再開すると同じ問題から続く");
 
   recallTest.answerRecall("correct");
-  const firstItem = recallTest.state.progress.items[firstWord.id];
-  assert.ok(firstItem.fsrs, "自信あり→合っていたで FSRS カードを作る");
-  assert.equal(firstItem.nextReviewAt, firstItem.fsrs.due, "nextReviewAt を更新する");
-  assert.equal(firstItem.recallCount, 1, "recallCount を数える");
+  assert.equal(recallTest.state.progress.items[firstWord.id], undefined, "間隔復習（FSRS）の記録には触れない");
+  const firstStat = recallTest.state.progress.recall[firstWord.id];
+  assert.equal(firstStat.count, 1, "思い出す問題の記録を別に数える");
+  assert.equal(firstStat.lastRating, "good");
   assert.equal(recallTest.getSession().recallRating, "good", "自信あり→合っていたは good");
   assert.equal(recallTest.state.progress.history.at(-1).kind, "recall", "履歴に recall を残す");
 
@@ -364,6 +365,18 @@ const fetchStub = async (url, init = {}) => {
   assert.deepEqual(Array.from(current.wrongMeaningIds), [secondKey], "思い出せない語は誤答確認へ回す");
   recallTest.nextRecall();
   assert.equal(recallTest.getSession().stage, "wrongReview", "again があれば誤答確認へ進む");
+  assert.equal(recallTest.state.progress.recall[secondKey.split("::").pop()].lastRating, "again");
+
+  // 今日のノルマ（20問）を数える。達成後も追加で解ける。
+  recallTest.state.progress.history.push(...Array.from({ length: 19 }, () => ({ at: new Date().toISOString(), kind: "recall", wordId: firstWord.id, result: "good" })));
+  recallTest.state.progress.history.push({ at: "2000-01-01T00:00:00.000Z", kind: "recall", wordId: firstWord.id, result: "good" });
+  delete recallTest.state.progress.resume;
+  recallTest.renderHome();
+  const homeText = texts(recallDom.document.querySelector("#homePanel")).join("\n");
+  assert.ok(homeText.includes("ノルマ達成"), "今日20問答えたらノルマ達成と出す（昨日以前の回答は数えない）");
+  recallTest.startRecallReview();
+  assert.equal(recallTest.getSession().meaningOrder.length, 2, "達成後も追加で出題できる");
+  assert.equal(recallTest.getSession().meaningOrder[0], secondKey, "前回思い出せなかった語から出す");
   console.log("vocabulary runtime contract: recall review OK");
 }
 
@@ -427,9 +440,9 @@ const fetchStub = async (url, init = {}) => {
   assert.equal(current.phase, "graded", "確信度が高ければ自動採点で結果へ進む");
   assert.equal(current.aiAutoGrade, "correct");
   assert.equal(current.recallRating, "good");
-  assert.equal(aiTest.state.progress.items[wordId], undefined, "自動採点は次へ進むまで記録しない");
+  assert.equal(aiTest.state.progress.recall?.[wordId], undefined, "自動採点は次へ進むまで記録しない");
   aiTest.nextRecall();
-  assert.equal(aiTest.state.progress.items[wordId].recallCount, 1, "次へで記録する");
+  assert.equal(aiTest.state.progress.recall[wordId].count, 1, "次へで記録する");
   assert.equal(lastHistory().gradedBy, "ai");
   assert.equal(lastHistory().aiGrade, "correct");
 
@@ -457,7 +470,7 @@ const fetchStub = async (url, init = {}) => {
   aiTest.overrideAiGrade();
   current = aiTest.getSession();
   assert.equal(current.phase, "revealed", "採点を直すと自己採点へ戻る");
-  assert.equal(aiTest.state.progress.items[wordId], undefined, "直す前の自動採点は記録されていない");
+  assert.equal(aiTest.state.progress.recall[wordId], undefined, "直す前の自動採点は記録されていない");
   aiTest.answerRecall("wrong");
   assert.equal(lastHistory().overridden, true);
   assert.equal(lastHistory().result, "again");
@@ -475,8 +488,7 @@ const fetchStub = async (url, init = {}) => {
   aiTest.nextRecall();
   assert.equal(lastHistory().aiSource, "rule");
 
-  // 5. 通信に失敗したら自己採点のまま。（全語を採点済みなので記録を空にして出題し直す）
-  aiTest.state.progress.items = {};
+  // 5. 通信に失敗したら自己採点のまま。
   aiTest.startRecallReview();
   aiTest.getSession().typed = "移動する";
   aiTest.chooseRecallConfidence("sure");

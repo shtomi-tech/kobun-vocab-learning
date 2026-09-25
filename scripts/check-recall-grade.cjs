@@ -38,3 +38,35 @@ console.log("OK: 思い出して書く復習の評価表");
   for (const text of ["出歩く", "わからせる", "不明瞭だ", "知らないふりをする"]) assert.equal(isNoAnswer(text), false, text);
   console.log("OK: 思い出して書く復習の評価表と自動採点の採否");
 }
+
+// 毎日のノルマ（間隔復習とは独立）: 今日の回答数・語ごとの記録・出題順
+{
+  const { DAILY_QUOTA, countToday, recordStat, pickWords } = require(path.resolve(__dirname, "..", "static", "recall-grade.js"));
+  assert.equal(DAILY_QUOTA, 20);
+  const now = new Date(2026, 8, 25, 21, 0);
+  const at = (d, h) => new Date(2026, 8, d, h).toISOString();
+  const histories = [
+    [{ kind: "recall", at: at(25, 8) }, { kind: "meaning", at: at(25, 8) }, { kind: "recall", at: at(24, 23) }],
+    [{ kind: "recall", at: at(25, 0) }, { kind: "recall", at: at(26, 0) }],
+    undefined,
+  ];
+  assert.equal(countToday(histories, now), 2, "今日の recall だけを全セット分数える");
+
+  let stat = recordStat(undefined, { rating: "again", confidentMiss: true }, now);
+  assert.deepEqual(stat, { count: 1, missCount: 1, confidentMissCount: 1, lastAt: now.toISOString(), lastRating: "again" });
+  stat = recordStat(stat, { rating: "good", confidentMiss: false }, now);
+  assert.equal(stat.count, 2);
+  assert.equal(stat.missCount, 1);
+  assert.equal(stat.lastRating, "good");
+
+  const entries = [
+    { key: "good-old", stat: { lastRating: "good", lastAt: at(1, 9) } },
+    { key: "again-today", stat: { lastRating: "again", lastAt: at(25, 9) } },
+    { key: "hard", stat: { lastRating: "hard", lastAt: at(20, 9) } },
+    { key: "new", stat: undefined },
+    { key: "again", stat: { lastRating: "again", lastAt: at(10, 9) } },
+  ];
+  assert.deepEqual(pickWords(entries, 10, now, () => 0), ["again", "new", "hard", "good-old", "again-today"], "思い出せなかった語→未出題→あいまい→思い出せた、今日出した語は最後");
+  assert.deepEqual(pickWords(entries, 2, now, () => 0), ["again", "new"], "問題数で切る");
+  console.log("OK: 思い出す問題の毎日のノルマ");
+}
