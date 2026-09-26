@@ -548,3 +548,34 @@
   .wgQuizFeedback { animation: none; }
   .wgTab, .wgPos, .wgChoice { transition: none; }
 }
+
+/* ---------- 今日の10首（和歌で文法） ---------- */
+.wgTeaserDaily { margin: 12px 0 0; color: var(--wg-text); font-size: 14px; }
+.wgHeaderActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.wdProgress { margin: 0 0 20px; }
+.wdProgressText { margin: 0 0 8px; color: var(--wg-text-muted); font-family: var(--mono); font-size: 12px; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.wdBar { height: 6px; border-radius: 999px; background: rgba(243, 234, 214, .12); overflow: hidden; }
+.wdBar span { display: block; height: 100%; background: var(--wg-gold); transition: width var(--motion-feedback) ease; }
+.wdStage { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 32px; align-items: start; }
+.wdPoem .wgTarget { text-decoration-color: var(--wg-shu); }
+.wdTools { margin: 0 0 6px; }
+.wdNext { display: flex; justify-content: flex-end; padding-top: 14px; border-top: 1px solid rgba(217, 183, 110, .25); }
+.wdResult .wgEyebrow { margin-bottom: 4px; }
+.wdRetryScore, .wdResultNote { margin: 0 0 8px; color: var(--wg-text-muted); font-size: 14px; }
+.wdResultList { display: grid; gap: 10px; margin: 16px 0 20px; padding: 0; list-style: none; }
+.wdResultItem { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid rgba(217, 183, 110, .25); border-radius: 8px; background: rgba(243, 234, 214, .04); }
+.wdResultMark { font-size: 18px; font-weight: 700; text-align: center; color: var(--wg-gold); }
+.wdResultPoem { display: grid; gap: 2px; min-width: 0; }
+.wdResultVerse { font-family: var(--wg-mincho); font-size: 16px; line-height: 1.6; }
+.wdResultMeta { color: var(--wg-text-muted); font-size: 13px; }
+.wdResultActions { display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 720px) {
+  .wdStage { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+}
+@media (max-width: 640px) {
+  .wdResultItem { grid-template-columns: 1.6em minmax(0, 1fr); }
+  .wdResultOpen { grid-column: 2; justify-self: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wdBar span { transition: none; }
+}
