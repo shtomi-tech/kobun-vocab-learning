@@ -7,7 +7,7 @@ const attachedSuffixes = [
 const headwordOwnedSuffixesById = new Map([
   ["kv02-019", "ば"], ["kv03-032", "む"], ["kv08-091", "まし"], ["kv17-199", "ん"],
   ["kv18-210", "て"], ["kv24-277", "けれ"], ["kv30-352", "て"], ["kv32-376", "けれ"],
-  ["kv32-381", "けれ"], ["kv33-385", "けれ"], ["kv42-494", "けれ"], ["kv42-499", "けれ"],
+  ["kv32-381", "けれ"], ["kv33-385", "けれ"], ["kv40-479", "給へ"], ["kv42-494", "けれ"], ["kv42-499", "けれ"],
 ]);
 const answerRepeatAllowedById = new Map([["kv08-086", "かつ"]]);
 const legacySourceLabels = new Set(["出典未詳", "学習用例文", "単語解説"]);
