@@ -506,7 +506,7 @@ const KobunVocabApp = (() => {
     }
     home.appendChild(meaningMission());
     home.appendChild(recallMission());
-    const wakaTeaser = hasWakaGallery() ? KobunWakaGallery.teaserCard(wakaPoems(), { onOpen: openWakaGallery }) : null;
+    const wakaTeaser = hasWakaGallery() ? KobunWakaGallery.teaserCard(wakaPoems(), { onOpen: openWakaGallery, onDaily: () => openWakaDaily() }) : null;
     if (wakaTeaser) home.appendChild(wakaTeaser);
     home.appendChild(el("section", { class: "card" }, setPicker()));
     home.appendChild(learningBlockMap());
@@ -847,6 +847,30 @@ const KobunVocabApp = (() => {
     KobunWakaGallery.render(panel, wakaPoems(), {
       initialKey,
       grammar,
+      onDaily: () => openWakaDaily(),
+      onClose: () => {
+        renderHome();
+        $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
+        $("#homePanel .wgTeaser .wgButton--gold")?.focus({ preventScroll: true });
+      },
+    });
+    window.scrollTo({ top: 0 });
+  }
+
+  // 今日の10首（和歌で文法）。文法解説が読めなければ歌の間をそのまま開く。
+  async function openWakaDaily() {
+    const grammar = await loadWakaGrammar();
+    if (!grammar) {
+      openWakaGallery();
+      return;
+    }
+    $("#homePanel").classList.add("hide");
+    $("#sessionPanel").classList.add("hide");
+    const panel = $("#wakaPanel");
+    panel.classList.remove("hide");
+    KobunWakaGallery.renderDaily(panel, wakaPoems(), {
+      grammar,
+      onOpenPoem: (key) => openWakaGallery(key),
       onClose: () => {
         renderHome();
         $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
