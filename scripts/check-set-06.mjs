@@ -12,10 +12,10 @@ checkSet({
     assert.equal(word62.example, "数ならぬ身に、思ふまじきこと思ひそめたるが、過ちこそあれ…。");
     assert.equal(word62.cloze, "（　）身に、思ふまじきこと思ひそめたるが、過ちこそあれ…。");
     const word63 = wordsById.get("kv06-063");
-    assert.equal(word63.example, "有明の空を思ひ出づる涙のいとどとどめがたきは、いとけしからぬ心かなと思ふ。");
-    assert.equal(word63.translation, "有明の空を思い出す涙がますます止めがたいのは、なんとも困った心だと思う。");
-    assert.equal(word63.source, "源氏物語（浮舟）");
-    assert.equal(word63.cloze, "有明の空を思ひ出づる涙のいとどとどめがたきは、いと（　）心かなと思ふ。");
+    assert.equal(word63.example, "若き公卿殿上人は、「けしからぬ泰親が泣きやうかな。ただ今何事のあるべきか」とて、一度にどつとぞ笑ひあはれける。");
+    assert.equal(word63.translation, "若い公卿や殿上人は、「異様な泰親の泣き方だな。今すぐ何事があるというのか」と言って、一度にどっと笑い合われた。");
+    assert.equal(word63.source, "平家物語（巻三・法印問答）");
+    assert.equal(word63.cloze, "若き公卿殿上人は、「（　）泰親が泣きやうかな。ただ今何事のあるべきか」とて、一度にどつとぞ笑ひあはれける。");
     const word69 = wordsById.get("kv06-069");
     assert.equal(word69.example, "かの女君ゆめのごとありしに、ただならずなりにけり。");
     assert.equal(word69.translation, "その女君は、夢のような一夜を過ごしたところ、妊娠した。");

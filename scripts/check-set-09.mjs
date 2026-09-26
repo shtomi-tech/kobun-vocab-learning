@@ -16,7 +16,7 @@ checkSet({
     ["kv09-105", "しろしめし"],
     ["kv09-106", "召さ"],
     ["kv09-107", "まゐらす"],
-    ["kv09-108", "申し"],
+    ["kv09-108", "申す"],
   ]),
   expect(wordsById) {
     assert.deepEqual(wordsById.get("kv09-097").meanings, ["おっしゃる。"]);
@@ -46,7 +46,7 @@ checkSet({
     assert.deepEqual(wordsById.get("kv09-107").meanings, ["さしあげる。", "〜申しあげる。お〜する。"]);
     assert.deepEqual(wordsById.get("kv09-108").meanings, ["申しあげる。", "〜申しあげる。お〜する。"]);
     assert.equal(wordsById.get("kv09-107").source, "竹取物語（かぐや姫の昇天）");
-    assert.equal(wordsById.get("kv09-108").source, "竹取物語（かぐや姫の昇天）");
+    assert.equal(wordsById.get("kv09-108").source, "竹取物語（つまどひ）");
   },
   unsafePairs: [
     ["kv09-097", "kv09-098"],

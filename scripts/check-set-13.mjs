@@ -28,7 +28,7 @@ checkSet({
     assert.equal(wordsById.get("kv13-151").source, "源氏物語（真木柱）");
     assert.equal(wordsById.get("kv13-152").source, "千載和歌集");
     assert.equal(wordsById.get("kv13-153").source, "源氏物語（松風）");
-    assert.equal(wordsById.get("kv13-154").source, "源氏物語（幻）");
+    assert.equal(wordsById.get("kv13-154").source, "枕草子（職の御曹司におはします頃）");
     assert.equal(wordsById.get("kv13-155").source, "源氏物語（若紫）");
     assert.equal(wordsById.get("kv13-156").source, "更級日記");
   },
