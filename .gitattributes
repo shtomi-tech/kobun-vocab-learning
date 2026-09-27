@@ -1,0 +1,2 @@
+# 改行コードは LF に統一する（Windows で CRLF 保存されても git には LF で入れる）。
+* text=auto eol=lf
