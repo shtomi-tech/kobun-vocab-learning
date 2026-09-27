@@ -40,6 +40,15 @@ After big code changes, refresh the graph with `graft build` (deterministic,
 no API key, $0).
 <!-- graft:end -->
 
+## このリポジトリのサブエージェント引き渡し
+
+- この4段階運用を採用する案件では、UI・学習導線の監査を `chao` と `hisui` に分け、独立していれば並列で行う。`chao` はDOM実測のデザイン監査、`hisui` は4状態のUX摩擦監査に限定する。
+- 監査結果を実装する案件では、`kira` は監査結果だけを入力に `docs/plans/` の実装計画を作成する。監査と実装の同時進行や、計画書のない会話引き渡しは行わない。単純な直接修正など、ユーザーが別の範囲を明示した場合はその指示を優先する。
+- 承認済み計画は `yuna` が依存順に実装・検証する。計画が `PARALLEL_SAFE` と明示し、専有 `write_set` を定義している場合だけ、親Agentが同じ `yuna` を `YUNA-A` / `YUNA-B` の2レーンとして起動できる。`yuna` は監査、計画作成、子Agent起動、レーン統合、commit、push、deployを行わない。親Agentが両レーンの差分と最新の検証結果を照合し、公開操作を担当する。
+- 学習データ、安定ID、保存進捗、出典、GitHub Pagesの公開契約を変更するタスクは、共有書込があるため原則 `SERIAL_ONLY` とする。正本・生成物・lockfile・schema・migration・共通fixture・公開manifest・interfaceをまたぐ作業は並列実装しない。同じcheckoutで並列に動かす場合も、計画の専有 `write_set` が重ならないことを親Agentが先に確認する。
+- 各段階の報告には、対象、Worker/レーン、変更ファイル、証拠段階、検証結果、未確認事項、最初の未完了タスク、統合引き渡しを含める。利用者観察が必要な所見は `WAITING_FOR_EVIDENCE` として残し、独立した実装まで止めない。
+- このサイトのデプロイは実装完了とは別段階である。親Agentが明示依頼を受けたときだけ行い、ローカル検証、CI、公開URL上のHTML・JS・CSS・データ確認を分けて記録する。
+
 ## データ作成の正本
 
 `data/set-*.json` へ語・セットを追加する、または例文を差し替えるときは、
