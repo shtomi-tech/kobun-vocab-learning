@@ -41,7 +41,7 @@ console.log("OK: 思い出して書く復習の評価表");
 
 // 毎日のノルマ（間隔復習とは独立）: 今日の回答数・語ごとの記録・出題順
 {
-  const { DAILY_QUOTA, countToday, recordStat, pickWords } = require(path.resolve(__dirname, "..", "static", "recall-grade.js"));
+  const { DAILY_QUOTA, countToday, recordStat, pickWords, pickMixed } = require(path.resolve(__dirname, "..", "static", "recall-grade.js"));
   assert.equal(DAILY_QUOTA, 20);
   const now = new Date(2026, 8, 25, 21, 0);
   const at = (d, h) => new Date(2026, 8, d, h).toISOString();
@@ -73,5 +73,36 @@ console.log("OK: 思い出して書く復習の評価表");
   for (let i = 0; i < 200; i++) seen.add(pickWords(entries, 1, now)[0]);
   assert.ok(!seen.has("again-today"), "今日出した語は、まだ出していない語があるうちは出さない");
   assert.equal(seen.size, 4, "今日出していない語はどれも先頭に来うる（ランダム）");
+
+  // 間隔復習の期限が来ている語とランダムの語を半々にする（20問なら10問ずつ）。
+  const due = (n) => Array.from({ length: n }, (_, i) => ({ key: `due${i}`, due: true, dueAt: 1000 + i }));
+  const free = (n) => Array.from({ length: n }, (_, i) => ({ key: `free${i}`, due: false, dueAt: 0 }));
+  const isDueKey = (key) => key.startsWith("due");
+  const mixed = pickMixed([...due(15), ...free(15)], 20, now);
+  assert.equal(mixed.length, 20);
+  assert.equal(new Set(mixed).size, 20, "同じ語は重ならない");
+  const dueFirst10 = Array.from({ length: 10 }, (_, i) => `due${i}`);
+  assert.ok(dueFirst10.every((key) => mixed.includes(key)), "期限が古い10語は必ず入る");
+  assert.ok(mixed.filter(isDueKey).length >= 10, "期限の語は10問以上");
+  // 期限の語が少ないときは、ランダム側で埋めて合計を保つ。
+  const few = pickMixed([...due(3), ...free(15)], 20, now);
+  assert.equal(few.length, 18, "語が足りなければ全部（3+15）");
+  const few2 = pickMixed([...due(3), ...free(30)], 20, now);
+  assert.equal(few2.length, 20);
+  assert.ok(["due0", "due1", "due2"].every((key) => few2.includes(key)), "期限の語は全部入る");
+  // ランダムの語が足りないときは、残りの期限の語で埋める。
+  assert.equal(pickMixed([...due(15), ...free(2)], 20, now).length, 17);
+  assert.equal(pickMixed(due(15), 8, now).length, 8);
+  // 問題数が奇数のときは期限の語を1問多くする。
+  assert.equal(pickMixed([...due(10), ...free(10)], 7, now, () => 0).filter(isDueKey).length >= 4, true);
+  // 今日出した期限の語は、他に期限の語があるうちは後回し。
+  const todayDue = [
+    { key: "d-today", due: true, dueAt: 1, stat: { lastAt: at(25, 9) } },
+    { key: "d-old", due: true, dueAt: 5 },
+    { key: "d-new", due: true, dueAt: 9 },
+    { key: "f1", due: false }, { key: "f2", due: false }, { key: "f3", due: false },
+  ];
+  for (let i = 0; i < 100; i++) assert.ok(!pickMixed(todayDue, 4, now).includes("d-today"), "今日出した語は後回し");
+  assert.deepEqual(pickMixed([], 20, now), []);
   console.log("OK: 思い出す問題の毎日のノルマ");
 }

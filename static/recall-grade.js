@@ -107,9 +107,39 @@ const KobunRecallGrade = (() => {
       .map((entry) => entry.key);
   }
 
+  /**
+   * 1回分を「間隔復習の期限が来ている語」と「ランダムの語」で半々にして選ぶ（20問なら10問ずつ）。
+   * entries は { key, stat, due, dueAt }。due は間隔復習の期限が来ているか、dueAt はその期限（ms。無ければ 0）。
+   * 期限の語は期限が古い順に取り、今日すでに出した語は後回しにする。期限の語が足りないぶんはランダム側で埋める。
+   * ランダム側は期限の語の残りも含めた全体から pickWords と同じ規則で選ぶ。最後に並びを混ぜる。
+   */
+  function pickMixed(entries, size, now = new Date(), random = Math.random) {
+    const list = Array.isArray(entries) ? entries : [];
+    const total = Math.min(Math.max(0, size), list.length);
+    const start = startOfLocalDay(now);
+    const askedToday = (entry) => {
+      const lastAt = new Date(normalizeStat(entry.stat).lastAt).getTime();
+      return Number.isFinite(lastAt) && lastAt >= start ? 1 : 0;
+    };
+    const dueKeys = list
+      .filter((entry) => entry.due === true)
+      .map((entry) => ({ key: entry.key, today: askedToday(entry), dueAt: Number(entry.dueAt) || 0 }))
+      .sort((a, b) => a.today - b.today || a.dueAt - b.dueAt)
+      .slice(0, Math.ceil(total / 2))
+      .map((entry) => entry.key);
+    const taken = new Set(dueKeys);
+    const randomKeys = pickWords(list.filter((entry) => !taken.has(entry.key)), total - dueKeys.length, now, random);
+    const picked = [...dueKeys, ...randomKeys];
+    for (let i = picked.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [picked[i], picked[j]] = [picked[j], picked[i]];
+    }
+    return picked;
+  }
+
   return {
     confidences, selfGrades, gradeRecall, AI_AUTO_THRESHOLD, isNoAnswer, decideAiGrade,
-    DAILY_QUOTA, countToday, normalizeStat, recordStat, pickWords,
+    DAILY_QUOTA, countToday, normalizeStat, recordStat, pickWords, pickMixed,
   };
 })();
 

@@ -776,7 +776,7 @@ const KobunVocabApp = (() => {
     const section = el("section", { class: "card recallMission" },
       el("p", { class: "label" }, "毎日のノルマ"),
       el("h2", {}, "選択肢なしで思い出す"),
-      el("p", { class: "lead" }, `学習済みの語から、毎日${RECALL_DAILY_QUOTA}問を4択なしで出します。間隔復習とは別枠で、結果は次の復習日に影響しません。学習済みの語からランダムに出し、今日まだ出していない語を先に出します。`),
+      el("p", { class: "lead" }, `学習済みの語から、毎日${RECALL_DAILY_QUOTA}問を4択なしで出します。半分は間隔復習の期限が来ている語（期限が古い順）、残り半分は学習済みの語からランダムです。間隔復習とは別枠で、結果は次の復習日に影響しません。今日まだ出していない語を先に出します。`),
       el("div", { class: "meaningMetrics" },
         stat(Math.min(today, RECALL_DAILY_QUOTA), RECALL_DAILY_QUOTA, remaining ? "今日の回答" : "今日の回答（達成）"),
         stat(learned.length, reviewPoolEntries().length, "出題対象"),
@@ -1029,8 +1029,17 @@ const KobunVocabApp = (() => {
   // meaningOrder などの名前を流用するのは、wordForSession と renderWrongReview をそのまま使うため。
   function startRecallReview() {
     const size = recallRemaining() || RECALL_DAILY_QUOTA;
-    const ids = KobunRecallGrade.pickWords(
-      learnedMeaningEntries().map((entry) => ({ key: entry.key, stat: entry.progress.recall?.[entry.word.id] })),
+    // 半分は間隔復習の期限が来ている語、残りはランダム（20問なら10問ずつ）。
+    const ids = KobunRecallGrade.pickMixed(
+      learnedMeaningEntries().map((entry) => {
+        const item = entry.progress.items?.[entry.word.id];
+        return {
+          key: entry.key,
+          stat: entry.progress.recall?.[entry.word.id],
+          due: KobunSrs.isDue(item),
+          dueAt: new Date(KobunSrs.normalize(item).nextReviewAt).getTime(),
+        };
+      }),
       size,
     );
     if (!ids.length) return renderHome();
