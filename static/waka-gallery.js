@@ -415,7 +415,7 @@ const KobunWakaGallery = (() => {
           el("p", { class: "wgEyebrow" }, daily ? "今日の結果" : "この歌の結果"),
           el("p", { class: "wgQuizDone", tabindex: "-1" }, `${items.length}問中 ${score}問 正解`),
           retry ? el("p", { class: "wdRetryScore" }, `解き直し：${retry.list.length}問中 ${retryScore}問 正解`) : null,
-          el("details", { class: "wdResultDetails" },
+          daily || poems.length > 1 ? el("details", { class: "wdResultDetails" },
             el("summary", {}, "歌ごとの結果を見る"),
             el("ol", { class: "wdResultList" }, poems.map((poem, p) => {
               const own = results.filter((result) => result.p === p);
@@ -429,7 +429,7 @@ const KobunWakaGallery = (() => {
                 onOpenPoem ? el("button", { class: "wgButton wdResultOpen", type: "button", onclick: () => onOpenPoem(poem.key) }, "歌の間で見る") : null,
               );
             })),
-          ),
+          ) : null,
           el("div", { class: "wdResultActions" },
             wrong.length && !retry ? el("button", {
               class: "wgButton wgButton--gold",
