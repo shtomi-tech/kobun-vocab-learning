@@ -237,17 +237,13 @@ const KobunWakaGallery = (() => {
     const save = () => { if (daily) persist(); };
 
     panel.innerHTML = "";
+    panel.closest(".wrap")?.classList.add("wakaFocus");
     panel.classList.add("wgRoom");
     const body = el("div", { class: "wdBody" });
     panel.append(
-      el("header", { class: "wgHeader" },
-        el("div", { class: "wgMoon", "aria-hidden": "true" }),
+      el("header", { class: "wgHeader wdHeader" },
         el("button", { class: "wgBack", type: "button", onclick: onClose }, backLabel),
-        el("p", { class: "wgEyebrow" }, el("span", { class: "wgBadge" }, "試験公開"), daily ? `今日の${poems.length}首` : "一首の文法"),
         el("h2", { class: "wgTitle" }, daily ? "和歌で文法" : "この歌で文法を学ぶ"),
-        el("p", { class: "wgLead" }, daily
-          ? `和歌を読んで、文法の確認問題に答えます。問題を解き終えると、その歌の現代語訳が出ます。`
-          : "和歌を読み、問題を解き、解説を確認して進みます。"),
       ),
       body,
     );
@@ -496,6 +492,7 @@ const KobunWakaGallery = (() => {
   // 「歌の間」画面。panel に描画し、戻るときは onClose を呼ぶ。
   // grammar: { rules, byKey: Map<和歌本文, 文法解説> }。無ければ文法の層を出さない。
   function render(panel, poems, { onClose, initialKey = null, grammar = null, onLearnPoem = null }) {
+    panel.closest(".wrap")?.classList.remove("wakaFocus");
     const grammarOf = (poem) => grammar?.byKey.get(poem.key) || null;
     const grammarCount = poems.filter(grammarOf).length;
     // 一部の歌だけに文法解説がある間は、しぼりこみと札の印で見分けられるようにする。

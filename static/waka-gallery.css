@@ -572,10 +572,17 @@
 /* ---------- 今日の10首（和歌で文法） ---------- */
 .wgTeaserDaily { margin: 12px 0 0; color: var(--wg-text); font-size: 14px; }
 .wgHeaderActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.wrap.wakaFocus { padding-top: 12px; }
+.wrap.wakaFocus > .top { margin-bottom: 8px; padding-bottom: 8px; }
+.wrap.wakaFocus .brand .backlink, .wrap.wakaFocus .shareStatus { display: none; }
+.wrap.wakaFocus .brand h1 { padding: 4px 10px; font-size: 16px; }
 .wdProgress { margin: 0 0 20px; }
 .wdProgressText { margin: 0 0 8px; color: var(--wg-text-muted); font-family: var(--mono); font-size: 12px; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
 .wdBar { height: 6px; border-radius: 999px; background: rgba(243, 234, 214, .12); overflow: hidden; }
 .wdBar span { display: block; height: 100%; background: var(--wg-gold); transition: width var(--motion-feedback) ease; }
+.wdHeader { margin-bottom: 16px; }
+.wdHeader .wgBack { margin-bottom: 4px; }
+.wdHeader .wgTitle { margin-bottom: 0; font-size: 28px; letter-spacing: .12em; }
 .wdStage { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 32px; align-items: start; }
 .wdPoem .wgTarget { text-decoration-color: var(--wg-shu); }
 .wdPoemMeta { margin: 0 0 4px; color: var(--wg-text-muted); font-family: var(--wg-mincho); font-size: 13px; line-height: 1.6; }
@@ -605,13 +612,30 @@
 .wdResultMeta { color: var(--wg-text-muted); font-size: 13px; }
 .wdResultActions { display: flex; flex-wrap: wrap; gap: 10px; }
 @media (max-width: 720px) {
-  .wdStage { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .wdProgress { margin-bottom: 12px; }
+  .wdStage { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .wdPoem { min-height: 260px; padding: 18px 12px 18px 40px; }
 }
 @media (max-width: 640px) {
+  .wdHeader .wgTitle { font-size: 24px; }
   .wdResultItem { grid-template-columns: 1.6em minmax(0, 1fr); }
   .wdResultOpen { grid-column: 2; justify-self: start; }
-  .wdStage { gap: 16px; }
+  .wdProgress { margin-bottom: 8px; }
+  .wdStage { gap: 8px; }
+  .wdPoem { min-height: 180px; padding: 10px 8px 10px 28px; }
+  .wdPoemMeta { font-size: 12px; }
+  .wdBody .wgQuizQuestion { margin-bottom: 6px; font-size: 16px; line-height: 1.4; }
+  .wdBody .wgChoices { gap: 6px; }
+  .wdBody .wgChoice { min-height: 44px; padding: 8px 10px; line-height: 1.4; }
   .wdGrammarToken { flex-basis: calc(50% - 6px); }
+}
+@media (max-width: 360px) {
+  .wrap.wakaFocus > .top { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+  .wdHeader { margin-bottom: 8px; }
+  .wdProgress { margin-bottom: 4px; }
+  .wdPoem { min-height: 150px; }
+  .wdPoem .wgVerse--detail { font-size: 16px; }
+  .wdTools { margin-bottom: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .wdBar span { transition: none; }

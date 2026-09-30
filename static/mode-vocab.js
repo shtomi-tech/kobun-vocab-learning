@@ -434,6 +434,7 @@ const KobunVocabApp = (() => {
 
   function renderHome() {
     session = null;
+    $(".wrap")?.classList.remove("wakaFocus");
     $(".wrap")?.classList.remove("sessionActive");
     $("#sessionPanel").classList.add("hide");
     $("#wakaPanel")?.classList.add("hide");
@@ -1007,6 +1008,7 @@ const KobunVocabApp = (() => {
 
   function renderSession() {
     saveResume();
+    $(".wrap")?.classList.remove("wakaFocus");
     $(".wrap")?.classList.add("sessionActive");
     $("#homePanel").classList.add("hide");
     $("#wakaPanel")?.classList.add("hide");
