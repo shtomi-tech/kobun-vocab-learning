@@ -789,7 +789,7 @@ const KobunVocabApp = (() => {
     return wakaGrammar;
   }
 
-  async function openWakaGallery(initialKey = null) {
+  async function openWakaGallery(initialKey = null, focusGrammar = false) {
     const grammar = await loadWakaGrammar();
     $("#homePanel").classList.add("hide");
     $("#sessionPanel").classList.add("hide");
@@ -798,8 +798,32 @@ const KobunVocabApp = (() => {
     KobunWakaGallery.render(panel, wakaPoems(), {
       initialKey,
       grammar,
-      onDaily: () => openWakaDaily(),
+      onLearnPoem: (poem) => openWakaPoemLesson(poem.key),
       onClose: () => {
+        renderHome();
+        $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
+        $("#homePanel .wgTeaser .wgButton--gold")?.focus({ preventScroll: true });
+      },
+    });
+    if (focusGrammar) panel.querySelector(".wgPoemGrammarStart")?.focus({ preventScroll: true });
+    window.scrollTo({ top: 0 });
+  }
+
+  async function openWakaPoemLesson(key) {
+    const grammar = await loadWakaGrammar();
+    const poem = wakaPoems().find((item) => item.key === key);
+    if (!grammar || !poem) {
+      openWakaGallery(key);
+      return;
+    }
+    $("#homePanel").classList.add("hide");
+    $("#sessionPanel").classList.add("hide");
+    const panel = $("#wakaPanel");
+    panel.classList.remove("hide");
+    KobunWakaGallery.renderPoemLesson(panel, poem, {
+      grammar,
+      onClose: () => openWakaGallery(key, true),
+      onHome: () => {
         renderHome();
         $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
         $("#homePanel .wgTeaser .wgButton--gold")?.focus({ preventScroll: true });

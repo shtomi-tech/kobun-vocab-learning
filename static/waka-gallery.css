@@ -138,7 +138,24 @@
 .wgTeaser h2 { margin: 0 0 6px; font-family: var(--wg-mincho); font-size: 30px; font-weight: 700; letter-spacing: .2em; color: var(--wg-text); }
 .wgTeaserLead { margin: 0 0 12px; color: var(--wg-text-muted); }
 .wgTeaserMeta { margin: 0 0 10px; font-family: var(--wg-mincho); color: var(--wg-text); }
-.wgTeaserActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.wgTeaserActions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 18px; }
+.wgTextLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--wg-gold-strong);
+  font-family: var(--wg-mincho);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+.wgTextLink:hover { color: var(--wg-text); }
+.wgTextLink--primary { min-height: 48px; padding: 10px 16px; border: 1px solid var(--wg-gold); border-radius: 8px; background: var(--wg-gold); color: var(--wg-ai); text-decoration: none; }
+.wgTextLink--primary:hover { background: var(--wg-gold-strong); color: var(--wg-ai); }
 .wgTeaserShikishi {
   display: grid;
   place-items: center;
@@ -344,6 +361,7 @@
 }
 .wgInfoTitle { margin: 4px 0 2px; font-family: var(--wg-mincho); font-size: 26px; font-weight: 700; letter-spacing: .12em; color: var(--wg-text); }
 .wgRef { margin: 0 0 18px; color: var(--wg-gold); font-family: var(--wg-mincho); font-size: 14px; }
+.wgPoemGrammarStart { margin-top: 6px; }
 .wgBlock { padding: 14px 0; border-top: 1px solid rgba(217, 183, 110, .25); }
 .wgBlock h4 { margin: 0 0 8px; color: var(--wg-gold); font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .16em; }
 .wgTranslation { margin: 0; font-family: var(--wg-mincho); font-size: 17px; line-height: 1.9; color: var(--wg-text); }
@@ -536,8 +554,10 @@
 .wgQuizFeedback.is-ok .wgQuizResult { color: #7fd19a; }
 .wgQuizFeedback.is-ng .wgQuizResult { color: #f08a7e; }
 .wgQuizRules { color: var(--wg-text-muted); font-size: 12px; margin: 0 !important; }
+.wgQuizRules summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; }
+.wgQuizRules p { margin: 0; }
 .wgQuizDone { margin: 0 0 12px; font-family: var(--wg-mincho); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.wgQuizDone:focus { outline: none; }
+.wgQuizDone:focus { outline: 2px solid var(--wg-gold-line); outline-offset: 4px; }
 
 @media (max-width: 640px) {
   .wgLegendHint { margin-left: 0; width: 100%; }
@@ -558,10 +578,25 @@
 .wdBar span { display: block; height: 100%; background: var(--wg-gold); transition: width var(--motion-feedback) ease; }
 .wdStage { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 32px; align-items: start; }
 .wdPoem .wgTarget { text-decoration-color: var(--wg-shu); }
+.wdPoemMeta { margin: 0 0 4px; color: var(--wg-text-muted); font-family: var(--wg-mincho); font-size: 13px; line-height: 1.6; }
 .wdTools { margin: 0 0 6px; }
+.wdReadingToggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 4px 2px; border: 0; background: transparent; color: var(--wg-text-muted); font-family: var(--wg-mincho); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.wdReadingToggle::before { content: "○"; color: var(--wg-gold); }
+.wdReadingToggle[aria-pressed="true"]::before { content: "●"; }
+.wdReadingToggle:hover { color: var(--wg-text); }
 .wdNext { display: flex; justify-content: flex-end; padding-top: 14px; border-top: 1px solid rgba(217, 183, 110, .25); }
 .wdResult .wgEyebrow { margin-bottom: 4px; }
-.wdRetryScore, .wdResultNote { margin: 0 0 8px; color: var(--wg-text-muted); font-size: 14px; }
+.wdRetryScore { margin: 0 0 8px; color: var(--wg-text-muted); font-size: 14px; }
+.wdGrammarDetails, .wdResultDetails { margin-top: 18px; border-top: 1px solid rgba(217, 183, 110, .25); }
+.wdGrammarDetails > summary, .wdResultDetails > summary { display: flex; align-items: center; min-height: 48px; color: var(--wg-gold-strong); font-family: var(--wg-mincho); font-size: 15px; font-weight: 700; cursor: pointer; }
+.wdGrammarDetails > summary:hover, .wdResultDetails > summary:hover { color: var(--wg-text); }
+.wdGrammarBody { padding-top: 2px; }
+.wdGrammarTokens { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px; }
+.wdGrammarToken { flex: 0 1 auto; min-width: 64px; }
+.wdGrammarToken > summary { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44px; cursor: pointer; list-style: none; }
+.wdGrammarToken > summary::-webkit-details-marker { display: none; }
+.wdTokenDescription { margin: 8px 0 2px !important; max-width: 34rem; white-space: normal; font-size: 13px; line-height: 1.65; }
+.wdResultDetails { margin: 12px 0 16px; }
 .wdResultList { display: grid; gap: 10px; margin: 16px 0 20px; padding: 0; list-style: none; }
 .wdResultItem { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid rgba(217, 183, 110, .25); border-radius: 8px; background: rgba(243, 234, 214, .04); }
 .wdResultMark { font-size: 18px; font-weight: 700; text-align: center; color: var(--wg-gold); }
@@ -575,6 +610,8 @@
 @media (max-width: 640px) {
   .wdResultItem { grid-template-columns: 1.6em minmax(0, 1fr); }
   .wdResultOpen { grid-column: 2; justify-self: start; }
+  .wdStage { gap: 16px; }
+  .wdGrammarToken { flex-basis: calc(50% - 6px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .wdBar span { transition: none; }
