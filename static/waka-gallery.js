@@ -1,6 +1,6 @@
 "use strict";
 
-// 「歌の間」（試験公開）。各セットで例文として採用している和歌を一覧・鑑賞する画面。
+// 「歌の間」（試験公開）。各セットで例文として採用している和歌（と文法演習用の百人一首の歌）を一覧・鑑賞する画面。
 // 学習フロー・保存データには触れず、読み込み済みのセットから和歌を集めて表示するだけ。
 // 見た目は static/waka-gallery.css に閉じ込め、既存画面のデザインへ波及させない。
 const KobunWakaGallery = (() => {
@@ -8,7 +8,7 @@ const KobunWakaGallery = (() => {
   const KU_LABELS = ["初句", "二句", "三句", "四句", "結句"];
   const COLLECTION_ORDER = [
     "万葉集", "古今和歌集", "後撰和歌集", "拾遺和歌集", "後拾遺和歌集", "金葉和歌集",
-    "詞花和歌集", "千載和歌集", "新古今和歌集", "続後撰和歌集", "新拾遺和歌集",
+    "詞花和歌集", "千載和歌集", "新古今和歌集", "続後撰和歌集", "新拾遺和歌集", "百人一首",
   ];
   const READING_KEY = "kobun_waka_gallery_reading";
   const POS_CLASS = {
@@ -76,6 +76,28 @@ const KobunWakaGallery = (() => {
     return [...poems.values()].sort((a, b) => a.order - b.order);
   }
 
+  // 文法解説の側だけに本文を持つ歌（単語の例文ではない百人一首の歌など）を、collect と同じ形にして後ろに足す。
+  // 同じ歌が例文にもあれば例文側を使う。学ぶ語（targets）は持たない。
+  function withGrammarPoems(poems, grammar) {
+    if (!grammar?.byKey) return poems;
+    const known = new Set(poems.map((poem) => poem.key));
+    const extra = [...grammar.byKey.values()]
+      .filter((entry) => entry.waka && !known.has(entry.key))
+      .sort((a, b) => a.waka.ref.number - b.waka.ref.number)
+      .map((entry) => ({
+        key: entry.key,
+        phrases: entry.waka.phrases,
+        reading: entry.waka.reading,
+        author: entry.author,
+        collection: entry.waka.ref.collection,
+        refText: `${entry.waka.ref.number}番（原典：${entry.waka.ref.origin}）`,
+        translation: entry.waka.translation,
+        order: Infinity,
+        targets: [],
+      }));
+    return extra.length ? [...poems, ...extra] : poems;
+  }
+
   // 端末の日付ごとに同じ1首を選ぶ（ホームの「今日の一首」）。
   function dailyPick(poems, date = new Date()) {
     if (!poems.length) return null;
@@ -135,6 +157,7 @@ const KobunWakaGallery = (() => {
   }
 
   function wordChips(poem) {
+    if (!poem.targets.length) return null;
     return el("ul", { class: "wgChips", role: "list" }, poem.targets.map((target) =>
       el("li", { class: "wgChip" }, target.headword),
     ));
@@ -550,6 +573,7 @@ const KobunWakaGallery = (() => {
         el("p", { class: "wgEyebrow" }, el("span", { class: "wgBadge" }, "試験公開"), "Waka Gallery"),
         el("h2", { class: "wgTitle" }, "歌の間"),
         el("p", { class: "wgLead" }, "学習セットの例文として採っている和歌を集めました。歌を選ぶと、訳と、その歌で学ぶ語を確かめられます。",
+          poems.some((poem) => !poem.targets.length) ? "文法を学ぶための百人一首の歌も収めています。" : "",
           grammarCount ? "文法の解説がある歌からは、その歌の確認問題にも進めます。" : ""),
       ),
       el("div", { class: "wgToolbar" }, filterBar, readingToggle),
@@ -622,14 +646,14 @@ const KobunWakaGallery = (() => {
           el("h4", {}, "現代語訳"),
           el("p", { class: "wgTranslation" }, poem.translation),
         ),
-        el("section", { class: "wgBlock" },
+        poem.targets.length ? el("section", { class: "wgBlock" },
           el("h4", {}, "この歌で学ぶ語"),
           el("ul", { class: "wgWords", role: "list" }, poem.targets.map((target) => el("li", { class: "wgWord" },
             el("span", { class: "wgWordHead" }, target.headword, el("span", { class: "wgWordKanji" }, `【${target.kanji}】`)),
             el("span", { class: "wgWordMeaning" }, target.meaning),
             el("span", { class: "wgWordSet" }, target.setLabel),
           ))),
-        ),
+        ) : null,
       ];
       // 縦書きは右から左へ読むので、「次の歌」を左側に置く。
       dialog.append(
@@ -669,7 +693,7 @@ const KobunWakaGallery = (() => {
     else panel.querySelector(".wgBack")?.focus();
   }
 
-  return { collect, dailyPick, dailyPoems, dailyStatus, teaserCard, render, renderDaily, renderPoemLesson };
+  return { collect, withGrammarPoems, dailyPick, dailyPoems, dailyStatus, teaserCard, render, renderDaily, renderPoemLesson };
 })();
 
 if (typeof module !== "undefined") module.exports = KobunWakaGallery;

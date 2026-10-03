@@ -767,10 +767,11 @@ const KobunVocabApp = (() => {
   // 試験機能なので、モジュールや表示先が無い環境（検査用の擬似DOMなど）では入口を出さない。
   const hasWakaGallery = () => typeof KobunWakaGallery !== "undefined" && Boolean($("#wakaPanel"));
 
-  function wakaPoems() {
-    return KobunWakaGallery.collect(setSources()
+  // grammar を渡すと、文法解説の側だけに本文を持つ歌（百人一首）も後ろに足す。
+  function wakaPoems(grammar = null) {
+    return KobunWakaGallery.withGrammarPoems(KobunWakaGallery.collect(setSources()
       .filter((source) => source.set)
-      .map((source) => ({ setId: source.setId, set: source.set, label: source.entry.label })));
+      .map((source) => ({ setId: source.setId, set: source.set, label: source.entry.label }))), grammar);
   }
 
   // 文法解説（試作）は歌の間を開いたときに一度だけ読む。読めなければ文法の層を出さずに開く。
@@ -796,7 +797,7 @@ const KobunVocabApp = (() => {
     $("#sessionPanel").classList.add("hide");
     const panel = $("#wakaPanel");
     panel.classList.remove("hide");
-    KobunWakaGallery.render(panel, wakaPoems(), {
+    KobunWakaGallery.render(panel, wakaPoems(grammar), {
       initialKey,
       grammar,
       onLearnPoem: (poem) => openWakaPoemLesson(poem.key),
@@ -812,7 +813,7 @@ const KobunVocabApp = (() => {
 
   async function openWakaPoemLesson(key) {
     const grammar = await loadWakaGrammar();
-    const poem = wakaPoems().find((item) => item.key === key);
+    const poem = wakaPoems(grammar).find((item) => item.key === key);
     if (!grammar || !poem) {
       openWakaGallery(key);
       return;
@@ -844,7 +845,7 @@ const KobunVocabApp = (() => {
     $("#sessionPanel").classList.add("hide");
     const panel = $("#wakaPanel");
     panel.classList.remove("hide");
-    KobunWakaGallery.renderDaily(panel, wakaPoems(), {
+    KobunWakaGallery.renderDaily(panel, wakaPoems(grammar), {
       grammar,
       onOpenPoem: (key) => openWakaGallery(key),
       onClose: () => {

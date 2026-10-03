@@ -286,4 +286,29 @@ const grammarCta = returnPanel.querySelector(".wgPoemGrammarStart");
 assert.ok(grammarCta, "元の歌詳細に文法CTAを戻す");
 assert.equal(documentStub.activeElement, grammarCta, "歌詳細へ戻った後、文法CTAへフォーカスを戻す");
 
-console.log("waka learning UI regression: daily resume/answer/retry, single-poem result/return, focus reset OK");
+// 文法解説の側だけに本文を持つ歌（百人一首）は、例文の歌の後ろに足し、例文と重なる歌は足さない。
+const standalone = {
+  key: "春すぎて夏きにけらししろたへのころもほすてふ天のかぐ山",
+  author: "持統天皇",
+  waka: {
+    phrases: ["春すぎて", "夏きにけらし", "しろたへの", "ころもほすてふ", "天のかぐ山"],
+    reading: ["はるすぎて", "なつきにけらし", "しろたへの", "ころもほすてふ", "あまのかぐやま"],
+    translation: "春が過ぎて夏が来たらしい。",
+    ref: { collection: "百人一首", number: 2, origin: "新古今和歌集・夏" },
+  },
+  quiz,
+};
+const mixedGrammar = { rules: grammar.rules, byKey: new Map([[poem.key, { key: poem.key, quiz }], [standalone.key, standalone]]) };
+const merged = gallery.withGrammarPoems([poem], mixedGrammar);
+assert.deepEqual(merged.map((item) => item.key), [poem.key, standalone.key], "単独の歌を例文の歌の後ろに足す");
+assert.equal(merged[1].collection, "百人一首");
+assert.equal(merged[1].refText, "2番（原典：新古今和歌集・夏）");
+assert.deepEqual(merged[1].targets, [], "単独の歌は学ぶ語を持たない");
+assert.equal(gallery.withGrammarPoems([poem], null).length, 1, "文法解説が読めなければ例文の歌だけ");
+const { panel: mixedPanel } = createPanel();
+gallery.render(mixedPanel, merged, { grammar: mixedGrammar, initialKey: standalone.key, onClose() {}, onLearnPoem() {} });
+const standaloneDetail = mixedPanel.querySelector(".wgDialog");
+assert.equal(standaloneDetail.querySelectorAll("h4").some((node) => node.textContent === "この歌で学ぶ語"), false, "単独の歌の詳細に学ぶ語の見出しを出さない");
+assert.ok(standaloneDetail.querySelector(".wgPoemGrammarStart"), "単独の歌からも文法学習へ進める");
+
+console.log("waka learning UI regression: daily resume/answer/retry, single-poem result/return, focus reset, standalone poems OK");
