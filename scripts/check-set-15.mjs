@@ -14,7 +14,7 @@ checkSet({
     ["kv15-175", "こと心"],
     ["kv15-176", "そらなり"],
     ["kv15-177", "虚言"],
-    ["kv15-178", "一日"],
+    ["kv15-178", "ひとひ"],
     ["kv15-179", "物"],
     ["kv15-180", "なま"],
   ]),
@@ -30,7 +30,7 @@ checkSet({
     assert.equal(wordsById.get("kv15-175").source, "伊勢物語（第二十三段）");
     assert.equal(wordsById.get("kv15-176").source, "源氏物語（総角）");
     assert.equal(wordsById.get("kv15-177").source, "源氏物語（総角）");
-    assert.equal(wordsById.get("kv15-178").source, "源氏物語（夕顔）");
+    assert.equal(wordsById.get("kv15-178").source, "紫式部日記（御産）");
     assert.equal(wordsById.get("kv15-179").source, "源氏物語（藤袴）");
     assert.equal(wordsById.get("kv15-180").source, "源氏物語（末摘花）");
     assert.equal(wordsById.get("kv15-180").example, "なま女ばらなどもゑみまけて、「なほ聞え給へ」とそそのかし奉れど、…");

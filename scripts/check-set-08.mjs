@@ -11,11 +11,11 @@ checkSet({
     ["kv08-088", "おはし"],
     ["kv08-089", "おはします"],
     ["kv08-090", "まさ"],
-    ["kv08-091", "ましまし"],
+    ["kv08-091", "ましませ"],
     ["kv08-092", "いませ"],
     ["kv08-093", "いますがる"],
     ["kv08-094", "賜はす"],
-    ["kv08-095", "たうべ"],
+    ["kv08-095", "たぶ"],
     ["kv08-096", "のたまひ"],
   ]),
   expect(wordsById) {
@@ -30,15 +30,15 @@ checkSet({
     assert.equal(wordsById.get("kv08-088").example, "昔、おほきおほいまうちぎみと聞ゆるおはしけり。");
     assert.equal(wordsById.get("kv08-088").source, "伊勢物語（頼む君）");
     assert.equal(wordsById.get("kv08-088").cloze, "昔、おほきおほいまうちぎみと聞ゆる（　）けり。");
-    assert.equal(wordsById.get("kv08-089").source, "源氏物語（花宴）");
-    assert.equal(wordsById.get("kv08-089").example, "帝、春宮の御才かしこくすぐれておはします。");
-    assert.equal(wordsById.get("kv08-089").cloze, "帝、春宮の御才かしこくすぐれて（　）。");
-    assert.equal(wordsById.get("kv08-091").source, "大和物語（第二十五段）");
-    assert.equal(wordsById.get("kv08-091").example, "比叡の山に、念覚といふ法師の山籠りにてありけるに、師徳にてましましける大徳の早う死にけるが、室に松の木の枯れたるを見て、");
-    assert.equal(wordsById.get("kv08-091").cloze, "比叡の山に、念覚といふ法師の山籠りにてありけるに、師徳にて（　）ける大徳の早う死にけるが、室に松の木の枯れたるを見て、");
+    assert.equal(wordsById.get("kv08-089").source, "枕草子（上にさぶらふ御猫は）");
+    assert.equal(wordsById.get("kv08-089").example, "朝餉の間にうへはおはします。御覧じて、いみじう驚かせ給ふ。");
+    assert.equal(wordsById.get("kv08-089").cloze, "朝餉の間にうへは（　）。御覧じて、いみじう驚かせ給ふ。");
+    assert.equal(wordsById.get("kv08-091").source, "平家物語（巻一・わが身の栄花）");
+    assert.equal(wordsById.get("kv08-091").example, "君も賢王にてましませば、神も神徳を輝かし、花も心ありければ、二十日の齢を保ちけり。");
+    assert.equal(wordsById.get("kv08-091").cloze, "君も賢王にて（　）ば、神も神徳を輝かし、花も心ありければ、二十日の齢を保ちけり。");
     assert.equal(wordsById.get("kv08-092").source, "落窪物語（二の巻）");
     assert.equal(wordsById.get("kv08-094").source, "竹取物語（かぐや姫の昇天）");
-    assert.equal(wordsById.get("kv08-095").source, "枕草子");
+    assert.equal(wordsById.get("kv08-095").source, "平家物語（巻九・生食の沙汰）");
     assert.deepEqual(wordsById.get("kv08-096").meanings, ["おっしゃる。"]);
     assert.equal(wordsById.get("kv08-096").source, "蜻蛉日記（巻中）");
     assert.equal(wordsById.get("kv08-096").example, "かへり事なにくれといと哀に多くのたまひて、");

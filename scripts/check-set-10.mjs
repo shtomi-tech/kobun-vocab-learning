@@ -5,9 +5,9 @@ checkSet({
   setId: "kobun-set-10",
   firstNumber: 109,
   expectedForms: new Map([
-    ["kv10-109", "聞こゆれ"],
+    ["kv10-109", "聞ゆれ"],
     ["kv10-110", "きこえさす"],
-    ["kv10-111", "奏し"],
+    ["kv10-111", "奏す"],
     ["kv10-112", "啓し"],
     ["kv10-113", "賜り"],
     ["kv10-114", "うけたまはら"],
@@ -31,9 +31,9 @@ checkSet({
     assert.deepEqual(wordsById.get("kv10-118").meanings, ["お仕えする。", "いたす。"]);
     assert.deepEqual(wordsById.get("kv10-119").meanings, ["お与えになる。くださる。", "〜なさる。お〜になる。", "〜ております。"]);
     assert.deepEqual(wordsById.get("kv10-120").meanings, ["さしあげる。", "お〜する。〜申しあげる。", "召しあがる。", "お召しになる。", "お乗りになる。"]);
-    assert.equal(wordsById.get("kv10-109").source, "伊勢物語（武蔵鐙）");
+    assert.equal(wordsById.get("kv10-109").source, "枕草子（中納言参り給ひて）");
     assert.equal(wordsById.get("kv10-110").source, "大和物語（下巻）");
-    assert.equal(wordsById.get("kv10-111").source, "大和物語（上巻）");
+    assert.equal(wordsById.get("kv10-111").source, "竹取物語（御狩の行幸）");
     assert.equal(wordsById.get("kv10-112").source, "大和物語（下巻）");
     assert.equal(wordsById.get("kv10-115").source, "伊勢物語");
     assert.equal(wordsById.get("kv10-117").source, "伊勢物語");

@@ -23,7 +23,7 @@ checkSet({
     assert.equal(wordsById.get("kv16-182").source, "源氏物語（総角）");
     assert.equal(wordsById.get("kv16-183").source, "源氏物語（松風）");
     assert.equal(wordsById.get("kv16-184").source, "十六夜日記（冒頭）");
-    assert.equal(wordsById.get("kv16-185").source, "竹取物語");
+    assert.equal(wordsById.get("kv16-185").source, "竹取物語（龍の首の珠）");
     assert.equal(wordsById.get("kv16-186").source, "源氏物語（総角）");
     assert.equal(wordsById.get("kv16-187").source, "徒然草（第十九段）");
     assert.equal(wordsById.get("kv16-188").source, "源氏物語（若紫）");

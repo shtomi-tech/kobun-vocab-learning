@@ -31,6 +31,7 @@ const scripts = [
   "check-waka-candidates.mjs",
   "check-waka-display.mjs",
   "check-waka-grammar.mjs",
+  "check-waka-learning-ui.cjs",
   "check-meaning-example-ui.cjs",
   "check-example-source.mjs",
   "check-srs.cjs",

@@ -17,9 +17,9 @@ checkSet({
     assert.equal(word75.cloze, "（　）まどろまれず、明しかねさせ給ふ。");
 
     const word78 = wordsById.get("kv07-078");
-    assert.equal(word78.example, "あなかしこあだにな。");
-    assert.equal(word78.translation, "けっしていいかげんにするな。");
-    assert.equal(word78.source, "源氏物語（葵）");
+    assert.equal(word78.example, "「あなかしこ、おびえ騒がせ給ふな。息もせで臥させ給へ」といふを聞くにも、いといみじうわびしくおそろしうて、");
+    assert.equal(word78.translation, "「けっして怖がって騒ぎなさるな。息もしないで横になっていらっしゃい」と言うのを聞くにつけても、たいそうつらく恐ろしくて、");
+    assert.equal(word78.source, "更級日記（初瀬詣で）");
 
     const word79 = wordsById.get("kv07-079");
     assert.equal(word79.example, "ゆめゆめ人に語るべからず。");
@@ -27,9 +27,9 @@ checkSet({
     assert.equal(word79.source, "宇治拾遺物語（巻第七）");
 
     const word77 = wordsById.get("kv07-077");
-    assert.equal(word77.source, "古今著聞集（巻第十・馬藝）");
-    assert.equal(word77.example, "敦頼は、よも落ちじ。");
-    assert.equal(word77.cloze, "敦頼は、（　）落ちじ。");
+    assert.equal(word77.source, "宇治拾遺物語（巻第二）");
+    assert.equal(word77.example, "この人の気色、今は逃ぐともよも逃がさじと覚えければ、鬼にきも取られたるやうにて共に行く程に、");
+    assert.equal(word77.cloze, "この人の気色、今は逃ぐとも（　）逃がさじと覚えければ、鬼にきも取られたるやうにて共に行く程に、");
 
     const word80 = wordsById.get("kv07-080");
     assert.equal(word80.source, "枕草子（巻二）");
