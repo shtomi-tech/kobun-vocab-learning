@@ -18,6 +18,8 @@ const KobunVocabApp = (() => {
   // 常時表示は「今日 n / m語」1本に絞る。
   const STUDY_PLAN_KEY = `kobun_vocab_study_plan_v1${storageScope}`;
   const STUDY_TIME_KEY = `kobun_vocab_study_time_v1${storageScope}`;
+  const HOME_TAB_KEY = `kobun_vocab_home_tab_v1${storageScope}`;
+  const WRITTEN_SIZE_KEY = `kobun_vocab_written_size_v1${storageScope}`;
   const {
     GOAL_TOTAL: VOCAB_GOAL_TOTAL,
     DAILY_MAX: STUDY_PLAN_DAILY_MAX,
@@ -223,6 +225,8 @@ const KobunVocabApp = (() => {
 
   function saveResume() {
     if (!session) return;
+    // 書く演習は短い回なので途中保存しない（途中保存は1枠のため、別の学習の続きを消さない）。
+    if (session.mode === "writtenDrill") return;
     state.progress.resume = JSON.parse(JSON.stringify(session));
     saveProgress();
   }
@@ -454,7 +458,10 @@ const KobunVocabApp = (() => {
     const nextUnclearedId = cleared && !resume && !reviews.length ? nextUnclearedSetId(state.setId) : null;
     const isFirstReveal = !homeIntroduced;
     homeIntroduced = true;
+    const marks = [];
+    const tabStart = (id) => marks.push({ id, from: home.children.length });
 
+    tabStart("today");
     if (isFirstReveal) {
       home.appendChild(el("section", { class: "card hero" },
         el("p", { class: "label" }, "学習の流れ"),
@@ -493,6 +500,11 @@ const KobunVocabApp = (() => {
     );
     if (nextUnclearedId) recommend.appendChild(el("button", { class: "ghost", onclick: startLearn }, "このセットをもう一周する"));
     card.appendChild(recommend);
+    const dueCount = dueMeaningEntries().length;
+    if (dueCount) {
+      card.appendChild(el("button", { class: "ghost secondaryCta homeTabJump", type: "button", onclick: () => selectHomeTab("review", true) },
+        `今日の復習へ（${dueCount}語）`));
+    }
 
     card.appendChild(el("div", { class: "stats" },
       stat(learned, total, "文中回答済み"),
@@ -505,10 +517,17 @@ const KobunVocabApp = (() => {
       studyTime.flush();
       home.appendChild(studyTimeCard());
     }
-    home.appendChild(meaningMission());
-    home.appendChild(recallMission());
     const wakaTeaser = hasWakaGallery() ? KobunWakaGallery.teaserCard(wakaPoems(), { onOpen: openWakaGallery, onDaily: () => openWakaDaily() }) : null;
     if (wakaTeaser) home.appendChild(wakaTeaser);
+
+    tabStart("review");
+    home.appendChild(meaningMission());
+    home.appendChild(recallMission());
+
+    tabStart("write");
+    home.appendChild(writtenMission());
+
+    tabStart("sets");
     home.appendChild(el("section", { class: "card" }, setPicker()));
     home.appendChild(learningBlockMap());
 
@@ -528,6 +547,89 @@ const KobunVocabApp = (() => {
     });
     list.appendChild(grid);
     home.appendChild(list);
+    arrangeHomeTabs(home, marks, { review: dueCount });
+  }
+
+  /* ---- ホームのタブ ----
+     1列に積んでいたホームを「今日・復習・書く・セット」の4面に分ける。
+     描画中に tabStart で区切りを付け、最後に arrangeHomeTabs で各面へ振り分ける。 */
+  const HOME_TABS = [
+    { id: "today", label: "今日" },
+    { id: "review", label: "復習" },
+    { id: "write", label: "書く" },
+    { id: "sets", label: "セット" },
+  ];
+
+  function storedHomeTab() {
+    const fromHash = String(location.hash || "").replace(/^#/, "");
+    if (HOME_TABS.some((tab) => tab.id === fromHash)) return fromHash;
+    try {
+      const stored = localStorage.getItem(HOME_TAB_KEY);
+      if (HOME_TABS.some((tab) => tab.id === stored)) return stored;
+    } catch (_) { /* localStorageなしでも表示は続ける */ }
+    return "today";
+  }
+
+  function selectHomeTab(id, focus = false) {
+    const bar = $(".homeTabs");
+    if (!bar) return;
+    try { localStorage.setItem(HOME_TAB_KEY, id); } catch (_) { /* 記憶できなくても切り替えは続ける */ }
+    try { history.replaceState(null, "", `${location.pathname}${location.search}#${id}`); } catch (_) { /* file:// など */ }
+    bar.querySelectorAll("[role=tab]").forEach((button) => {
+      const selected = button.dataset.tab === id;
+      button.setAttribute("aria-selected", String(selected));
+      button.tabIndex = selected ? 0 : -1;
+      if (selected && focus) button.focus();
+    });
+    document.querySelectorAll(".homeTabPanel").forEach((panel) => {
+      panel.hidden = panel.dataset.tab !== id;
+    });
+    if (bar.getBoundingClientRect().top < 0) bar.scrollIntoView({ block: "start" });
+  }
+
+  function arrangeHomeTabs(home, marks, badges = {}) {
+    if (!marks.length) return;
+    const panels = Object.fromEntries(HOME_TABS.map((tab) => [tab.id, el("div", {
+      class: "homeTabPanel",
+      id: `homeTabPanel-${tab.id}`,
+      role: "tabpanel",
+      "aria-labelledby": `homeTab-${tab.id}`,
+      "data-tab": tab.id,
+    })]));
+    Array.from(home.children).forEach((node, index) => {
+      let id = marks[0].id;
+      marks.forEach((mark) => { if (index >= mark.from) id = mark.id; });
+      panels[id].appendChild(node);
+    });
+    const tabs = HOME_TABS.filter((tab) => panels[tab.id].children.length);
+    if (!tabs.length) return;
+    const stored = storedHomeTab();
+    const active = tabs.some((tab) => tab.id === stored) ? stored : tabs[0].id;
+    const bar = el("div", { class: "homeTabs", role: "tablist", "aria-label": "ホームの表示" });
+    tabs.forEach((tab, i) => {
+      const badge = Number(badges[tab.id]) || 0;
+      const button = el("button", {
+        class: "homeTab",
+        id: `homeTab-${tab.id}`,
+        type: "button",
+        role: "tab",
+        "aria-controls": `homeTabPanel-${tab.id}`,
+        "data-tab": tab.id,
+        onclick: () => selectHomeTab(tab.id),
+      }, el("span", {}, tab.label), badge
+        ? el("span", { class: "homeTabBadge", "aria-label": `復習の期限 ${badge}語` }, String(badge))
+        : null);
+      button.addEventListener("keydown", (event) => {
+        const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+        if (!step) return;
+        event.preventDefault();
+        selectHomeTab(tabs[(i + step + tabs.length) % tabs.length].id, true);
+      });
+      bar.appendChild(button);
+    });
+    home.appendChild(bar);
+    tabs.forEach((tab) => home.appendChild(panels[tab.id]));
+    selectHomeTab(active);
   }
 
   function studyPlanProgress(label, value, max, valueText, detail) {
@@ -812,6 +914,89 @@ const KobunVocabApp = (() => {
     return section;
   }
 
+  // --- 意味を書く演習（ホームの「書く」タブ）。段階と再出題の決め方は static/written-drill.js。 ---
+  // 学習済みの語から出し、書いた答えを Jev（/api/grade-recall）で採点する。Worker が無い・失敗した・
+  // 確信度が低いときは自己採点に戻す。記録は履歴（kind: "written"）だけで、FSRS とノルマには混ぜない。
+  const WRITTEN_OUTCOME_LABELS = { learned: "見出し語だけで正解", shaky: "例文で正解", notLearned: "答えを確認" };
+  const WRITTEN_GRADE_TIMEOUT_MS = 10000;
+
+  function writtenPoolKeys() {
+    return learnedMeaningEntries().filter(({ word }) => word.example).map((entry) => entry.key);
+  }
+
+  function readWrittenSize() {
+    try { return localStorage.getItem(WRITTEN_SIZE_KEY); } catch (_) { return null; }
+  }
+
+  function writtenMission() {
+    const pool = writtenPoolKeys();
+    const section = el("section", { class: "card writtenMission", "aria-labelledby": "writtenMissionTitle" },
+      el("p", { class: "label" }, "書いて覚える"),
+      el("h2", { id: "writtenMissionTitle" }, "古文単語の意味を書く"),
+      el("p", { class: "lead" }, "選択肢なしで、見出し語を見て意味を自分の言葉で書きます。言い回しが違っても、意味が合っていれば正解です。"),
+      el("ol", { class: "writtenSteps" },
+        el("li", {}, el("strong", {}, "見出し語だけ"), el("span", {}, "まず何も見ずに書く")),
+        el("li", {}, el("strong", {}, "例文ヒント"), el("span", {}, "わからなければ例文を見てもう一度")),
+        el("li", {}, el("strong", {}, "答えを確認"), el("span", {}, `${KobunWrittenDrill.REASK_GAP}問ほどあとに見出し語だけでもう一度`)),
+      ),
+    );
+    if (!pool.length) {
+      section.appendChild(el("p", { class: "hint" }, "通常学習で文中問題まで解いた語が対象になります。"));
+      section.appendChild(el("button", { class: "cta writtenCta", type: "button", disabled: true }, "出題できる語はまだありません"));
+      return section;
+    }
+    const choices = KobunWrittenDrill.sizeChoices(pool.length);
+    let size = KobunWrittenDrill.preferredSize(choices, readWrittenSize());
+    const startButton = el("button", { class: "cta writtenCta", type: "button", onclick: () => startWrittenDrill(size) });
+    const sizeButtons = choices.map((choice) => el("button", {
+      class: "writtenSizeChoice",
+      type: "button",
+      onclick: () => {
+        size = choice;
+        try { localStorage.setItem(WRITTEN_SIZE_KEY, String(choice)); } catch (_) { /* 記憶できなくても選択は続ける */ }
+        sync();
+      },
+    }, `${choice}語`));
+    function sync() {
+      sizeButtons.forEach((button, i) => button.setAttribute("aria-pressed", String(choices[i] === size)));
+      startButton.textContent = `書きはじめる（${size}語）`;
+    }
+    sync();
+    section.appendChild(el("div", { class: "writtenSizeRow" },
+      el("span", { class: "writtenSizeLabel", id: "writtenSizeLabel" }, "1回の語数"),
+      el("div", { class: "writtenSizeChoices", role: "group", "aria-labelledby": "writtenSizeLabel" }, ...sizeButtons),
+    ));
+    section.appendChild(startButton);
+    section.appendChild(el("p", { class: "hint" },
+      `出題できる語：${pool.length}語（学習済みの語から毎回ランダム）。採点は Jev が意味の近さで行い、判定が難しいときは自分で判定します。間隔復習の復習日と、思い出す問題のノルマには影響しません。`));
+    return section;
+  }
+
+  function startWrittenDrill(size = KobunWrittenDrill.SESSION_SIZE) {
+    const picked = shuffle(writtenPoolKeys()).slice(0, size);
+    if (!picked.length) return renderHome();
+    session = {
+      mode: "writtenDrill",
+      stage: "written",
+      writtenSize: size,
+      writtenKeys: picked,
+      // 出題順。{ key, reask }。あやふや・未習得の語は reask: true で後ろへ差し込む。
+      writtenQueue: picked.map((key) => ({ key, reask: false })),
+      writtenPos: 0,
+      // 語ごとの結果。{ key, outcome, answers, reaskResult }
+      writtenResults: [],
+      ...freshWrittenTurn(),
+    };
+    lastStepKey = stepKey();
+    renderSession();
+    $(".writtenInput")?.focus({ preventScroll: true });
+  }
+
+  function freshWrittenTurn() {
+    // step: word → example（初回の誤答・わからない）。phase: input → grading → self → result | answer
+    return { writtenStep: "word", writtenPhase: "input", writtenAnswer: "", writtenAnswers: [], writtenAi: null, writtenGradedBy: null, writtenOutcome: null };
+  }
+
   // 歌の間（試験公開）。読み込み済みの全セットから、例文として表示される和歌を集める。
   // 試験機能なので、モジュールや表示先が無い環境（検査用の擬似DOMなど）では入口を出さない。
   const hasWakaGallery = () => typeof KobunWakaGallery !== "undefined" && Boolean($("#wakaPanel"));
@@ -852,6 +1037,7 @@ const KobunVocabApp = (() => {
       onLearnPoem: (poem) => openWakaPoemLesson(poem.key),
       onClose: () => {
         renderHome();
+        selectHomeTab("today");
         $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
         $("#homePanel .wgTeaser .wgButton--gold")?.focus({ preventScroll: true });
       },
@@ -876,6 +1062,7 @@ const KobunVocabApp = (() => {
       onClose: () => openWakaGallery(key, true),
       onHome: () => {
         renderHome();
+        selectHomeTab("today");
         $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
         $("#homePanel .wgTeaser .wgButton--gold")?.focus({ preventScroll: true });
       },
@@ -899,6 +1086,7 @@ const KobunVocabApp = (() => {
       onOpenPoem: (key) => openWakaGallery(key),
       onClose: () => {
         renderHome();
+        selectHomeTab("today");
         $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
         $("#homePanel .wgTeaser .wgButton--gold")?.focus({ preventScroll: true });
       },
@@ -1117,6 +1305,8 @@ const KobunVocabApp = (() => {
     if (session.stage === "flash") renderFlash(panel);
     else if (session.stage === "meaning") renderQuiz(panel, "meaning");
     else if (session.stage === "recall") renderRecall(panel);
+    else if (session.stage === "written") renderWritten(panel);
+    else if (session.stage === "writtenDone") renderWrittenDone(panel);
     else if (session.stage === "wrongReview") renderWrongReview(panel);
     else if (session.stage === "context") renderQuiz(panel, "context");
     else renderDone(panel);
@@ -1130,6 +1320,7 @@ const KobunVocabApp = (() => {
       return `意味確認 ${session.meaningIndex + 1} / ${session.meaningOrder.length}${block}`;
     }
     if (session.stage === "recall") return `思い出して復習 ${session.meaningIndex + 1} / ${session.meaningOrder.length}`;
+    if (session.stage === "written") return `意味を書く ${session.writtenPos + 1} / ${session.writtenQueue.length}`;
     if (session.stage === "context") return `文中問題 ${session.contextIndex + 1} / ${session.contextOrder.length}`;
     if (session.stage === "wrongReview") {
       const total = session.wrongMeaningIds.length;
@@ -1141,6 +1332,7 @@ const KobunVocabApp = (() => {
   function stageTitle() {
     if (session.mode === "review") return "間違えた語を解き直す";
     if (session.mode === "meaningReview") return session.stage === "done" ? "意味だけ復習完了" : session.stage === "wrongReview" ? "間違えた語を確認" : "意味だけ復習";
+    if (session.mode === "writtenDrill") return session.stage === "writtenDone" ? "意味を書く・完了" : "見出し語を見て意味を書く";
     if (session.mode === "recallReview") return session.stage === "done" ? "思い出して復習完了" : session.stage === "wrongReview" ? "間違えた語を確認" : "選択肢なしで思い出す";
     return {
       flash: `STEP 1　覚える（第${session.batchIndex + 1}ブロック）`,
@@ -1159,16 +1351,17 @@ const KobunVocabApp = (() => {
     const steps = session.mode === "learn" ? ["flash", "meaning", "wrongReview", "context"]
       : session.mode === "meaningReview" ? ["meaning", "wrongReview"]
         : session.mode === "recallReview" ? ["recall", "wrongReview"]
+          : session.mode === "writtenDrill" ? ["written"]
           : ["context"];
     const block = session.mode === "learn" ? ` ${session.batchIndex + 1}/${session.batchCount}` : "";
-    const labels = { flash: `1 覚える${block}`, meaning: session.mode === "meaningReview" ? "意味だけ復習" : `2 確かめる${block}`, wrongReview: "必要なら復習", context: "3 解く", recall: "思い出す" };
+    const labels = { flash: `1 覚える${block}`, meaning: session.mode === "meaningReview" ? "意味だけ復習" : `2 確かめる${block}`, wrongReview: "必要なら復習", context: "3 解く", recall: "思い出す", written: "書く" };
     const current = steps.indexOf(session.stage);
     const key = stepKey();
     const changed = key !== lastStepKey;
     lastStepKey = key;
     return el("div", { class: "stepBar", "aria-label": "学習ステップ" }, ...steps.map((step, index) => {
       const isActive = step === session.stage;
-      const isCleared = !isActive && (index < current || session.stage === "done");
+      const isCleared = !isActive && (index < current || session.stage === "done" || session.stage === "writtenDone");
       return el("span", {
         class: `step ${isActive ? "active" : isCleared ? "cleared" : ""}${isActive && changed ? " is-settling" : ""}`,
         "aria-current": isActive ? "step" : null,
@@ -1688,6 +1881,261 @@ const KobunVocabApp = (() => {
         return el("li", {}, `${word.headword}【${word.kanji}】：${meaningText(word)}`);
       })),
     );
+  }
+
+  const currentWrittenEntry = () => session.writtenQueue[session.writtenPos];
+  // 同じ読みの語は見出し語だけでは問いが決まらないので、最初から例文を出す（思い出す問題と同じ扱い）。
+  // 答えの確認では例文が単語カードに入るので、ここでは出さない。
+  const writtenExampleShown = (word) => session.writtenPhase !== "answer" && (session.writtenStep === "example" || isHomograph(word));
+
+  function renderWritten(panel) {
+    const entry = currentWrittenEntry();
+    const word = wordForSession(entry.key);
+    const box = el("section", { class: `quiz written${session.writtenPhase === "result" || session.writtenPhase === "answer" ? " quiz--answered" : ""}` });
+    if (entry.reask) box.appendChild(el("p", { class: "writtenReaskBadge" }, "もう一度"));
+    box.appendChild(el("p", { class: "askWord recallHeadword", tabindex: "-1" }, word.headword));
+    if (writtenExampleShown(word)) {
+      const label = session.writtenStep === "example" ? `ヒント：『${word.source}』` : `この例文での意味を答えてください（『${word.source}』）`;
+      box.appendChild(el("div", { class: "recallHint writtenHint" },
+        el("p", { class: "label" }, label),
+        el("p", { class: exampleClass(word, "meaningExample") }, exampleBody(word, { underline: true })),
+      ));
+    }
+    const firstTry = session.writtenAnswers.filter((a) => a.step === "word").pop();
+    if (session.writtenStep === "example" && session.writtenPhase !== "answer" && firstTry) {
+      box.appendChild(el("p", { class: "hint writtenPrevious" }, `1回目の答え：${firstTry.answer}　→ 例文をヒントにもう一度書いてください。`));
+    }
+    if (["input", "grading", "self"].includes(session.writtenPhase)) box.appendChild(writtenForm(word, entry));
+    if (session.writtenPhase === "grading") {
+      box.appendChild(el("p", { class: "recallAiNote", role: "status", "aria-live": "polite" }, "Jev が採点しています…"));
+    } else if (session.writtenPhase === "self") {
+      box.appendChild(writtenSelfGrade(word));
+    } else if (session.writtenPhase === "result") {
+      box.appendChild(writtenCorrectFeedback(entry, word));
+    } else if (session.writtenPhase === "answer") {
+      box.appendChild(writtenAnswerReveal(entry, word));
+    }
+    panel.appendChild(box);
+  }
+
+  function writtenForm(word, entry) {
+    const input = el("input", {
+      class: "recallInput writtenInput",
+      type: "text",
+      id: "writtenInput",
+      maxlength: String(KobunWrittenDrill.MAX_ANSWER_LENGTH),
+      autocomplete: "off",
+      placeholder: "例：出歩く",
+    });
+    input.value = session.writtenAnswer || "";
+    input.addEventListener("input", () => { session.writtenAnswer = input.value; });
+    // 変換確定の Enter で送信しない。
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && (event.isComposing || event.keyCode === 229)) event.preventDefault();
+    });
+    const submit = el("button", { class: "cta", type: "submit" }, "採点する");
+    const unknown = el("button", { class: "ghost", type: "button" },
+      session.writtenStep === "word" && !entry.reask && !isHomograph(word) ? "わからない（例文を見る）" : "わからない（答えを見る）");
+    const form = el("form", { class: "writtenForm" },
+      el("label", { class: "recallInputLabel", for: "writtenInput" },
+        session.writtenStep === "example" ? `例文の下線部「${word.headword}」の意味を書いてください` : `「${word.headword}」の意味を書いてください`),
+      el("div", { class: "writtenInputRow" }, input, submit),
+      el("div", { class: "writtenFormSub" }, unknown),
+    );
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      submitWrittenAnswer(input.value);
+    });
+    unknown.addEventListener("click", () => {
+      if (session.writtenPhase !== "input") return;
+      session.writtenAnswer = "わからない";
+      applyWrittenGrade("wrong", "local");
+    });
+    if (session.writtenPhase !== "input") {
+      input.disabled = true;
+      submit.disabled = true;
+      unknown.disabled = true;
+    }
+    return form;
+  }
+
+  async function submitWrittenAnswer(raw) {
+    const answer = String(raw || "").trim().slice(0, KobunWrittenDrill.MAX_ANSWER_LENGTH);
+    if (!answer || session?.writtenPhase !== "input") return;
+    const entry = currentWrittenEntry();
+    const word = wordForSession(entry.key);
+    session.writtenAnswer = answer;
+    // 「わからない」などは Jev に送らず違った扱い、意味と表記ゆれ程度で一致すれば正解にする。
+    if (KobunRecallGrade.isNoAnswer(answer)) return applyWrittenGrade("wrong", "local");
+    if (KobunWrittenDrill.localMatch(answer, word.meanings)) return applyWrittenGrade("correct", "local");
+    session.writtenPhase = "grading";
+    renderSession();
+    const current = session;
+    const result = await requestWrittenGrade(reviewEntryByKey(entry.key)?.word.id || word.id, answer);
+    // 採点待ちの間に一覧へ戻った・別の演習を始めたときは結果を捨てる。
+    if (session !== current || session.writtenPhase !== "grading") return;
+    session.writtenAi = result;
+    const decision = KobunRecallGrade.decideAiGrade(result);
+    if (decision.auto) return applyWrittenGrade(decision.selfGrade, "ai");
+    session.writtenPhase = "self";
+    renderSession();
+    $(".writtenSelfGrade .choice")?.focus({ preventScroll: true });
+  }
+
+  async function requestWrittenGrade(wordId, answer) {
+    if (typeof fetch !== "function") return null;
+    try {
+      const response = await fetch(RECALL_GRADE_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ wordId, answer }),
+        signal: typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(WRITTEN_GRADE_TIMEOUT_MS) : undefined,
+      });
+      return response.ok ? await response.json() : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function applyWrittenGrade(grade, gradedBy) {
+    const entry = currentWrittenEntry();
+    const word = wordForSession(entry.key);
+    const safeGrade = KobunWrittenDrill.grades.includes(grade) ? grade : "wrong";
+    session.writtenGradedBy = gradedBy;
+    session.writtenAnswers.push({ step: session.writtenStep, answer: session.writtenAnswer, grade: safeGrade, gradedBy });
+    const step = KobunWrittenDrill.nextStep(session.writtenStep, entry.reask, safeGrade, { exampleShown: isHomograph(word) });
+    if (step.next === "example") {
+      Object.assign(session, { writtenStep: "example", writtenPhase: "input", writtenAnswer: "", writtenAi: null });
+      renderSession();
+      $(".writtenInput")?.focus({ preventScroll: true });
+      return;
+    }
+    recordWrittenResult(entry, step);
+    session.writtenPhase = step.next;
+    renderSession();
+    const feedback = $(".written .feedback");
+    feedback?.focus({ preventScroll: true });
+    feedback?.scrollIntoView({ block: "nearest" });
+  }
+
+  function recordWrittenResult(entry, step) {
+    if (entry.reask) {
+      const result = session.writtenResults.find((r) => r.key === entry.key);
+      if (result) result.reaskResult = step.reaskResult;
+    } else {
+      session.writtenOutcome = step.outcome;
+      session.writtenResults.push({ key: entry.key, outcome: step.outcome, answers: session.writtenAnswers.slice(), reaskResult: null });
+      const at = KobunWrittenDrill.reaskIndex(step.outcome, session.writtenPos, session.writtenQueue.length);
+      if (at >= 0) session.writtenQueue.splice(at, 0, { key: entry.key, reask: true });
+    }
+    const poolEntry = reviewEntryByKey(entry.key);
+    const progress = poolEntry?.progress || state.progress;
+    const last = session.writtenAnswers[session.writtenAnswers.length - 1];
+    // 自動採点のしきい値を後で見直せるよう、Jev の判定も残す。
+    const aiFields = session.writtenAi && KobunRecallGrade.selfGrades.includes(session.writtenAi.grade) ? {
+      aiGrade: session.writtenAi.grade,
+      aiConfidence: Math.round(Number(session.writtenAi.confidence) * 1000) / 1000,
+    } : {};
+    appendHistory({
+      kind: "written",
+      wordId: poolEntry?.word.id || entry.key,
+      result: entry.reask ? `reask-${step.reaskResult}` : step.outcome,
+      hintUsed: session.writtenAnswers.some((a) => a.step === "example"),
+      answer: last?.answer || "",
+      gradedBy: session.writtenGradedBy,
+      ...aiFields,
+    }, progress);
+    saveProgressFor(poolEntry?.setId || state.setId, progress);
+  }
+
+  function writtenSelfGrade(word) {
+    const decision = KobunRecallGrade.decideAiGrade(session.writtenAi);
+    return el("div", { class: "feedback writtenFeedback", role: "status", "aria-live": "polite" },
+      el("h3", {}, "答え合わせ"),
+      el("p", {}, `あなたの答え：${session.writtenAnswer}`),
+      el("p", {}, `${word.headword}【${word.kanji}】：${meaningText(word)}`),
+      el("p", { class: "recallAiNote" }, decision.selfGrade
+        ? `Jev の判定は「${recallSelfGradeLabel(decision.selfGrade)}」ですが、確信が低いため自分で判定してください。`
+        : "自動採点が使えなかったため、自分で判定してください。"),
+      el("div", { class: "choices writtenSelfGrade" },
+        recallChoiceButton("selfGradeChoice", 1, "合っていた", () => applyWrittenGrade("correct", "self")),
+        recallChoiceButton("selfGradeChoice", 2, "違った", () => applyWrittenGrade("wrong", "self")),
+      ),
+    );
+  }
+
+  function writtenNextButton(label) {
+    return el("div", { class: "quizNextAction" },
+      el("button", { class: "cta next", type: "button", onclick: advanceWritten }, label));
+  }
+
+  const writtenIsLast = () => session.writtenPos >= session.writtenQueue.length - 1;
+
+  function writtenCorrectFeedback(entry, word) {
+    const heading = entry.reask
+      ? "○ 今度は見出し語だけで思い出せました"
+      : session.writtenOutcome === "learned" ? "○ 見出し語だけで思い出せました" : "○ 例文を手がかりに思い出せました";
+    return el("div", { class: "feedback ok", role: "status", "aria-live": "polite", tabindex: "-1" },
+      el("h3", {}, heading),
+      el("p", {}, `あなたの答え：${session.writtenAnswer}`),
+      el("p", {}, `${word.headword}【${word.kanji}】：${meaningText(word)}`),
+      !entry.reask && session.writtenOutcome === "shaky" ? el("p", { class: "hint" }, "まだあやふやなので、最後にもう一度見出し語だけで出します。") : null,
+      session.writtenGradedBy === "ai" && session.writtenAi
+        ? el("p", { class: "recallAiNote" }, `Jev が意味の近さで採点しました（確信度 ${Math.round(Number(session.writtenAi.confidence) * 100)}%）。`)
+        : null,
+      writtenNextButton(writtenIsLast() ? "結果を見る →" : "次の問題 →"),
+    );
+  }
+
+  // 答えを例文・解説と並べて確認させる。確認ボタンを押すまで次へ進めない。
+  function writtenAnswerReveal(entry, word) {
+    const box = el("div", { class: "feedback ng", role: "status", "aria-live": "polite", tabindex: "-1" },
+      el("h3", {}, "× 答えを確認しましょう"),
+      ...session.writtenAnswers.map((a) => el("p", {}, `${a.step === "word" ? "見出し語だけ" : "例文あり"}の答え：${a.answer}`)),
+      el("p", { class: "hint" }, entry.reask
+        ? "下の意味と解説を読んでから進んでください。"
+        : `下の意味と解説を読んでから進んでください。${KobunWrittenDrill.REASK_GAP}問ほどあとに、もう一度見出し語だけで出します。`),
+      writtenNextButton("確認した →"),
+    );
+    const answer = el("div", { class: "recallAnswer" }, wordCard(word));
+    return el("div", {}, box, answer);
+  }
+
+  function advanceWritten() {
+    if (writtenIsLast()) session.stage = "writtenDone";
+    else {
+      session.writtenPos++;
+      Object.assign(session, freshWrittenTurn());
+    }
+    renderSession();
+    $(session.stage === "writtenDone" ? ".doneBanner h2" : ".writtenInput")?.focus({ preventScroll: true });
+  }
+
+  function renderWrittenDone(panel) {
+    const summary = KobunWrittenDrill.summarize(session.writtenResults);
+    const total = session.writtenKeys.length;
+    panel.appendChild(el("section", { class: "doneBanner" },
+      el("p", { class: "label" }, "学習結果"),
+      el("div", { class: "score" }, `${summary.learned} / ${total}`),
+      el("h2", { tabindex: "-1" }, "見出し語だけで思い出せた語"),
+      el("p", { class: "hint" }, `例文で正解 ${summary.shaky}・答えを確認 ${summary.notLearned}${summary.reasked
+        ? `・再出題で正解 ${summary.reaskCorrect} / ${summary.reasked}` : ""}。間隔復習の復習日は変わりません。`),
+    ));
+    panel.appendChild(el("section", { class: "card writtenResultList" },
+      el("ul", {}, ...session.writtenResults.map((r) => {
+        const word = wordForSession(r.key);
+        const reask = r.reaskResult ? `／再出題：${r.reaskResult === "correct" ? "正解" : "不正解"}` : "";
+        return el("li", { class: `writtenResult writtenResult--${r.outcome}` },
+          el("strong", {}, `${WRITTEN_OUTCOME_LABELS[r.outcome]}　${word.headword}【${word.kanji}】`),
+          el("span", {}, `${meaningText(word)}${reask}`),
+        );
+      })),
+    ));
+    const size = Math.min(session.writtenSize, writtenPoolKeys().length);
+    panel.appendChild(el("div", { class: "actions doneActions" },
+      size ? el("button", { class: "cta reviewCta", type: "button", onclick: () => startWrittenDrill(session.writtenSize) }, `続けて書く（${size}語）`) : null,
+      el("button", { class: "ghost", type: "button", onclick: renderHome }, "一覧へ戻る"),
+    ));
   }
 
   function handleQuizKeydown(event) {
