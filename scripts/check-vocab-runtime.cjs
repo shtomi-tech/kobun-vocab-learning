@@ -23,6 +23,7 @@ function loadModeApp(exposedNames, sandboxOverrides = {}) {
     KobunExampleParts: require("../static/example-parts.js"),
     KobunChoiceBuilder: require("../static/choice-builder.js"),
     KobunRecallGrade: require("../static/recall-grade.js"),
+    KobunWrittenDrill: require("../static/written-drill.js"),
     ...sandboxOverrides,
   };
   vm.runInNewContext(`${source}\nglobalThis.__app = KobunVocabApp;`, sandbox);
@@ -303,6 +304,7 @@ const fetchStub = async (url, init = {}) => {
       },
       KobunSrs: realSrs,
       KobunRecallGrade: require("../static/recall-grade.js"),
+      KobunWrittenDrill: require("../static/written-drill.js"),
       KobunMeaningGuard: require("../static/meaning-guard.js"),
       KobunSetProgress: require("../static/set-progress.js"),
       Date,
@@ -433,6 +435,7 @@ const fetchStub = async (url, init = {}) => {
       fetch: fakeFetch,
       KobunSrs: require("../static/srs.js"),
       KobunRecallGrade: require("../static/recall-grade.js"),
+      KobunWrittenDrill: require("../static/written-drill.js"),
       KobunMeaningGuard: require("../static/meaning-guard.js"),
       KobunSetProgress: require("../static/set-progress.js"),
       Date,
