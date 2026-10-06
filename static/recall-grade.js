@@ -1,29 +1,10 @@
 "use strict";
 
-// 思い出して書く復習の評価。確信度（答えを見る前）・自己採点・ヒントの有無から、
-// 評価（good / hard / again）と、誤答確認へ回すか・自信ありの取り違えかを決める純粋ロジック。
-// 評価は間隔復習（FSRS）へは渡さず、この問題専用の記録と毎日のノルマにだけ使う。
+// 書いた答えの採点まわりの純粋ロジック。意味を書く演習（static/written-drill.js と mode-vocab.js）が使う。
+// 「答えなし」の判定と、Jev の判定を自動で採用するかどうかだけを持つ。
+// （以前の「選択肢なしで思い出す」毎日のノルマは、意味を書く演習と重なるため廃止した。）
 const KobunRecallGrade = (() => {
-  const confidences = ["sure", "maybe", "blank"];
   const selfGrades = ["correct", "partial", "wrong"];
-
-  /**
-   * @param confidence  "sure"（言える）| "maybe"（たぶん）| "blank"（思い出せない）
-   * @param selfGrade   "correct" | "partial" | "wrong" | null（思い出せないときは null）
-   * @param hintUsed    例文ヒントを見たか
-   * 想定外の値は例外にせず Again として扱う（学習を止めない）。
-   */
-  function gradeRecall({ confidence, selfGrade, hintUsed } = {}) {
-    const again = { rating: "again", toWrongReview: true, confidentMiss: false };
-    if (!confidences.includes(confidence)) return again;
-    if (confidence === "blank") return again;
-    if (!selfGrades.includes(selfGrade)) return again;
-    if (selfGrade === "wrong") return { ...again, confidentMiss: confidence === "sure" };
-    if (selfGrade === "partial") return { rating: "hard", toWrongReview: false, confidentMiss: false };
-    // 合っていた: 自信ありでヒントなしのときだけ Good。
-    const rating = confidence === "sure" && hintUsed !== true ? "good" : "hard";
-    return { rating, toWrongReview: false, confidentMiss: false };
-  }
 
   // Jev の自動採点を採用する確信度の下限。日本語の答えで測って決める（README の自動採点の節）。
   const AI_AUTO_THRESHOLD = 0.8;
@@ -45,102 +26,7 @@ const KobunRecallGrade = (() => {
     return { auto: true, selfGrade: result.grade };
   }
 
-  // --- 毎日のノルマ。間隔復習（FSRS）とは独立に、学習済みの語から1日20問を出す。 ---
-  const DAILY_QUOTA = 20;
-  const DAY_MS = 86400000;
-
-  function startOfLocalDay(now) {
-    const day = new Date(now);
-    day.setHours(0, 0, 0, 0);
-    return day.getTime();
-  }
-
-  /** 今日（端末の日付）答えた思い出す問題の数。histories は各セットの progress.history。 */
-  function countToday(histories, now = new Date()) {
-    const start = startOfLocalDay(now);
-    const end = start + DAY_MS;
-    return (Array.isArray(histories) ? histories : []).reduce((sum, history) => sum
-      + (Array.isArray(history) ? history : []).filter((event) => {
-        if (!event || event.kind !== "recall") return false;
-        const at = new Date(event.at).getTime();
-        return at >= start && at < end;
-      }).length, 0);
-  }
-
-  function normalizeStat(value) {
-    const source = value && typeof value === "object" ? value : {};
-    const count = (key) => Number.isInteger(source[key]) && source[key] > 0 ? source[key] : 0;
-    return {
-      count: count("count"),
-      missCount: count("missCount"),
-      confidentMissCount: count("confidentMissCount"),
-      lastAt: typeof source.lastAt === "string" ? source.lastAt : null,
-      lastRating: ["good", "hard", "again"].includes(source.lastRating) ? source.lastRating : null,
-    };
-  }
-
-  /** 1問の結果を語ごとの記録（progress.recall[wordId]）へ足す。 */
-  function recordStat(value, grade, now = new Date()) {
-    const stat = normalizeStat(value);
-    const rating = ["good", "hard", "again"].includes(grade?.rating) ? grade.rating : "again";
-    stat.count++;
-    if (rating === "again") stat.missCount++;
-    if (grade?.confidentMiss === true) stat.confidentMissCount++;
-    stat.lastAt = now.toISOString();
-    stat.lastRating = rating;
-    return stat;
-  }
-
-  /**
-   * 出題する語を選ぶ。entries は { key, stat }。学習済みの語からランダムに出す。
-   * 同じ日に同じ語が重ならないよう、今日まだ出していない語を先にし、今日出した語はその後に回す。
-   */
-  function pickWords(entries, size, now = new Date(), random = Math.random) {
-    const start = startOfLocalDay(now);
-    return (Array.isArray(entries) ? entries : [])
-      .map((entry) => {
-        const lastAt = new Date(normalizeStat(entry.stat).lastAt).getTime();
-        return { key: entry.key, today: Number.isFinite(lastAt) && lastAt >= start ? 1 : 0, tie: random() };
-      })
-      .sort((a, b) => a.today - b.today || a.tie - b.tie)
-      .slice(0, Math.max(0, size))
-      .map((entry) => entry.key);
-  }
-
-  /**
-   * 1回分を「間隔復習の期限が来ている語」と「ランダムの語」で半々にして選ぶ（20問なら10問ずつ）。
-   * entries は { key, stat, due, dueAt }。due は間隔復習の期限が来ているか、dueAt はその期限（ms。無ければ 0）。
-   * 期限の語は期限が古い順に取り、今日すでに出した語は後回しにする。期限の語が足りないぶんはランダム側で埋める。
-   * ランダム側は期限の語の残りも含めた全体から pickWords と同じ規則で選ぶ。最後に並びを混ぜる。
-   */
-  function pickMixed(entries, size, now = new Date(), random = Math.random) {
-    const list = Array.isArray(entries) ? entries : [];
-    const total = Math.min(Math.max(0, size), list.length);
-    const start = startOfLocalDay(now);
-    const askedToday = (entry) => {
-      const lastAt = new Date(normalizeStat(entry.stat).lastAt).getTime();
-      return Number.isFinite(lastAt) && lastAt >= start ? 1 : 0;
-    };
-    const dueKeys = list
-      .filter((entry) => entry.due === true)
-      .map((entry) => ({ key: entry.key, today: askedToday(entry), dueAt: Number(entry.dueAt) || 0 }))
-      .sort((a, b) => a.today - b.today || a.dueAt - b.dueAt)
-      .slice(0, Math.ceil(total / 2))
-      .map((entry) => entry.key);
-    const taken = new Set(dueKeys);
-    const randomKeys = pickWords(list.filter((entry) => !taken.has(entry.key)), total - dueKeys.length, now, random);
-    const picked = [...dueKeys, ...randomKeys];
-    for (let i = picked.length - 1; i > 0; i--) {
-      const j = Math.floor(random() * (i + 1));
-      [picked[i], picked[j]] = [picked[j], picked[i]];
-    }
-    return picked;
-  }
-
-  return {
-    confidences, selfGrades, gradeRecall, AI_AUTO_THRESHOLD, isNoAnswer, decideAiGrade,
-    DAILY_QUOTA, countToday, normalizeStat, recordStat, pickWords, pickMixed,
-  };
+  return { selfGrades, AI_AUTO_THRESHOLD, isNoAnswer, decideAiGrade };
 })();
 
 if (typeof module !== "undefined") module.exports = KobunRecallGrade;

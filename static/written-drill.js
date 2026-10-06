@@ -5,7 +5,7 @@
 // 見出し語だけで正解＝覚えた（learned）、例文で正解＝あやふや（shaky。回の最後にもう一度）、
 // 答えを見た＝未習得（notLearned。数問あとに見出し語だけでもう一度）。
 // 記憶から引き出す負荷を先に掛け、例文は補助に回す（英単語アプリ eiken-q1-practice の同名演習から移植）。
-// 結果は履歴（kind: "written"）にだけ残し、間隔復習（FSRS）と思い出す問題のノルマには混ぜない。
+// 結果は履歴（kind: "written"）にだけ残し、間隔復習（FSRS）には混ぜない。
 const KobunWrittenDrill = (() => {
   const SESSION_SIZE = 10;
   const SIZE_CHOICES = [5, 10, 20];

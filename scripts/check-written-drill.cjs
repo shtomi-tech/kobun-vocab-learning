@@ -58,7 +58,7 @@ assert.match(js, /role: "tablist"/);
 assert.match(js, /"aria-selected"/);
 assert.match(js, /if \(session\.mode === "writtenDrill"\) return;/, "書く演習は途中保存しない（別の学習の途中保存を消さない）");
 assert.match(js, /kind: "written"/, "書く演習は履歴にだけ残す");
-assert.ok(!/kind: "written"[\s\S]{0,400}recordStat/.test(js), "書く演習は思い出す問題の記録に混ぜない");
+assert.ok(!js.includes("recallMission") && !js.includes("startRecallReview"), "選択肢なしで思い出す（毎日のノルマ）は廃止済み");
 for (const cls of [".homeTabs", ".homeTab", ".homeTabPanel[hidden]", ".writtenSteps", ".writtenSizeChoice", ".writtenResult"]) {
   assert.ok(css.includes(cls), `CSSに ${cls} の規則が必要`);
 }

@@ -226,7 +226,7 @@ button:disabled { cursor: default; opacity: .55; }
 .blockCardState--done { color: var(--ok); }
 .blockCardState--done::before { content: "✓ "; }
 .blockCardArrow { grid-column: 2; justify-self: end; color: var(--muted); font-size: 13px; font-weight: 700; }
-.meaningMission, .recallMission { border-left: 4px solid var(--clay); }
+.meaningMission { border-left: 4px solid var(--clay); }
 .meaningMission--empty .hint { margin-bottom: 0; }
 .meaningMissionEmptyCount { margin: 8px 0 0; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
 .meaningMetrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--grid-gap); margin: 20px 0; }
@@ -307,27 +307,14 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .feedback.ng h3 { color: var(--ng); }
 .questionTranslation { margin: -4px 0 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--soft); }
 .next { display: block; }
-/* 思い出して書く復習 */
-.recall .recallHeadword { margin: 6px 0 16px; font-size: 38px; }
+/* 書いた答えの入力・ヒント・採点表示（意味を書く演習） */
 .recallInputLabel { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
 .recallInput { box-sizing: border-box; width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid var(--color-control-border); border-radius: var(--radius-control); background: var(--canvas); color: var(--ink); font: inherit; }
 .recallInput:focus { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
-.recallHintButton { margin-top: 12px; }
 .recallHint { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--soft); }
 .recallHint .meaningExample { margin: 4px 0 0; }
-.recallHomograph { margin: 0 0 16px; }
-.recallQuotaStatus { margin: 0 0 12px; font-weight: 700; }
-.recallPrompt { margin: 20px 0 10px; font-weight: 700; }
 .recallAnswer { display: grid; gap: 12px; margin-top: 12px; }
-.recallTyped { display: grid; gap: 4px; margin: 0; padding: 12px 14px; border: 1px dashed var(--color-control-border); border-radius: var(--radius-control); background: var(--canvas); }
-.recallConfidentMiss { margin: 0 0 8px; padding-left: 10px; border-left: 3px solid var(--color-accent); color: var(--clay-dark); font-weight: 700; }
-.recallMissList { margin-top: 16px; border-left: 4px solid var(--color-accent); }
-.recallMissList ul { margin: 8px 0 0; padding-left: 1.2em; }
 .recallAiNote { margin: 16px 0 0; color: var(--muted); font-size: 14px; }
-.recallSelfGrade .is-aiSuggested { grid-template-columns: 24px 1fr auto; border-color: var(--clay); box-shadow: inset 0 0 0 1px var(--clay); }
-.aiSuggestedTag { padding: 1px 8px; border-radius: 999px; background: var(--clay); color: var(--canvas); font-size: 12px; font-weight: 700; }
-.recallAiGraded { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 8px; }
-.recallAiGraded p { margin: 0; color: var(--muted); font-size: 14px; }
 .quiz--answered { margin-bottom: var(--quiz-next-action-height); }
 .quizNextAction { position: fixed; left: 50%; bottom: 0; z-index: 20; display: flex; justify-content: flex-end; width: min(var(--container-max), calc(100% - var(--page-gutter))); padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--card); transform: translateX(-50%); }
 .reviewList { display: grid; gap: 16px; }

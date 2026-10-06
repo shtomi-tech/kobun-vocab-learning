@@ -287,136 +287,11 @@ const fetchStub = async (url, init = {}) => {
   process.exitCode = 1;
 });
 
-// --- 思い出して書く復習（recallReview） ---
-{
-  globalThis.FSRS = require("../static/vendor/fsrs/index.umd.js");
-  const realSrs = require("../static/srs.js");
-  const recallDom = createDomStub();
-  const sessionPanel = recallDom.document.querySelector("#sessionPanel");
-  const recallStorage = new Map();
-  const recallTest = loadModeApp(
-    ["startRecallReview", "chooseRecallConfidence", "answerRecall", "nextRecall", "restoreSession", "renderHome", "state", "getSession: () => session"],
-    {
-      document: recallDom.document,
-      localStorage: {
-        getItem: (key) => recallStorage.has(key) ? recallStorage.get(key) : null,
-        setItem: (key, value) => recallStorage.set(key, String(value)),
-      },
-      KobunSrs: realSrs,
-      KobunRecallGrade: require("../static/recall-grade.js"),
-      KobunWrittenDrill: require("../static/written-drill.js"),
-      KobunMeaningGuard: require("../static/meaning-guard.js"),
-      KobunSetProgress: require("../static/set-progress.js"),
-      Date,
-    },
-  );
-  const recallSet = JSON.parse(read("data/set-01.json"));
-  const recallWords = recallSet.words.slice(0, 2);
-  recallTest.state.set = { meta: recallSet.meta, words: recallWords };
-  recallTest.state.setId = "kobun-set-01";
-  recallTest.state.manifest = { sets: { "kobun-set-01": { label: "第1セット" } } };
-  recallTest.state.reviewPool = [];
-  recallTest.state.progress = {
-    units: Object.fromEntries(recallWords.map((word) => [word.id, { learned: true }])),
-    finalCheck: {},
-    items: {},
-    history: [],
-  };
-  const texts = (node) => node.nodeType === 3 ? [node.textContent] : [node.textContent || "", ...(node.children || []).flatMap(texts)];
-  const panelText = () => texts(sessionPanel).join("\n");
-
-  recallTest.startRecallReview();
-  let current = recallTest.getSession();
-  assert.equal(current.mode, "recallReview", "補助ボタンの処理で recallReview が始まる");
-  assert.equal(current.meaningOrder.length, 2, "学習済みの語を今日のノルマの残りまで出題する");
-  const firstKey = current.meaningOrder[0];
-  const firstWord = recallWords.find((word) => `kobun-set-01::${word.id}` === firstKey) || recallWords.find((word) => word.id === firstKey);
-  assert.ok(panelText().includes(firstWord.headword), "問う画面に見出し語を出す");
-  assert.ok(!panelText().includes(firstWord.kanji), "問う画面に漢字表記を出さない");
-
-  // 途中で一覧へ戻って再開しても、同じ問題の同じ段階から続く
-  current.typed = "移動する";
-  recallTest.chooseRecallConfidence("sure");
-  assert.equal(recallTest.getSession().phase, "revealed", "確信度を選ぶと答え合わせへ進む");
-  assert.ok(panelText().includes(firstWord.kanji), "答え合わせでは漢字表記を出す");
-  assert.ok(panelText().includes("移動する"), "入力した答えを並べて出す");
-  recallTest.renderHome();
-  assert.equal(recallTest.state.progress.resume.mode, "recallReview", "途中保存される");
-  recallTest.restoreSession();
-  current = recallTest.getSession();
-  assert.equal(current.phase, "revealed", "再開すると同じ段階から続く");
-  assert.equal(current.meaningOrder[current.meaningIndex], firstKey, "再開すると同じ問題から続く");
-
-  recallTest.answerRecall("correct");
-  assert.equal(recallTest.state.progress.items[firstWord.id], undefined, "間隔復習（FSRS）の記録には触れない");
-  const firstStat = recallTest.state.progress.recall[firstWord.id];
-  assert.equal(firstStat.count, 1, "思い出す問題の記録を別に数える");
-  assert.equal(firstStat.lastRating, "good");
-  assert.equal(recallTest.getSession().recallRating, "good", "自信あり→合っていたは good");
-  assert.equal(recallTest.state.progress.history.at(-1).kind, "recall", "履歴に recall を残す");
-
-  recallTest.nextRecall();
-  current = recallTest.getSession();
-  assert.equal(current.phase, "ask", "次の問題は問う段階から");
-  assert.equal(current.typed, "", "次の問題では入力を消す");
-  const secondKey = current.meaningOrder[1];
-  recallTest.chooseRecallConfidence("blank");
-  current = recallTest.getSession();
-  assert.equal(current.phase, "graded", "思い出せないは自己採点を飛ばす");
-  assert.equal(current.recallRating, "again", "思い出せないは again");
-  assert.deepEqual(Array.from(current.wrongMeaningIds), [secondKey], "思い出せない語は誤答確認へ回す");
-  recallTest.nextRecall();
-  assert.equal(recallTest.getSession().stage, "wrongReview", "again があれば誤答確認へ進む");
-  assert.equal(recallTest.state.progress.recall[secondKey.split("::").pop()].lastRating, "again");
-
-  const homeText = () => texts(recallDom.document.querySelector("#homePanel")).join("\n");
-
-  // 思い出す問題の途中保存があれば、ノルマのカードは新しく始めずに続きへつなぐ。
-  recallTest.renderHome();
-  assert.equal(recallTest.state.progress.resume.mode, "recallReview");
-  assert.ok(homeText().includes("続きから再開する（誤答確認）"), "途中保存があれば続きへつなぐ");
-  assert.ok(!homeText().includes("問を解く"), "途中保存があるときは新しく始めるボタンを出さない");
-  assert.ok(homeText().includes("全セット共通・誤答確認"), "途中保存の説明をセット名に結び付けない");
-
-  // 残りの数は1か所。ボタンは1回の問題数で、学習済みが少ない理由を添える。
-  delete recallTest.state.progress.resume;
-  recallTest.renderHome();
-  assert.ok(homeText().includes("今日の残り 18問"), "今日の残りは20から答えた数を引く");
-  assert.ok(homeText().includes("2問を解く"), "ボタンは1回の問題数");
-  assert.ok(homeText().includes("学習済みが2語のため、1回2問です。"));
-
-  // 別の学習の途中保存があるときは、始めると消えることを先に書く。
-  recallTest.state.progress.resume = { mode: "learn", stage: "flash", order: recallWords.map((word) => word.id), index: 0, batchIndex: 0, batchCount: 1 };
-  recallTest.renderHome();
-  assert.ok(homeText().includes("別の学習の途中保存があります。ここで始めると、その途中保存は消えます。"), "上書きの前に知らせる");
-  delete recallTest.state.progress.resume;
-
-  // 今日のノルマ（20問）を数える。達成後も追加で解ける。
-  recallTest.state.progress.history.push(...Array.from({ length: 18 }, () => ({ at: new Date().toISOString(), kind: "recall", wordId: firstWord.id, result: "good" })));
-  recallTest.state.progress.history.push({ at: "2000-01-01T00:00:00.000Z", kind: "recall", wordId: firstWord.id, result: "good" });
-  recallTest.renderHome();
-  assert.ok(homeText().includes("今日のノルマを達成しました"), "今日20問答えたら達成と出す（昨日以前の回答は数えない）");
-  assert.ok(homeText().includes("追加で2問解く"));
-  recallTest.startRecallReview();
-  assert.equal(recallTest.getSession().meaningOrder.length, 2, "達成後も追加で出題できる");
-  assert.equal(recallTest.getSession().extraAfterQuota, true, "達成後に始めた回は追加の回として完了画面を出す");
-
-  // 同じ読みの語（ゐる：率る・居る）は、例文を最初から出してヒント扱いにしない。
-  const homographs = recallSet.words.filter((word) => word.headword === "ゐる");
-  assert.equal(homographs.length, 2, "検査の前提：第1セットに同じ読みの語が2語ある");
-  recallTest.state.set = { meta: recallSet.meta, words: homographs };
-  recallTest.state.progress = { units: Object.fromEntries(homographs.map((word) => [word.id, { learned: true }])), finalCheck: {}, items: {}, history: [] };
-  recallTest.startRecallReview();
-  assert.ok(panelText().includes("同じ読みの語があります"), "同じ読みの語は例文を出す");
-  assert.ok(!panelText().includes("例文をヒントに見る"), "ヒントのボタンは出さない");
-  assert.equal(recallTest.getSession().hintUsed, false, "ヒントを使った扱いにしない");
-  console.log("vocabulary runtime contract: recall review OK");
-}
-
-// --- 思い出す復習の Jev 自動採点（fetch を差し替えて、採用・確信度不足・採点を直す・答えなしを見る） ---
+// --- 意味を書く演習（writtenDrill）: 段階・再出題・Jev 採点・記録の置き場所 ---
 (async () => {
-  const aiDom = createDomStub();
-  const aiStorage = new Map();
+  globalThis.FSRS = require("../static/vendor/fsrs/index.umd.js");
+  const dom = createDomStub();
+  const storage = new Map();
   const replies = [];
   const requests = [];
   const fakeFetch = async (url, init) => {
@@ -424,13 +299,13 @@ const fetchStub = async (url, init = {}) => {
     const reply = replies.shift();
     return { ok: Boolean(reply), json: async () => reply };
   };
-  const aiTest = loadModeApp(
-    ["startRecallReview", "chooseRecallConfidence", "answerRecall", "nextRecall", "overrideAiGrade", "state", "getSession: () => session"],
+  const test = loadModeApp(
+    ["startWrittenDrill", "submitWrittenAnswer", "applyWrittenGrade", "advanceWritten", "renderHome", "state", "getSession: () => session"],
     {
-      document: aiDom.document,
+      document: dom.document,
       localStorage: {
-        getItem: (key) => aiStorage.has(key) ? aiStorage.get(key) : null,
-        setItem: (key, value) => aiStorage.set(key, String(value)),
+        getItem: (key) => storage.has(key) ? storage.get(key) : null,
+        setItem: (key, value) => storage.set(key, String(value)),
       },
       fetch: fakeFetch,
       KobunSrs: require("../static/srs.js"),
@@ -438,99 +313,80 @@ const fetchStub = async (url, init = {}) => {
       KobunWrittenDrill: require("../static/written-drill.js"),
       KobunMeaningGuard: require("../static/meaning-guard.js"),
       KobunSetProgress: require("../static/set-progress.js"),
+      requestAnimationFrame: (fn) => fn(),
       Date,
     },
   );
-  const aiSet = JSON.parse(read("data/set-01.json"));
-  const aiWords = aiSet.words.slice(0, 4);
-  aiTest.state.set = { meta: aiSet.meta, words: aiWords };
-  aiTest.state.setId = "kobun-set-01";
-  aiTest.state.manifest = { sets: { "kobun-set-01": { label: "第1セット" } } };
-  aiTest.state.reviewPool = [];
-  aiTest.state.progress = {
-    units: Object.fromEntries(aiWords.map((word) => [word.id, { learned: true }])),
+  const set = JSON.parse(read("data/set-01.json"));
+  const words = set.words.filter((word) => word.headword !== "ゐる").slice(0, 4);
+  test.state.set = { meta: set.meta, words };
+  test.state.setId = "kobun-set-01";
+  test.state.manifest = { sets: { "kobun-set-01": { label: "第1セット" } } };
+  test.state.reviewPool = [];
+  const learnResume = { mode: "learn", stage: "flash", order: words.map((word) => word.id), index: 0, batchIndex: 0, batchCount: 1 };
+  test.state.progress = {
+    units: Object.fromEntries(words.map((word) => [word.id, { learned: true }])),
     finalCheck: {},
     items: {},
     history: [],
+    resume: learnResume,
   };
   const flush = () => new Promise((resolve) => setImmediate(resolve));
-  const currentWordId = () => {
-    const s = aiTest.getSession();
-    return String(s.meaningOrder[s.meaningIndex]).split("::").pop();
+  const session = () => test.getSession();
+  const currentWord = () => {
+    const key = String(session().writtenQueue[session().writtenPos].key).split("::").pop();
+    return words.find((word) => word.id === key);
   };
-  const lastHistory = () => aiTest.state.progress.history.at(-1);
+  const lastHistory = () => test.state.progress.history.at(-1);
 
-  aiTest.startRecallReview();
+  test.startWrittenDrill(4);
+  assert.equal(session().mode, "writtenDrill");
+  assert.equal(session().writtenQueue.length, 4);
 
-  // 1. 確信度が高い → 自動採点。記録は「次へ」まで保留する。
-  let wordId = currentWordId();
-  aiTest.getSession().typed = "出歩く";
-  replies.push({ grade: "correct", confidence: 0.95, probabilities: { correct: 0.95, partial: 0.05, wrong: 0 }, model: "jev-1.13.0" });
-  aiTest.chooseRecallConfidence("sure");
-  assert.equal(aiTest.getSession().aiPending, true, "書いた答えがあれば Jev に問い合わせる");
-  assert.deepEqual(requests.at(-1).body, { wordId, answer: "出歩く" }, "送るのは語IDと答えだけ");
+  // 1. 意味と表記ゆれ程度で一致すれば Jev に送らず「見出し語だけで正解」
+  await test.submitWrittenAnswer(currentWord().meanings[0].split(/[。、]/)[0]);
+  assert.equal(requests.length, 0, "ローカル一致は Jev に送らない");
+  assert.equal(session().writtenPhase, "result");
+  assert.equal(lastHistory().kind, "written");
+  assert.equal(lastHistory().result, "learned");
+  test.advanceWritten();
+
+  // 2. わからない → 例文の段階 → Jev 自動採点で正解＝あやふや（最後に再出題）
+  await test.submitWrittenAnswer("わからない");
+  assert.equal(session().writtenStep, "example", "わからないは例文ヒントへ");
+  let wordId = currentWord().id;
+  replies.push({ grade: "correct", confidence: 0.95, probabilities: {}, model: "jev-1.13.0" });
+  await test.submitWrittenAnswer("なんとなくの意味");
   await flush();
-  let current = aiTest.getSession();
-  assert.equal(current.phase, "graded", "確信度が高ければ自動採点で結果へ進む");
-  assert.equal(current.aiAutoGrade, "correct");
-  assert.equal(current.recallRating, "good");
-  assert.equal(aiTest.state.progress.recall?.[wordId], undefined, "自動採点は次へ進むまで記録しない");
-  aiTest.nextRecall();
-  assert.equal(aiTest.state.progress.recall[wordId].count, 1, "次へで記録する");
+  assert.deepEqual(requests.at(-1).body, { wordId, answer: "なんとなくの意味" }, "送るのは語IDと答えだけ");
+  assert.equal(session().writtenPhase, "result");
+  assert.equal(lastHistory().result, "shaky");
   assert.equal(lastHistory().gradedBy, "ai");
-  assert.equal(lastHistory().aiGrade, "correct");
+  assert.equal(session().writtenQueue.at(-1).reask, true, "あやふやは最後に再出題");
+  test.advanceWritten();
 
-  // 2. 確信度が低い → 判定を参考表示して自己採点。
-  wordId = currentWordId();
-  aiTest.getSession().typed = "なにか";
-  replies.push({ grade: "partial", confidence: 0.4, probabilities: { correct: 0.3, partial: 0.4, wrong: 0.3 }, model: "jev-1.13.0" });
-  aiTest.chooseRecallConfidence("maybe");
+  // 3. 確信度が低い → 自己採点。違った → 例文 → 通信失敗で自己採点 → 違った＝答えを確認
+  replies.push({ grade: "partial", confidence: 0.4, probabilities: {}, model: "jev-1.13.0" });
+  await test.submitWrittenAnswer("なにか");
   await flush();
-  current = aiTest.getSession();
-  assert.equal(current.phase, "revealed", "確信度が低ければ自己採点に戻す");
-  assert.equal(current.ai.grade, "partial");
-  aiTest.answerRecall("wrong");
-  assert.equal(lastHistory().gradedBy, "self");
-  assert.equal(lastHistory().aiGrade, "partial");
-  assert.equal(lastHistory().result, "again");
-  aiTest.nextRecall();
-
-  // 3. 自動採点のあと「採点を直す」→ 自己採点で記録し、直したことを残す。
-  wordId = currentWordId();
-  aiTest.getSession().typed = "歩く";
-  replies.push({ grade: "correct", confidence: 0.9, probabilities: { correct: 0.9, partial: 0.1, wrong: 0 }, model: "jev-1.13.0" });
-  aiTest.chooseRecallConfidence("sure");
+  assert.equal(session().writtenPhase, "self", "確信度が低ければ自己採点");
+  test.applyWrittenGrade("wrong", "self");
+  assert.equal(session().writtenStep, "example");
+  await test.submitWrittenAnswer("べつのなにか");
   await flush();
-  aiTest.overrideAiGrade();
-  current = aiTest.getSession();
-  assert.equal(current.phase, "revealed", "採点を直すと自己採点へ戻る");
-  assert.equal(aiTest.state.progress.recall[wordId], undefined, "直す前の自動採点は記録されていない");
-  aiTest.answerRecall("wrong");
-  assert.equal(lastHistory().overridden, true);
-  assert.equal(lastHistory().result, "again");
-  assert.equal(aiTest.state.progress.history.filter((event) => event.wordId === wordId).length, 1, "記録は1回だけ");
-  aiTest.nextRecall();
+  assert.equal(session().writtenPhase, "self", "通信に失敗したら自己採点");
+  test.applyWrittenGrade("wrong", "self");
+  assert.equal(session().writtenPhase, "answer");
+  assert.equal(lastHistory().result, "notLearned");
+  const pos = session().writtenPos;
+  assert.equal(session().writtenQueue[Math.min(pos + 4, session().writtenQueue.length - 1)].reask || session().writtenQueue.slice(pos + 1).some((entry) => entry.reask), true, "答えを見た語は再出題する");
 
-  // 4. 「わからない」は Jev に送らず、違った扱い。
-  const before = requests.length;
-  aiTest.getSession().typed = "わからない";
-  aiTest.chooseRecallConfidence("maybe");
-  current = aiTest.getSession();
-  assert.equal(requests.length, before, "答えなしは Jev に送らない");
-  assert.equal(current.aiAutoGrade, "wrong");
-  assert.equal(current.recallRating, "again");
-  aiTest.nextRecall();
-  assert.equal(lastHistory().aiSource, "rule");
-
-  // 5. 通信に失敗したら自己採点のまま。
-  aiTest.startRecallReview();
-  aiTest.getSession().typed = "移動する";
-  aiTest.chooseRecallConfidence("sure");
-  await flush();
-  current = aiTest.getSession();
-  assert.equal(current.phase, "revealed");
-  assert.equal(current.aiFailed, true, "失敗は自己採点に戻す");
-  console.log("vocabulary runtime contract: recall AI grading OK");
+  // 記録の置き場所: FSRS・思い出す問題の記録・別の学習の途中保存には触れない
+  assert.deepEqual(test.state.progress.items, {}, "FSRS には触れない");
+  assert.equal(test.state.progress.recall, undefined, "思い出す問題の記録は作らない");
+  test.renderHome();
+  assert.deepEqual(test.state.progress.resume, learnResume, "別の学習の途中保存を消さない");
+  console.log("vocabulary runtime contract: written drill OK");
 })().catch((error) => {
   console.error(error);
   process.exit(1);
