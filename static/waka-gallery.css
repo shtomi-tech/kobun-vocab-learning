@@ -556,9 +556,27 @@
 .wgQuizRules { color: var(--wg-text-muted); font-size: 12px; margin: 0 !important; }
 .wgQuizRules summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; }
 .wgQuizRules p { margin: 0; }
-.wgRuleLink { display: inline-block; padding: 4px 0; color: inherit; text-decoration: underline; text-underline-offset: 2px; }
-.wgRuleLink:hover, .wgRuleLink:focus-visible { color: var(--wg-text); }
-.wgRuleLinkMark { margin-left: 1px; font-size: 0.9em; }
+.wgRuleLink { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; color: var(--wg-text); font: inherit; font-size: 13px; text-decoration: underline; text-decoration-color: var(--wg-gold-line); text-underline-offset: 3px; cursor: pointer; }
+.wgRuleLink:hover { color: var(--wg-gold); }
+
+/* ---------- 文法の解説（dialog） ---------- */
+.wgGuideDialog { width: min(640px, calc(100% - 24px)); }
+.wgGuideTitle { margin: 4px 0 8px; font-family: var(--wg-mincho); font-size: 22px; font-weight: 700; }
+.wgGuideSummary { margin: 0 0 4px; line-height: 1.8; }
+.wgGuideTable { display: grid; gap: 8px; margin: 0; }
+.wgGuideRow { display: grid; grid-template-columns: minmax(7em, 34%) 1fr; gap: 12px; padding: 8px 0; border-top: 1px solid rgba(217, 183, 110, .2); }
+.wgGuideRow dt { color: var(--wg-gold); font-weight: 600; }
+.wgGuideRow dd { margin: 0; line-height: 1.7; }
+.wgGuideSteps { margin: 0; padding-left: 1.4em; line-height: 1.8; }
+.wgGuideSteps li + li { margin-top: 4px; }
+.wgGuideExamples, .wgGuideUses { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.wgGuideExamples li, .wgGuideUses li { display: grid; gap: 2px; }
+.wgGuideExampleText, .wgGuideUsePhrase { font-family: var(--wg-mincho); font-size: 17px; }
+.wgGuideExampleNote, .wgGuideUseMeta { color: var(--wg-text-muted); font-size: 13px; line-height: 1.7; }
+.wgGuideCaution { display: flex; gap: 8px; align-items: baseline; margin: 16px 0 0; color: var(--wg-text-muted); font-size: 13px; line-height: 1.7; }
+@media (max-width: 640px) {
+  .wgGuideRow { grid-template-columns: 1fr; gap: 2px; }
+}
 .wgQuizDone { margin: 0 0 12px; font-family: var(--wg-mincho); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .wgQuizDone:focus { outline: 2px solid var(--wg-gold-line); outline-offset: 4px; }
 
