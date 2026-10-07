@@ -781,7 +781,7 @@ const KobunVocabApp = (() => {
         if (!response.ok) throw new Error(`waka grammar: HTTP ${response.status}`);
         return response.json();
       });
-      wakaGrammar = { rules: data.rules || {}, byKey: new Map(data.poems.map((poem) => [poem.key, poem])) };
+      wakaGrammar = { rules: data.rules || {}, explanations: data.explanations || {}, byKey: new Map(data.poems.map((poem) => [poem.key, poem])) };
     } catch (error) {
       console.error(error);
       wakaGrammar = null;

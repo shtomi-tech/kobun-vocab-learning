@@ -536,6 +536,9 @@
 .wgQuizFeedback.is-ok .wgQuizResult { color: #7fd19a; }
 .wgQuizFeedback.is-ng .wgQuizResult { color: #f08a7e; }
 .wgQuizRules { color: var(--wg-text-muted); font-size: 12px; margin: 0 !important; }
+.wgRuleLink { display: inline-block; padding: 4px 0; color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.wgRuleLink:hover, .wgRuleLink:focus-visible { color: var(--wg-text); }
+.wgRuleLinkMark { margin-left: 1px; font-size: 0.9em; }
 .wgQuizDone { margin: 0 0 12px; font-family: var(--wg-mincho); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .wgQuizDone:focus { outline: none; }
 
