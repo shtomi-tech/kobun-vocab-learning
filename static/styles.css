@@ -461,7 +461,9 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .quotaHead { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; }
 .quotaHead h2 { margin-top: 4px; }
 .dailyQuota.is-done .quotaHead h2 { color: var(--ok); }
-.quotaSettingsToggle { flex: 0 0 auto; }
+.quotaSettingsToggle, .quotaBodyToggle { flex: 0 0 auto; }
+.quotaBody[hidden] { display: none; }
+.quotaBodyActions { display: flex; justify-content: flex-end; margin-top: 12px; }
 .quotaList { display: grid; gap: 14px; margin: 16px 0 0; padding: 0; list-style: none; }
 .quotaRowHead { display: flex; align-items: baseline; gap: 12px; }
 .quotaLabel { min-width: 3em; font-size: 15px; }
@@ -560,6 +562,7 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
   font-size: 11px;
   line-height: 18px;
 }
+.homeTabBadge.is-done { background: var(--ok); }
 .homeTabPanel[hidden] { display: none; }
 .homeTabJump { width: 100%; margin-top: var(--space-3); }
 .homeTabBack { margin: 0 0 var(--space-3); }
