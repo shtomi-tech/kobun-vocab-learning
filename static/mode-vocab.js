@@ -24,6 +24,7 @@ const KobunVocabApp = (() => {
     GOAL_TOTAL: VOCAB_GOAL_TOTAL,
     DAILY_MAX: STUDY_PLAN_DAILY_MAX,
     QUOTA_LIMITS,
+    REVIEW_AUTO_MAX,
     isValidIsoDate,
     normalizeStudyPlan,
     defaultStudyPlan,
@@ -770,7 +771,7 @@ const KobunVocabApp = (() => {
   // 数は履歴の時刻から毎回数え直すので、日付が変われば自然に0へ戻る。設定は学習目標（studyPlan）に同梱して保存・同期する。
   const QUOTA_ITEMS = {
     today: { label: "今日", unit: "語", note: "新しい語を文中問題まで解く" },
-    review: { label: "復習", unit: "語", note: "意味だけ復習で答える" },
+    review: { label: "復習", unit: "語", note: `期限が来た語から自動（最大${REVIEW_AUTO_MAX}語）` },
     write: { label: "書く", unit: "語", note: "意味を書く演習で答える" },
     waka: { label: "和歌", unit: "首", note: "今日の10首を答え終える" },
   };
@@ -786,6 +787,7 @@ const KobunVocabApp = (() => {
       unitEntries: studyPlanUnitEntries(),
       history: progressSources().flatMap(({ progress }) => (Array.isArray(progress?.history) ? progress.history : [])),
       wakaPoemsDone: wakaPoemsDoneToday(),
+      reviewDue: dueMeaningEntries().length,
     });
     // 和歌の面が無い環境では和歌の項目を出さない。
     const items = summary.items.filter((item) => item.id !== "waka" || hasWakaGallery());
@@ -803,12 +805,12 @@ const KobunVocabApp = (() => {
         role: "progressbar",
         "aria-label": `${meta.label}のノルマ`,
         "aria-valuemin": "0",
-        "aria-valuemax": String(item.goal),
-        "aria-valuenow": String(Math.min(item.done, item.goal)),
+        "aria-valuemax": String(Math.max(1, item.goal)),
+        "aria-valuenow": String(item.goal > 0 ? Math.min(item.done, item.goal) : 1),
         "aria-valuetext": done ? `${meta.label}は達成` : `${meta.label}はあと${item.remaining}${meta.unit}`,
       });
       const fill = el("span", { class: "quotaFill" });
-      fill.style.width = `${(Math.min(item.done, item.goal) / item.goal) * 100}%`;
+      fill.style.width = item.goal > 0 ? `${(Math.min(item.done, item.goal) / item.goal) * 100}%` : "100%";
       track.appendChild(fill);
       const jump = item.id === "today" ? null : el("button", {
         class: "quotaJump",
@@ -819,7 +821,9 @@ const KobunVocabApp = (() => {
       list.appendChild(el("li", { class: `quotaRow${done ? " is-done" : ""}` },
         el("div", { class: "quotaRowHead" },
           el("strong", { class: "quotaLabel" }, meta.label),
-          el("span", { class: "quotaCount" }, `${num(Math.min(item.done, item.goal))} / ${num(item.goal)}${meta.unit}`),
+          el("span", { class: "quotaCount" }, item.goal > 0
+            ? `${num(Math.min(item.done, item.goal))} / ${num(item.goal)}${meta.unit}`
+            : "期限の来た語なし"),
           el("span", { class: "quotaRemain" }, done ? "✓ 達成" : `あと${num(item.remaining)}${meta.unit}`),
         ),
         track,
@@ -840,10 +844,10 @@ const KobunVocabApp = (() => {
     const current = { today: plan.dailyWordGoal, ...plan.dailyQuota };
     const inputs = {};
     settings.appendChild(el("h4", { id: "dailyQuotaSettingsTitle" }, "1日のノルマ"));
-    settings.appendChild(el("p", { class: "hint" }, "0にした項目はノルマに含めません（今日は1以上）。"));
+    settings.appendChild(el("p", { class: "hint" }, `0にした項目はノルマに含めません（今日は1以上）。復習は、その時点で期限が来ている語数から自動で決まります（最大${REVIEW_AUTO_MAX}語）。`));
     const fields = el("div", { class: "quotaFields" });
     Object.entries(QUOTA_ITEMS).forEach(([id, meta]) => {
-      if (id === "waka" && !hasWakaGallery()) return;
+      if (id === "review" || (id === "waka" && !hasWakaGallery())) return;
       inputs[id] = el("input", {
         type: "number",
         min: String(limits[id].min),
