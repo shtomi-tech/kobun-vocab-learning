@@ -20,7 +20,6 @@ const KobunVocabApp = (() => {
   const STUDY_PLAN_KEY = `kobun_vocab_study_plan_v1${storageScope}`;
   const STUDY_TIME_KEY = `kobun_vocab_study_time_v1${storageScope}`;
   const HOME_TAB_KEY = `kobun_vocab_home_tab_v1${storageScope}`;
-  const QUOTA_OPEN_KEY = `kobun_vocab_quota_open_v1${storageScope}`;
   const WRITTEN_SIZE_KEY = `kobun_vocab_written_size_v1${storageScope}`;
   const {
     GOAL_TOTAL: VOCAB_GOAL_TOTAL,
@@ -475,7 +474,7 @@ const KobunVocabApp = (() => {
     }
 
     const quota = dailyQuotaState();
-    home.appendChild(dailyQuotaCard(quota));
+    mountQuotaMenu(quota);
 
     const card = el("section", { class: `card${isFirstReveal ? " is-entering" : ""}` },
       el("p", { class: "label" }, cleared ? "達成状況" : "今日の学習"),
@@ -815,10 +814,6 @@ const KobunVocabApp = (() => {
     }));
   }
 
-  function storedQuotaOpen() {
-    try { return localStorage.getItem(QUOTA_OPEN_KEY) === "1"; } catch (_) { return false; }
-  }
-
   function dailyQuotaCard({ plan, items, active, achieved, allDone }) {
     const num = (value) => Number(value).toLocaleString("ja-JP");
 
@@ -934,34 +929,78 @@ const KobunVocabApp = (() => {
     const headline = !active.length ? "ノルマは設定されていません"
       : allDone ? "✓ 今日のノルマ達成"
       : `${num(active.length)}項目中 ${num(achieved)}項目達成`;
-    // 中身（各項目と設定）はふだん畳んでおき、ボタンで開く。残り数はタブのバッジで見える。
-    const bodyId = "dailyQuotaBody";
-    const body = el("div", { class: "quotaBody", id: bodyId }, el("div", { class: "quotaBodyActions" }, settingsToggle), list, settings);
-    const open = storedQuotaOpen();
-    body.hidden = !open;
-    const bodyToggle = el("button", {
-      class: "ghost quotaBodyToggle",
-      type: "button",
-      "aria-expanded": String(open),
-      "aria-controls": bodyId,
-    }, open ? "閉じる" : "ノルマを表示");
-    bodyToggle.addEventListener("click", () => {
-      const next = body.hidden;
-      body.hidden = !next;
-      bodyToggle.setAttribute("aria-expanded", String(next));
-      bodyToggle.textContent = next ? "閉じる" : "ノルマを表示";
-      try { localStorage.setItem(QUOTA_OPEN_KEY, next ? "1" : "0"); } catch (_) { /* 開閉を覚えられなくても表示は続ける */ }
-    });
-    return el("section", { class: `card dailyQuota${allDone ? " is-done" : ""}`, "aria-labelledby": "dailyQuotaTitle" },
+    return el("section", { class: `quotaPanel${allDone ? " is-done" : ""}`, "aria-labelledby": "dailyQuotaTitle" },
       el("div", { class: "quotaHead" },
         el("div", {},
           el("p", { class: "label" }, "1日のノルマ"),
           el("h2", { id: "dailyQuotaTitle" }, headline),
         ),
-        bodyToggle,
+        settingsToggle,
       ),
-      body,
+      list,
+      settings,
     );
+  }
+
+  // 画面右上の「ノルマ」ボタン。押すとノルマの中身（各項目と設定）を下に開く。残り数はふだんタブのバッジで見える。
+  // ホームを描き直すたびに中身を作り直し、開いていたかどうかは quotaMenuOpen で引き継ぐ。
+  let quotaMenuOpen = false;
+  let quotaMenuWired = false;
+  function mountQuotaMenu(quota) {
+    const header = $(".top");
+    if (!header) return;
+    let menu = $("#quotaMenu");
+    if (!menu) {
+      menu = el("div", { class: "quotaMenu", id: "quotaMenu" });
+      header.appendChild(menu);
+    }
+    menu.innerHTML = "";
+    const { active, achieved, allDone } = quota;
+    const panelId = "quotaMenuPanel";
+    const button = el("button", {
+      class: `quotaMenuButton${allDone ? " is-done" : ""}`,
+      type: "button",
+      "aria-expanded": String(quotaMenuOpen),
+      "aria-controls": panelId,
+      "aria-label": allDone ? "1日のノルマ（達成）" : `1日のノルマ（${active.length}項目中${achieved}項目達成）`,
+    }, el("span", {}, "ノルマ"), active.length
+      ? el("span", { class: "quotaMenuCount" }, allDone ? "✓" : `${achieved}/${active.length}`)
+      : null);
+    const panel = el("div", { class: "quotaMenuPanel", id: panelId }, dailyQuotaCard(quota));
+    panel.hidden = !quotaMenuOpen;
+    const setOpen = (open) => {
+      quotaMenuOpen = open;
+      panel.hidden = !open;
+      button.setAttribute("aria-expanded", String(open));
+    };
+    button.addEventListener("click", () => setOpen(panel.hidden));
+    menu.append(button, panel);
+    menu.hidden = $("#homePanel")?.classList.contains("hide") || false;
+    if (quotaMenuWired) return;
+    quotaMenuWired = true;
+    // 外側を押すか Esc で閉じる。
+    document.addEventListener("click", (event) => {
+      if (quotaMenuOpen && !$("#quotaMenu")?.contains(event.target)) {
+        $("#quotaMenuPanel")?.setAttribute("hidden", "");
+        $(".quotaMenuButton")?.setAttribute("aria-expanded", "false");
+        quotaMenuOpen = false;
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || !quotaMenuOpen) return;
+      $("#quotaMenuPanel")?.setAttribute("hidden", "");
+      $(".quotaMenuButton")?.setAttribute("aria-expanded", "false");
+      quotaMenuOpen = false;
+      $(".quotaMenuButton")?.focus();
+    });
+    // 学習中（ホームを隠している間）はボタンも隠す。
+    const home = $("#homePanel");
+    if (home && typeof MutationObserver === "function") {
+      new MutationObserver(() => {
+        const m = $("#quotaMenu");
+        if (m) m.hidden = home.classList.contains("hide");
+      }).observe(home, { attributes: true, attributeFilter: ["class"] });
+    }
   }
 
   // 到達予想。既定は折りたたみ。1語＝語彙1で、このペースの600語到達日と期間別の理論語数を出す。注記文は置かない。
