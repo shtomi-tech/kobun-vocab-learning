@@ -16,6 +16,8 @@ const KobunWakaGallery = (() => {
     接続詞: "adv", 感動詞: "adv", 助動詞: "aux", 助詞: "part", 連語: "phrase", 接頭語: "noun", 接尾語: "noun",
   };
   const posClass = (pos) => POS_CLASS[pos] || "noun";
+  // 根拠の文法事項から開く解説。古典文法演習の予習資料を ?prep=<資料名>&sec=<節番号> で直接開く。
+  const EXPLANATION_BASE_URL = "https://shtomi-tech.github.io/kobun-vocab/";
 
   const el = (tag, attrs = {}, ...children) => {
     const node = document.createElement(tag);
@@ -31,6 +33,20 @@ const KobunWakaGallery = (() => {
     }
     return node;
   };
+
+  // 確認問題の「根拠」に並べる文法事項。解説のあるものは別タブで開くリンクにし、無いものは名前だけを出す。
+  const ruleNodes = (grammar, rules) => rules.flatMap((rule, i) => {
+    const name = grammar.rules[rule] || rule;
+    const target = grammar.explanations?.[rule];
+    const node = target?.prep ? el("a", {
+      class: "wgRuleLink",
+      href: `${EXPLANATION_BASE_URL}?${new URLSearchParams({ prep: target.prep, ...(target.sec ? { sec: target.sec } : {}) })}`,
+      target: "_blank",
+      rel: "noopener",
+      title: "古典文法演習で解説を読む（別タブ）",
+    }, name, el("span", { class: "wgRuleLinkMark", "aria-hidden": "true" }, "↗")) : name;
+    return i ? ["／", node] : [node];
+  });
 
   const readPref = () => {
     try { return localStorage.getItem(READING_KEY) === "1"; } catch { return false; }
@@ -422,7 +438,7 @@ const KobunWakaGallery = (() => {
         el("p", {}, item.explain),
         el("details", { class: "wgQuizRules" },
           el("summary", {}, "文法の根拠を見る"),
-          el("p", {}, item.rules.map((rule) => grammar.rules[rule] || rule).join("／")),
+          el("p", {}, ruleNodes(grammar, item.rules)),
         ),
       );
     }
