@@ -39,6 +39,15 @@ for (const word of loadWords()) {
 }
 
 assert.ok(grammar.rules && typeof grammar.rules === "object", "rules map is required");
+// 根拠カードから開く解説（古典文法演習の予習資料）。行き先の無いカードは名前だけを表示する。
+const explanations = grammar.explanations ?? {};
+for (const [rule, target] of Object.entries(explanations)) {
+  assert.ok(grammar.rules[rule], `explanations: ${rule} must be listed in rules`);
+  assert.match(target.prep ?? "", /^kobun-\d{2}-[a-z0-9-]+$/u, `explanations: ${rule} needs a preparation name like kobun-05-ba`);
+  assert.ok(target.sec === undefined || (Number.isInteger(target.sec) && target.sec > 0), `explanations: ${rule} sec must be a positive integer`);
+}
+const unlinked = Object.keys(grammar.rules).filter((rule) => !explanations[rule]);
+
 const keys = new Set();
 const standaloneNumbers = new Set();
 let quizCount = 0;
@@ -100,4 +109,4 @@ if (fs.existsSync(indexUrl)) {
   cardNote = `${Object.keys(grammar.rules).length} rule cards active`;
 }
 
-console.log(`OK: ${grammar.poems.length} poems (${standaloneCount} standalone), ${quizCount} quiz items, ${cardNote}`);
+console.log(`OK: ${grammar.poems.length} poems (${standaloneCount} standalone), ${quizCount} quiz items, ${cardNote}, ${Object.keys(explanations).length} explanation links${unlinked.length ? ` (unlinked: ${unlinked.join(", ")})` : ""}`);
