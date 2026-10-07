@@ -23,10 +23,12 @@ const KobunVocabApp = (() => {
   const {
     GOAL_TOTAL: VOCAB_GOAL_TOTAL,
     DAILY_MAX: STUDY_PLAN_DAILY_MAX,
+    QUOTA_LIMITS,
     isValidIsoDate,
     normalizeStudyPlan,
     defaultStudyPlan,
     studyPlanSummary,
+    dailyQuotaSummary,
     vocabularyForecast,
     vocabularyGoalForecast,
     migrateFirstAnsweredAt,
@@ -469,6 +471,8 @@ const KobunVocabApp = (() => {
       ));
     }
 
+    home.appendChild(dailyQuotaCard());
+
     const card = el("section", { class: `card${isFirstReveal ? " is-entering" : ""}` },
       el("p", { class: "label" }, cleared ? "達成状況" : "今日の学習"),
       el("h2", {}, state.set.meta.title),
@@ -757,6 +761,158 @@ const KobunVocabApp = (() => {
           dailyStatus,
         ),
       ),
+      settings,
+    );
+  }
+
+  // --- 1日のノルマ（今日の面の先頭） ---
+  // 今日・復習・書く・和歌の4項目について、1日に解く数を決めておき「あと何問か」を出す。
+  // 数は履歴の時刻から毎回数え直すので、日付が変われば自然に0へ戻る。設定は学習目標（studyPlan）に同梱して保存・同期する。
+  const QUOTA_ITEMS = {
+    today: { label: "今日", unit: "語", note: "新しい語を文中問題まで解く" },
+    review: { label: "復習", unit: "語", note: "意味だけ復習で答える" },
+    write: { label: "書く", unit: "語", note: "意味を書く演習で答える" },
+    waka: { label: "和歌", unit: "首", note: "今日の10首を答え終える" },
+  };
+
+  function wakaPoemsDoneToday() {
+    if (!hasWakaGallery()) return 0;
+    return KobunWakaGallery.dailyStatus()?.poemsDone || 0;
+  }
+
+  function dailyQuotaCard() {
+    const plan = studyPlan || defaultStudyPlan();
+    const summary = dailyQuotaSummary(new Date(), plan, {
+      unitEntries: studyPlanUnitEntries(),
+      history: progressSources().flatMap(({ progress }) => (Array.isArray(progress?.history) ? progress.history : [])),
+      wakaPoemsDone: wakaPoemsDoneToday(),
+    });
+    // 和歌の面が無い環境では和歌の項目を出さない。
+    const items = summary.items.filter((item) => item.id !== "waka" || hasWakaGallery());
+    const active = items.filter((item) => item.active);
+    const achieved = active.filter((item) => item.remaining === 0).length;
+    const allDone = active.length > 0 && achieved === active.length;
+    const num = (value) => Number(value).toLocaleString("ja-JP");
+
+    const list = el("ul", { class: "quotaList" });
+    items.filter((item) => item.active).forEach((item) => {
+      const meta = QUOTA_ITEMS[item.id];
+      const done = item.remaining === 0;
+      const track = el("div", {
+        class: "quotaTrack",
+        role: "progressbar",
+        "aria-label": `${meta.label}のノルマ`,
+        "aria-valuemin": "0",
+        "aria-valuemax": String(item.goal),
+        "aria-valuenow": String(Math.min(item.done, item.goal)),
+        "aria-valuetext": done ? `${meta.label}は達成` : `${meta.label}はあと${item.remaining}${meta.unit}`,
+      });
+      const fill = el("span", { class: "quotaFill" });
+      fill.style.width = `${(Math.min(item.done, item.goal) / item.goal) * 100}%`;
+      track.appendChild(fill);
+      const jump = item.id === "today" ? null : el("button", {
+        class: "quotaJump",
+        type: "button",
+        "aria-label": `${meta.label}を開く`,
+        onclick: () => selectHomeTab(item.id, true),
+      }, "開く →");
+      list.appendChild(el("li", { class: `quotaRow${done ? " is-done" : ""}` },
+        el("div", { class: "quotaRowHead" },
+          el("strong", { class: "quotaLabel" }, meta.label),
+          el("span", { class: "quotaCount" }, `${num(Math.min(item.done, item.goal))} / ${num(item.goal)}${meta.unit}`),
+          el("span", { class: "quotaRemain" }, done ? "✓ 達成" : `あと${num(item.remaining)}${meta.unit}`),
+        ),
+        track,
+        el("div", { class: "quotaRowFoot" }, el("span", { class: "quotaNote" }, meta.note), jump),
+      ));
+    });
+
+    // 設定フォーム。今日の項目は既存の「1日の単語目標」と同じ値。
+    const settingsId = "dailyQuotaSettings";
+    const settingsToggle = el("button", {
+      class: "ghost quotaSettingsToggle",
+      type: "button",
+      "aria-expanded": "false",
+      "aria-controls": settingsId,
+    }, "ノルマを設定");
+    const settings = el("form", { class: "quotaSettings hide", id: settingsId, "aria-labelledby": "dailyQuotaSettingsTitle" });
+    const limits = { today: { min: 1, max: STUDY_PLAN_DAILY_MAX }, ...Object.fromEntries(Object.entries(QUOTA_LIMITS).map(([id, { max }]) => [id, { min: 0, max }])) };
+    const current = { today: plan.dailyWordGoal, ...plan.dailyQuota };
+    const inputs = {};
+    settings.appendChild(el("h4", { id: "dailyQuotaSettingsTitle" }, "1日のノルマ"));
+    settings.appendChild(el("p", { class: "hint" }, "0にした項目はノルマに含めません（今日は1以上）。"));
+    const fields = el("div", { class: "quotaFields" });
+    Object.entries(QUOTA_ITEMS).forEach(([id, meta]) => {
+      if (id === "waka" && !hasWakaGallery()) return;
+      inputs[id] = el("input", {
+        type: "number",
+        min: String(limits[id].min),
+        max: String(limits[id].max),
+        value: String(current[id]),
+        inputmode: "numeric",
+        name: `quota-${id}`,
+      });
+      fields.appendChild(el("label", { class: "quotaField" },
+        el("span", { class: "fieldLabel" }, meta.label),
+        el("span", { class: "quotaFieldInput" }, inputs[id], el("span", {}, meta.unit)),
+        el("span", { class: "quotaFieldHint" }, `${meta.note}（${limits[id].min}〜${limits[id].max}）`),
+      ));
+    });
+    settings.appendChild(fields);
+    const error = el("p", { class: "studyPlanFormError", role: "alert", "aria-live": "polite" });
+    settings.appendChild(error);
+    const closeSettings = () => {
+      Object.entries(inputs).forEach(([id, input]) => { input.value = String(current[id]); });
+      error.textContent = "";
+      settings.classList.add("hide");
+      settingsToggle.setAttribute("aria-expanded", "false");
+      settingsToggle.focus();
+    };
+    settings.appendChild(el("div", { class: "actions studyPlanFormActions" },
+      el("button", { class: "cta", type: "submit" }, "保存"),
+      el("button", { class: "ghost", type: "button", onclick: closeSettings }, "キャンセル"),
+    ));
+    settings.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const values = {};
+      for (const [id, input] of Object.entries(inputs)) {
+        const value = input.value.trim() === "" ? NaN : Number(input.value);
+        if (!Number.isInteger(value) || value < limits[id].min || value > limits[id].max) {
+          error.textContent = `${QUOTA_ITEMS[id].label}は${limits[id].min}〜${limits[id].max}で入力してください。`;
+          input.focus();
+          return;
+        }
+        values[id] = value;
+      }
+      const { today, ...quota } = values;
+      studyPlan = normalizeStudyPlan({ ...plan, dailyWordGoal: today, dailyQuota: { ...plan.dailyQuota, ...quota } });
+      saveStudyPlan();
+      if (cloud) cloud.queueSave({ datasetId: state.setId, progress: state.progress, meta: cloudMeta() });
+      renderHome();
+      selectHomeTab("today");
+    });
+    settingsToggle.addEventListener("click", () => {
+      if (settings.classList.contains("hide")) {
+        settings.classList.remove("hide");
+        settingsToggle.setAttribute("aria-expanded", "true");
+        Object.values(inputs)[0]?.focus();
+      } else {
+        closeSettings();
+      }
+    });
+
+    const headline = !active.length ? "ノルマは設定されていません"
+      : allDone ? "✓ 今日のノルマ達成"
+      : `${num(active.length)}項目中 ${num(achieved)}項目達成`;
+    return el("section", { class: `card dailyQuota${allDone ? " is-done" : ""}`, "aria-labelledby": "dailyQuotaTitle" },
+      el("div", { class: "quotaHead" },
+        el("div", {},
+          el("p", { class: "label" }, "1日のノルマ"),
+          el("h2", { id: "dailyQuotaTitle" }, headline),
+        ),
+        settingsToggle,
+      ),
+      list,
       settings,
     );
   }

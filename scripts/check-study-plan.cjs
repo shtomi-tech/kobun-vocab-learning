@@ -33,8 +33,8 @@ assert.equal(t.normalizeStudyPlan({ dailyWordGoal: 8.5 }).dailyWordGoal, 12, "�
 assert.equal(t.normalizeStudyPlan({ dailyWordGoal: "20" }).dailyWordGoal, 20, "数字文字列は受理");
 assert.equal(
   JSON.stringify(Object.keys(t.normalizeStudyPlan({ dailyWordGoal: 20, junk: 1 })).sort()),
-  JSON.stringify(["dailyWordGoal", "version"]),
-  "保存形状はversionとdailyWordGoalのみ（未知キーは持ち込まない）",
+  JSON.stringify(["dailyQuota", "dailyWordGoal", "version"]),
+  "保存形状はversion・dailyWordGoal・dailyQuotaのみ（未知キーは持ち込まない）",
 );
 assert.equal(t.normalizeStudyPlan("nope").dailyWordGoal, 12, "オブジェクト以外は既定へ");
 
@@ -125,5 +125,41 @@ assert.equal(legacy.migrations.studyPlanFirstAnsweredAtV1, 1, "移行済みマ�
 assert.equal(t.migrateFirstAnsweredAt(legacy), false, "移行は冪等（2回目は何もしない）");
 assert.equal(t.migrateFirstAnsweredAt({ migrations: { studyPlanFirstAnsweredAtV1: 1 } }), false, "マーカー済みは走らない");
 assert.equal(t.migrateFirstAnsweredAt(null), false, "壊れた入力でも例外を出さない");
+
+// --- 1日のノルマ: 既定値・範囲・旧保存の救済 ---
+assert.deepEqual({ ...def.dailyQuota }, { review: 20, write: 10, waka: 10 }, "既定は各タブの1回分（復習20・書く10・和歌10首）");
+assert.deepEqual({ ...t.normalizeStudyPlan({ dailyWordGoal: 12 }).dailyQuota }, { review: 20, write: 10, waka: 10 }, "ノルマの無い旧保存は既定値で補う");
+const q = t.normalizeStudyPlan({ dailyQuota: { review: 0, write: "15", waka: 11, junk: 3 } }).dailyQuota;
+assert.deepEqual({ ...q }, { review: 0, write: 15, waka: 10 }, "0は許可、上限超えは既定へ、未知キーは捨てる");
+assert.equal(t.normalizeStudyPlan({ dailyQuota: { review: "" } }).dailyQuota.review, 20, "空文字は0扱いにせず既定へ");
+
+// --- countToday / dailyQuotaSummary: ローカル日付で今日の分だけ数える ---
+const history = [
+  { kind: "meaning", at: iso(localDate(2026, 9, 2, 8)) },
+  { kind: "meaning", at: iso(localDate(2026, 9, 2, 23, 50)) },
+  { kind: "meaning", at: iso(localDate(2026, 9, 1, 23, 50)) },        // 昨日
+  { kind: "written", result: "learned", at: iso(localDate(2026, 9, 2, 9)) },
+  { kind: "written", result: "reask-correct", at: iso(localDate(2026, 9, 2, 9, 5)) }, // 再出題は数えない
+  { kind: "question", at: iso(localDate(2026, 9, 2, 9)) },
+  { kind: "meaning", at: "broken" },
+];
+assert.equal(t.countToday(history, now, (e) => e.kind === "meaning"), 2, "今日の意味復習だけを数える");
+const quota = t.dailyQuotaSummary(now, { dailyWordGoal: 3, dailyQuota: { review: 2, write: 5, waka: 0 } }, {
+  unitEntries: entries,
+  history,
+  wakaPoemsDone: 4,
+});
+const byId = Object.fromEntries(quota.items.map((item) => [item.id, item]));
+assert.equal(byId.today.done, 2);
+assert.equal(byId.today.remaining, 1, "今日は 3−2=1");
+assert.equal(byId.review.remaining, 0, "復習は達成");
+assert.equal(byId.write.done, 1, "書くは再出題を除いて1");
+assert.equal(byId.write.remaining, 4);
+assert.equal(byId.waka.active, false, "0の項目はノルマに含めない");
+assert.equal(quota.activeCount, 3);
+assert.equal(quota.achievedCount, 1);
+assert.equal(quota.allDone, false);
+const nextDay = t.dailyQuotaSummary(localDate(2026, 9, 3, 7), { dailyQuota: { review: 2 } }, { history });
+assert.equal(nextDay.items.find((item) => item.id === "review").done, 0, "日付が変わると0から数え直す");
 
 console.log("study plan logic contract: OK");
