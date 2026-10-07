@@ -3,7 +3,8 @@
     "title": "歌の間・文法解説（試作）",
     "status": "draft",
     "note": "AIによる下書き。品詞分解・意味の判定は docs/kobun-principles の active カードに照らして作成し、カードの無い修辞（掛詞・倒置など）は review: \"needs-check\" とする。利用者の確認前。",
-    "basis": "高校古典文法（学校文法）"
+    "basis": "高校古典文法（学校文法）",
+    "explanationsNote": "explanations は根拠カードごとの解説の行き先。古典文法演習（kobun-vocab）の予習資料 data/preparation/<prep>.md と、その H2 節番号 sec（省略時は資料の先頭）を指す。"
   },
   "rules": {
     "kbp.particles.tsutsu-meaning": "「つつ」の訳し方",
@@ -40,6 +41,124 @@
     "kbp.verbs.katsuyou-type-translation": "四段・下二段動詞の訳し分け",
     "kbp.syntax.kakari-musubi-omission": "係り結びにおける結びの省略",
     "kbp.particles.dani-meanings": "「だに」の訳し分け"
+  },
+  "explanations": {
+    "kbp.particles.tsutsu-meaning": {
+      "prep": "kobun-05-joshi-koou",
+      "sec": 10
+    },
+    "kbp.particles.ba-meanings": {
+      "prep": "kobun-05-ba"
+    },
+    "kbp.auxiliaries.ramu-meanings": {
+      "prep": "kobun-04-ramu"
+    },
+    "kbp.auxiliaries.mashi-meanings": {
+      "prep": "kobun-04-mashi"
+    },
+    "kbp.disambiguation.se-identification": {
+      "prep": "kobun-06-se"
+    },
+    "kbp.particles.ga-no-case-functions": {
+      "prep": "kobun-05-no"
+    },
+    "kbp.disambiguation.nu-ne-identification": {
+      "prep": "kobun-06-nune"
+    },
+    "kbp.auxiliaries.ru-raru-meanings": {
+      "prep": "kobun-04-rareru"
+    },
+    "kbp.particles.tomo-do-domo-meanings": {
+      "prep": "kobun-05-joshi-map",
+      "sec": 5
+    },
+    "kbp.particles.kakari-musubi-basic": {
+      "prep": "kobun-01-katsuyokei-kakari",
+      "sec": 4
+    },
+    "kbp.particles.kakari-musubi-special-constructions": {
+      "prep": "kobun-05-kakari"
+    },
+    "kbp.disambiguation.ni-identification": {
+      "prep": "kobun-06-ni"
+    },
+    "kbp.disambiguation.shi-identification": {
+      "prep": "kobun-06-shite",
+      "sec": 1
+    },
+    "kbp.auxiliaries.keri-meanings": {
+      "prep": "kobun-04-keri"
+    },
+    "kbp.auxiliaries.tsu-nu-meanings": {
+      "prep": "kobun-04-tsunu"
+    },
+    "kbp.particles.ya-ka-rhetorical-tendency": {
+      "prep": "kobun-05-kakari-imi",
+      "sec": 2
+    },
+    "kbp.auxiliaries.rashi-meaning": {
+      "prep": "kobun-04-other",
+      "sec": 2
+    },
+    "kbp.disambiguation.nari-identification": {
+      "prep": "kobun-06-nari"
+    },
+    "kbp.auxiliaries.nari-meanings": {
+      "prep": "kobun-04-nari"
+    },
+    "kbp.particles.de-meaning": {
+      "prep": "kobun-05-joshi-koou",
+      "sec": 7
+    },
+    "kbp.auxiliaries.mu-muzu-ji-meanings": {
+      "prep": "kobun-04-mu"
+    },
+    "kbp.adjectives.keiyoushi-gokan-mi": {
+      "prep": "kobun-02-yougo-yaku",
+      "sec": 1
+    },
+    "kbp.particles.final-particles-meanings": {
+      "prep": "kobun-05-shuujoshi"
+    },
+    "kbp.disambiguation.namu-identification": {
+      "prep": "kobun-06-namu"
+    },
+    "kbp.particles.nagara-meanings": {
+      "prep": "kobun-05-joshi-koou",
+      "sec": 9
+    },
+    "kbp.particles.mono-no-wo-yue-meanings": {
+      "prep": "kobun-05-joshi-koou",
+      "sec": 8
+    },
+    "kbp.auxiliaries.meri-meaning": {
+      "prep": "kobun-04-other",
+      "sec": 3
+    },
+    "kbp.disambiguation.te-identification": {
+      "prep": "kobun-06-shite",
+      "sec": 4
+    },
+    "kbp.auxiliaries.tari-ri-meanings": {
+      "prep": "kobun-04-tariri"
+    },
+    "kbp.disambiguation.ru-re-identification": {
+      "prep": "kobun-06-rure"
+    },
+    "kbp.particles.yori-meanings": {
+      "prep": "kobun-05-yori"
+    },
+    "kbp.verbs.katsuyou-type-translation": {
+      "prep": "kobun-02-yougo-yaku",
+      "sec": 3
+    },
+    "kbp.syntax.kakari-musubi-omission": {
+      "prep": "kobun-05-kakari-shouryaku-nagare",
+      "sec": 1
+    },
+    "kbp.particles.dani-meanings": {
+      "prep": "kobun-05-dani"
+    }
   },
   "poems": [
     {
