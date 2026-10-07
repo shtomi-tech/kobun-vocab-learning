@@ -487,7 +487,7 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
   .studyTimeMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* ---- ホームのタブ（今日・復習・書く・セット） ---- */
+/* ---- ホームのタブ（今日・復習・書く・和歌。セットはタブ外） ---- */
 .homeTabs {
   position: sticky;
   top: 0;
@@ -531,6 +531,8 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 }
 .homeTabPanel[hidden] { display: none; }
 .homeTabJump { width: 100%; margin-top: var(--space-3); }
+.homeTabBack { margin: 0 0 var(--space-3); }
+.homeTabJump + .stats { margin-top: var(--space-4); }
 
 /* ---- 意味を書く演習 ---- */
 .writtenMission { border-left: 4px solid var(--clay); }
