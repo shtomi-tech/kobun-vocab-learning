@@ -460,10 +460,18 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 /* ---- 1日のノルマ（今日の面の先頭。今日・復習・書く・和歌の残り数） ---- */
 .quotaHead { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; }
 .quotaHead h2 { margin-top: 4px; }
-.dailyQuota.is-done .quotaHead h2 { color: var(--ok); }
-.quotaSettingsToggle, .quotaBodyToggle { flex: 0 0 auto; }
-.quotaBody[hidden] { display: none; }
-.quotaBodyActions { display: flex; justify-content: flex-end; margin-top: 12px; }
+.quotaSettingsToggle { flex: 0 0 auto; }
+/* 右上の「ノルマ」ボタンと、その下に開くパネル */
+.top { position: relative; }
+.quotaMenu { margin-left: auto; align-self: flex-start; }
+.quotaMenu[hidden] { display: none; }
+.quotaMenuButton { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 14px; border: 1px solid var(--color-control-border); border-radius: var(--radius-pill); background: var(--canvas); color: var(--ink); font-weight: 600; cursor: pointer; }
+.quotaMenuButton:hover, .quotaMenuButton[aria-expanded="true"] { background: var(--soft); }
+.quotaMenuCount { min-width: 20px; padding: 1px 6px; border-radius: var(--radius-pill); background: var(--clay); color: var(--canvas); font-family: var(--mono); font-size: 11px; line-height: 18px; text-align: center; }
+.quotaMenuButton.is-done .quotaMenuCount { background: var(--ok); }
+.quotaMenuPanel { position: absolute; z-index: 20; top: calc(100% + 8px); right: 0; width: min(440px, 100%); max-height: 75vh; overflow-y: auto; padding: var(--card-padding); border: 1px solid var(--line); border-radius: var(--radius-container); background: var(--card); box-shadow: 0 12px 32px rgba(0, 0, 0, .14); }
+.quotaMenuPanel[hidden] { display: none; }
+.quotaPanel.is-done .quotaHead h2 { color: var(--ok); }
 .quotaList { display: grid; gap: 14px; margin: 16px 0 0; padding: 0; list-style: none; }
 .quotaRowHead { display: flex; align-items: baseline; gap: 12px; }
 .quotaLabel { min-width: 3em; font-size: 15px; }
