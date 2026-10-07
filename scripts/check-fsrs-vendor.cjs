@@ -1,7 +1,7 @@
 // vendoring した ts-fsrs が「本番でも配信される」ことを機械的に守るための検査。
 //
-// pages.yml の Prepare static files は `cp static/*.js` のグロブで静的ファイルを配るが、
-// グロブはサブディレクトリを拾わない。専用の cp を消すと本番だけ 404 になり、
+// scripts/build-site.mjs は static/ 直下の .js などだけを配り、サブディレクトリは拾わない。
+// vendor 専用のコピーを消すと本番だけ 404 になり、
 // ローカルでは絶対に再現しない。ここが落ちる状態でデプロイしてはいけない。
 const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
@@ -37,15 +37,17 @@ assert.ok(vendorReadme.includes(EXPECTED_VERSION), "vendor README に版を記�
 assert.ok(vendorReadme.includes(EXPECTED_SHA256), "vendor README に sha256 を記録する必要がある");
 
 // --- 本番へコピーされる（これが本検査の主目的） ---
+// 配信ファイルの一覧は scripts/build-site.mjs が正本で、GitHub Pages と Cloudflare の両方が使う。
 const workflow = read(".github/workflows/pages.yml");
+const buildSite = read("scripts/build-site.mjs");
+assert.ok(workflow.includes("node scripts/build-site.mjs"), "pages.yml が scripts/build-site.mjs で _site を作る必要がある");
 assert.ok(
-  workflow.includes("_site/static/vendor/fsrs"),
-  "pages.yml が _site/static/vendor/fsrs を作る必要がある（漏れると本番だけ404）",
+  read("wrangler.jsonc").includes("node scripts/build-site.mjs"),
+  "wrangler.jsonc の build.command が scripts/build-site.mjs で _site を作る必要がある",
 );
-assert.match(
-  workflow,
-  /cp\s+static\/vendor\/fsrs\/index\.umd\.js[^\n]*_site\/static\/vendor\/fsrs\//,
-  "pages.yml が vendor/fsrs/index.umd.js を _site へコピーする必要がある（漏れると本番だけ404）",
+assert.ok(
+  buildSite.includes('"static/vendor/fsrs"') && buildSite.includes('copy("static/vendor/fsrs/index.umd.js")'),
+  "build-site.mjs が vendor/fsrs/index.umd.js を _site へコピーする必要がある（漏れると本番だけ404）",
 );
 // CIは scripts/check-all.mjs の一覧を実行する。その一覧にSRS契約検査が入っていることを見る。
 assert.ok(

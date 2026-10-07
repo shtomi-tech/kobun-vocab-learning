@@ -1,0 +1,13 @@
+{
+  // Cloudflare Workers（Workers Builds）で静的ファイルだけを配信する。
+  // build.command が _site/ を作り、wrangler deploy がそれをアセットとして上げる。
+  // 端末間同期を使う場合は、Workers Builds のビルド変数に SUPABASE_URL / SUPABASE_ANON_KEY を設定する。
+  "name": "kobun-vocab-learning",
+  "compatibility_date": "2026-10-01",
+  "build": {
+    "command": "node scripts/write-config.mjs && node scripts/check-all.mjs && node scripts/build-site.mjs"
+  },
+  "assets": {
+    "directory": "./_site"
+  }
+}

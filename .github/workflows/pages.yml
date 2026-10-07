@@ -35,13 +35,8 @@ jobs:
         run: node scripts/check-all.mjs
       - uses: actions/configure-pages@v5
       - name: Prepare static files
-        run: |
-          mkdir -p _site/static _site/static/vendor/fsrs _site/data
-          cp index.html .nojekyll _site/
-          cp static/*.js static/*.css static/*.svg static/config.json _site/static/
-          # cp static/*.js のグロブはサブディレクトリを拾わない。消すと本番だけ404になる。
-          cp static/vendor/fsrs/index.umd.js static/vendor/fsrs/LICENSE _site/static/vendor/fsrs/
-          cp data/*.json _site/data/
+        # 配信するファイルの一覧は scripts/build-site.mjs が正本（Cloudflare 側と共通）。
+        run: node scripts/build-site.mjs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
