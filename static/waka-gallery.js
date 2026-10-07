@@ -203,7 +203,7 @@ const KobunWakaGallery = (() => {
     return Array.from({ length: n }, (_, i) => order[(start + i) % order.length]);
   }
 
-  // 保存形：{ date, keys: [和歌本文], total, picked: [選んだ選択肢の番号] }。picked は問題の並び順。
+  // 保存形：{ date, keys: [和歌本文], total, picked: [選んだ選択肢の番号], sizes: [歌ごとの問題数] }。picked は問題の並び順。
   const readDaily = () => {
     try { return JSON.parse(localStorage.getItem(DAILY_KEY) || "null"); } catch { return null; }
   };
@@ -212,10 +212,22 @@ const KobunWakaGallery = (() => {
   };
 
   // ホームの入口に出す当日の状況。未着手なら null。
+  // poemsDone は全問に答え終えた首の数（1日のノルマ用）。sizes の無い旧保存は全問完了時だけ数える。
   function dailyStatus(date = new Date()) {
     const saved = readDaily();
     if (!saved || saved.date !== dateKey(date) || !saved.picked?.length || !saved.total) return null;
-    return { answered: saved.picked.length, total: saved.total, done: saved.picked.length >= saved.total };
+    const answered = saved.picked.length;
+    const done = answered >= saved.total;
+    let poemsDone = done ? (saved.keys || []).length : 0;
+    if (!done && Array.isArray(saved.sizes)) {
+      let reach = 0;
+      for (const size of saved.sizes) {
+        reach += Number(size) || 0;
+        if (reach > answered) break;
+        poemsDone++;
+      }
+    }
+    return { answered, total: saved.total, done, poemsDone };
   }
 
   // 「今日の10首」画面。grammar は歌の間と同じ { rules, byKey }。
@@ -231,7 +243,8 @@ const KobunWakaGallery = (() => {
     const sameSet = savedPoems === poems;
     const picked = sameSet && Array.isArray(saved.picked) ? saved.picked.slice(0, items.length) : [];
     const keys = poems.map((poem) => poem.key);
-    const persist = () => writeDaily({ date: today, keys, total: items.length, picked });
+    const sizes = poems.map((poem) => grammar.byKey.get(poem.key).quiz.length);
+    const persist = () => writeDaily({ date: today, keys, total: items.length, picked, sizes });
     if (!sameSet) persist();
     renderGrammarLesson(panel, poems, {
       grammar,

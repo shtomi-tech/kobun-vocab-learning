@@ -457,6 +457,37 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .studyPlanFormError:empty { display: none; }
 .studyPlanFormActions { margin-top: 16px; }
 
+/* ---- 1日のノルマ（今日の面の先頭。今日・復習・書く・和歌の残り数） ---- */
+.quotaHead { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; }
+.quotaHead h2 { margin-top: 4px; }
+.dailyQuota.is-done .quotaHead h2 { color: var(--ok); }
+.quotaSettingsToggle { flex: 0 0 auto; }
+.quotaList { display: grid; gap: 14px; margin: 16px 0 0; padding: 0; list-style: none; }
+.quotaRowHead { display: flex; align-items: baseline; gap: 12px; }
+.quotaLabel { min-width: 3em; font-size: 15px; }
+.quotaCount { color: var(--muted); font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.quotaRemain { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.quotaRow.is-done .quotaRemain { color: var(--ok); }
+.quotaTrack { position: relative; height: 8px; margin-top: 6px; border-radius: var(--radius-pill); background: var(--line); overflow: hidden; }
+.quotaFill { position: absolute; top: 0; left: 0; height: 100%; border-radius: var(--radius-pill); background: var(--ink); transition: width var(--motion-progress) var(--ease-spring-soft); }
+.quotaRow.is-done .quotaFill { background: var(--ok); }
+.quotaRowFoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; }
+.quotaNote { color: var(--muted); font-size: 13px; }
+.quotaJump { min-height: 32px; padding: 4px 8px; border: 0; background: none; color: var(--ink); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.quotaSettings { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.quotaSettings.hide { display: none; }
+.quotaSettings h4 { margin: 0 0 4px; font-size: 15px; }
+.quotaFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; margin-top: 12px; }
+.quotaField { display: block; }
+.quotaField .fieldLabel { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
+.quotaFieldInput { display: flex; align-items: center; gap: 8px; }
+.quotaFieldInput input { width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid var(--color-control-border); border-radius: var(--radius-control); background: var(--canvas); color: var(--ink); font-variant-numeric: tabular-nums; }
+.quotaFieldHint { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; }
+
+@media (max-width: 480px) {
+  .quotaFields { grid-template-columns: 1fr; }
+}
+
 /* ---- 到達予想（このペースで学べる語。既定は折りたたみ、注記文は置かない） ---- */
 .vocabForecast { margin-top: 16px; border-top: 1px solid var(--line); }
 .vocabForecastSummary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-top: 14px; cursor: pointer; list-style: none; }
