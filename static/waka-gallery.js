@@ -16,6 +16,8 @@ const KobunWakaGallery = (() => {
     接続詞: "adv", 感動詞: "adv", 助動詞: "aux", 助詞: "part", 連語: "phrase", 接頭語: "noun", 接尾語: "noun",
   };
   const posClass = (pos) => POS_CLASS[pos] || "noun";
+  // 根拠の文法事項から開く解説。古典文法演習の予習資料を ?prep=<資料名>&sec=<節番号> で直接開く。
+  const EXPLANATION_BASE_URL = "https://shtomi-tech.github.io/kobun-vocab/";
 
   const el = (tag, attrs = {}, ...children) => {
     const node = document.createElement(tag);
@@ -31,6 +33,21 @@ const KobunWakaGallery = (() => {
     }
     return node;
   };
+
+  // 確認問題の「根拠」の行。解説のある文法事項は別タブで開くリンクにし、無いものは名前だけを出す。
+  const ruleLine = (grammar, rules) => el("p", { class: "wgQuizRules" }, "根拠：",
+    rules.flatMap((rule, i) => {
+      const name = grammar.rules[rule] || rule;
+      const target = grammar.explanations?.[rule];
+      const node = target?.prep ? el("a", {
+        class: "wgRuleLink",
+        href: `${EXPLANATION_BASE_URL}?${new URLSearchParams({ prep: target.prep, ...(target.sec ? { sec: target.sec } : {}) })}`,
+        target: "_blank",
+        rel: "noopener",
+        title: "古典文法演習で解説を読む（別タブ）",
+      }, name, el("span", { class: "wgRuleLinkMark", "aria-hidden": "true" }, "↗")) : name;
+      return i ? ["／", node] : [node];
+    }));
 
   const readPref = () => {
     try { return localStorage.getItem(READING_KEY) === "1"; } catch { return false; }
@@ -329,7 +346,7 @@ const KobunWakaGallery = (() => {
       return el("div", { class: `wgQuizFeedback ${ok ? "is-ok" : "is-ng"}`, tabindex: "-1" },
         el("p", { class: "wgQuizResult" }, ok ? "○ 正解" : `× 不正解　正解は「${item.choices[item.answer]}」`),
         el("p", {}, item.explain),
-        el("p", { class: "wgQuizRules" }, `根拠：${item.rules.map((rule) => grammar.rules[rule] || rule).join("／")}`),
+        ruleLine(grammar, item.rules),
       );
     }
 
@@ -737,7 +754,7 @@ const KobunWakaGallery = (() => {
           el("div", { class: `wgQuizFeedback ${ok ? "is-ok" : "is-ng"}`, tabindex: "-1" },
             el("p", { class: "wgQuizResult" }, ok ? "○ 正解" : `× 不正解　正解は「${item.choices[item.answer]}」`),
             el("p", {}, item.explain),
-            el("p", { class: "wgQuizRules" }, `根拠：${item.rules.map((rule) => grammar.rules[rule] || rule).join("／")}`),
+            ruleLine(grammar, item.rules),
           ),
           el("button", {
             class: "wgButton wgButton--gold",
