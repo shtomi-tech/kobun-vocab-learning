@@ -3,6 +3,7 @@
 const KobunVocabApp = (() => {
   const MANIFEST_URL = "data/manifest.json";
   const WAKA_GRAMMAR_URL = "data/waka-grammar.json";
+  const GRAMMAR_GUIDE_URL = "data/grammar-guide.json";
   const sharedStudentId = (() => {
     const params = new URLSearchParams(location.search);
     return (params.get("s") || params.get("student") || "").trim();
@@ -1141,7 +1142,11 @@ const KobunVocabApp = (() => {
         if (!response.ok) throw new Error(`waka grammar: HTTP ${response.status}`);
         return response.json();
       });
-      wakaGrammar = { rules: data.rules || {}, explanations: data.explanations || {}, byKey: new Map(data.poems.map((poem) => [poem.key, poem])) };
+      // 根拠カードごとの解説。読めなくても問題は解けるので、無ければ名前だけを出す。
+      const guide = await fetch(GRAMMAR_GUIDE_URL, { cache: "no-store" })
+        .then((response) => (response.ok ? response.json() : null))
+        .catch(() => null);
+      wakaGrammar = { rules: data.rules || {}, guides: guide?.guides || {}, byKey: new Map(data.poems.map((poem) => [poem.key, poem])) };
     } catch (error) {
       console.error(error);
       wakaGrammar = null;

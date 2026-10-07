@@ -39,14 +39,17 @@ for (const word of loadWords()) {
 }
 
 assert.ok(grammar.rules && typeof grammar.rules === "object", "rules map is required");
-// 根拠カードから開く解説（古典文法演習の予習資料）。行き先の無いカードは名前だけを表示する。
-const explanations = grammar.explanations ?? {};
-for (const [rule, target] of Object.entries(explanations)) {
-  assert.ok(grammar.rules[rule], `explanations: ${rule} must be listed in rules`);
-  assert.match(target.prep ?? "", /^kobun-\d{2}-[a-z0-9-]+$/u, `explanations: ${rule} needs a preparation name like kobun-05-ba`);
-  assert.ok(target.sec === undefined || (Number.isInteger(target.sec) && target.sec > 0), `explanations: ${rule} sec must be a positive integer`);
+// 根拠カードの解説（data/grammar-guide.json）。カードごとに要点・見分け方を必ず置く。
+const guides = JSON.parse(fs.readFileSync(new URL("../data/grammar-guide.json", import.meta.url), "utf8")).guides;
+for (const rule of Object.keys(grammar.rules)) {
+  const guide = guides[rule];
+  assert.ok(guide, `grammar-guide: ${rule} needs a guide`);
+  assert.ok(typeof guide.summary === "string" && guide.summary, `grammar-guide: ${rule} needs a summary`);
+  assert.ok(Array.isArray(guide.table) && guide.table.length > 0 && guide.table.every((row) => row.length === 2 && row.every(Boolean)), `grammar-guide: ${rule} table rows must be [label, text]`);
+  assert.ok(Array.isArray(guide.steps) && guide.steps.length > 0 && guide.steps.every(Boolean), `grammar-guide: ${rule} needs steps`);
+  assert.ok((guide.examples ?? []).every((example) => example.text && example.note), `grammar-guide: ${rule} examples need text and note`);
 }
-const unlinked = Object.keys(grammar.rules).filter((rule) => !explanations[rule]);
+for (const rule of Object.keys(guides)) assert.ok(grammar.rules[rule], `grammar-guide: ${rule} is not a rule in waka-grammar.json`);
 
 const keys = new Set();
 const standaloneNumbers = new Set();
@@ -109,4 +112,4 @@ if (fs.existsSync(indexUrl)) {
   cardNote = `${Object.keys(grammar.rules).length} rule cards active`;
 }
 
-console.log(`OK: ${grammar.poems.length} poems (${standaloneCount} standalone), ${quizCount} quiz items, ${cardNote}, ${Object.keys(explanations).length} explanation links${unlinked.length ? ` (unlinked: ${unlinked.join(", ")})` : ""}`);
+console.log(`OK: ${grammar.poems.length} poems (${standaloneCount} standalone), ${quizCount} quiz items, ${cardNote}, ${Object.keys(guides).length} guides`);
