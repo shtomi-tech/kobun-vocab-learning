@@ -88,7 +88,7 @@ button, select, input, textarea { font: inherit; }
 button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 .askWord:focus, .meaningExample:focus, .cloze:focus, .feedback:focus { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 .wrap { width: min(var(--container-max), calc(100% - var(--page-gutter))); margin: 0 auto; padding: 40px 0 64px; }
-.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 2px solid var(--ink); padding-bottom: 12px; margin-bottom: 16px; }
+.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 16px; }
 .brand { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
 .backlink { color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-decoration: none; text-transform: uppercase; }
 .backlink:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
@@ -336,7 +336,7 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 @keyframes skeletonPulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
 
 @media (max-width: 640px) {
-  :root { --page-gutter: 20px; --card-padding: 18px; --card-gap: var(--space-6); --numeric-primary: 24px; }
+  :root { --page-gutter: 32px; --card-padding: 18px; --card-gap: var(--space-6); --numeric-primary: 24px; }
   .wrap { padding-top: 24px; }
   .card, .quiz { padding: var(--card-padding); }
   .stats { grid-template-columns: repeat(2, 1fr); }
@@ -514,13 +514,14 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .vocabForecastRow strong { font-family: var(--mono); font-size: var(--numeric-secondary); font-variant-numeric: tabular-nums; }
 
 @media (max-width: 640px) {
-  .studyPlanSettingsToggle { flex-basis: 100%; }
   .vocabForecastGrid { grid-template-columns: repeat(2, 1fr); }
   .vocabForecastRow:nth-child(odd) { border-left: 0; }
   .vocabForecastRow:nth-child(n + 3) { border-top: 1px solid var(--line); }
 }
 
 /* 学習時間カード */
+/* 学習時間は補助の記録なので、見出しは学習目標カードの h3 と同じ大きさに抑える（英単語アプリと共通）。 */
+.studyTimeCard h2 { margin: 0; font-size: 18px; font-weight: 700; }
 .studyTimeMetrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--grid-gap); margin: var(--space-3) 0 var(--space-2); }
 .studyTimeMetric { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; padding: var(--space-3); border-radius: var(--radius-container); background: var(--soft); }
 .studyTimeMetric strong { font-family: var(--serif); font-size: var(--numeric-secondary); font-variant-numeric: tabular-nums; }
@@ -572,12 +573,11 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 }
 .homeTabBadge.is-done { background: var(--ok); }
 .homeTabPanel[hidden] { display: none; }
-.homeTabJump { width: 100%; margin-top: var(--space-3); }
+.homeTabJump { margin-top: var(--space-3); }
 .homeTabBack { margin: 0 0 var(--space-3); }
 .homeTabJump + .stats { margin-top: var(--space-4); }
 
 /* ---- 意味を書く演習 ---- */
-.writtenMission { border-left: 4px solid var(--clay); }
 .writtenSteps {
   list-style: none;
   counter-reset: writtenStep;
@@ -609,6 +609,7 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .writtenSizeChoice[aria-pressed="true"] { border-color: var(--ink); background: var(--card); font-weight: 700; }
 .writtenCta { width: 100%; }
 .writtenMission .hint { margin-top: var(--space-3); }
+.writtenMission .hint + .writtenCta { margin-top: var(--space-2); }
 .written .recallHeadword { margin-bottom: var(--space-3); }
 .writtenHint { margin: 0 0 var(--space-4); }
 .writtenForm { display: grid; gap: var(--space-2); }
