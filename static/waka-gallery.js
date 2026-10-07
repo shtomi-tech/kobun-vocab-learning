@@ -34,17 +34,19 @@ const KobunWakaGallery = (() => {
 
   // 根拠カードの解説（data/grammar-guide.json）を <dialog> で開く。
   // 確認問題の途中で読むので画面は移らず、閉じると押したボタンへフォーカスを戻す。
-  function guideViewer(panel, grammar) {
+  // onLearnPoem を渡すと、「この文法が出る歌」から、その歌の確認問題へ進める。
+  // poems（歌の間と同じ形）を渡すと、例文の歌の作者名をそこから引く。
+  function guideViewer(panel, grammar, { onLearnPoem = null, poems = [] } = {}) {
+    const authorOf = new Map(poems.map((poem) => [poem.key, poem.author]));
     const dialog = el("dialog", { class: "wgDialog wgGuideDialog", "aria-labelledby": "wgGuideTitle" });
     dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
     let opener = null;
     dialog.addEventListener("close", () => opener?.focus());
-    panel.appendChild(dialog);
 
     // この文法が問われている歌（問題の対象の句）を並べる。
     const poemsFor = (rule) => [...grammar.byKey.values()].flatMap((poem) => poem.quiz
       .filter((item) => item.rules.includes(rule))
-      .map((item) => ({ phrase: poem.tokens[item.target.ku].map((token) => token.t).join(""), text: item.target.text, author: poem.author })));
+      .map((item) => ({ key: poem.key, phrase: (poem.tokens?.[item.target.ku] || []).map((token) => token.t).join("") || item.target.text, text: item.target.text, author: poem.author || authorOf.get(poem.key) || "" })));
 
     function open(rule, button) {
       const guide = grammar.guides?.[rule];
@@ -80,30 +82,99 @@ const KobunWakaGallery = (() => {
         guide.caution ? el("p", { class: "wgGuideCaution" }, el("span", { class: "wgReview" }, "注意"), guide.caution) : null,
         uses.length ? el("section", { class: "wgBlock" },
           el("h4", {}, `この文法が出る歌（${uses.length}問）`),
-          el("ul", { class: "wgGuideUses", role: "list" }, uses.slice(0, 6).map((use) => el("li", {},
-            el("span", { class: "wgGuideUsePhrase" }, use.phrase),
-            el("span", { class: "wgGuideUseMeta" }, `「${use.text}」　${use.author}`),
-          ))),
+          el("ul", { class: "wgGuideUses", role: "list" }, uses.slice(0, 6).map((use) => {
+            const parts = [
+              el("span", { class: "wgGuideUsePhrase" }, use.phrase),
+              el("span", { class: "wgGuideUseMeta" }, [`「${use.text}」`, use.author].filter(Boolean).join("　")),
+            ];
+            return el("li", {}, onLearnPoem ? el("button", {
+              class: "wgGuideUse",
+              type: "button",
+              onclick: () => { dialog.close(); onLearnPoem(use.key); },
+            }, parts, el("span", { class: "wgGuideUseCue" }, "この歌で解く ›")) : parts);
+          })),
         ) : null,
         el("p", { class: "wgDraftNote" }, el("span", { class: "wgReview" }, "試作"), "AIによる下書きです。"),
       ));
+      // 画面の描き直しに巻き込まれないよう、開くときに panel の末尾へ置く。
+      if (dialog.parentNode !== panel) panel.appendChild(dialog);
       if (!dialog.open) dialog.showModal();
       dialog.querySelector(".wgClose")?.focus();
     }
 
-    // 確認問題の「根拠」に並べる文法事項。解説のあるものはボタンにし、無いものは名前だけを出す。
-    const ruleNodes = (rules) => rules.flatMap((rule, i) => {
+    // 文法事項を、解説を開くボタンの列にする。解説の無いものは名前だけを出す。
+    const ruleButtons = (rules) => el("ul", { class: "wgRuleList", role: "list" }, [...new Set(rules)].map((rule) => {
       const name = grammar.rules[rule] || rule;
-      const node = grammar.guides?.[rule] ? el("button", {
+      return el("li", {}, grammar.guides?.[rule] ? el("button", {
         class: "wgRuleLink",
         type: "button",
         "aria-haspopup": "dialog",
         onclick: (event) => open(rule, event.currentTarget),
-      }, name) : name;
-      return i ? ["／", node] : [node];
-    });
+      },
+      el("span", { class: "wgRuleName" }, name),
+      el("span", { class: "wgRuleCue", "aria-hidden": "true" }, "解説 ›"),
+      ) : el("span", { class: "wgRuleName" }, name));
+    }));
 
-    return { ruleNodes };
+    return { open, ruleButtons, poemsFor };
+  }
+
+  // 解説一覧の並び。根拠カード ID の2番目の区切りで分ける。
+  const GUIDE_GROUPS = [
+    ["disambiguation", "識別"],
+    ["auxiliaries", "助動詞"],
+    ["particles", "助詞"],
+    ["", "そのほか"],
+  ];
+  const guideGroup = (rule) => {
+    const kind = rule.split(".")[1] || "";
+    return GUIDE_GROUPS.some(([id]) => id === kind) ? kind : "";
+  };
+
+  // 「文法の解説」一覧。和歌の確認問題に出る文法事項を種類ごとに並べ、選ぶと解説を開く。
+  function renderGuides(panel, grammar, { onClose, onLearnPoem = null, poems = [], backLabel = "← 和歌へ戻る" }) {
+    panel.closest(".wrap")?.classList.remove("wakaFocus");
+    panel.innerHTML = "";
+    panel.classList.add("wgRoom");
+    const viewer = guideViewer(panel, grammar, { onLearnPoem, poems });
+    const rules = Object.keys(grammar.rules).filter((rule) => grammar.guides?.[rule]);
+    const countOf = new Map(rules.map((rule) => [rule, viewer.poemsFor(rule).length]));
+    panel.append(
+      el("header", { class: "wgHeader" },
+        el("button", { class: "wgBack", type: "button", onclick: onClose }, backLabel),
+        el("p", { class: "wgEyebrow" }, "Grammar Notes"),
+        el("h2", { class: "wgTitle wgTitle--sub" }, "文法の解説"),
+        el("p", { class: "wgLead" }, `和歌の確認問題に出る文法を${rules.length}項目にまとめました。項目を選ぶと解説が開きます。`),
+        el("nav", { class: "wgFilters wgGuideJump", "aria-label": "種類へ移る" }, GUIDE_GROUPS
+          .filter(([id]) => rules.some((rule) => guideGroup(rule) === id))
+          .map(([id, label]) => el("button", {
+            class: "wgFilter",
+            type: "button",
+            onclick: () => panel.querySelector(`#wgGuideGroup-${id || "other"}`)?.scrollIntoView({ behavior: "smooth", block: "start" }),
+          }, label, el("span", { class: "wgFilterCount" }, rules.filter((rule) => guideGroup(rule) === id).length)))),
+      ),
+      ...GUIDE_GROUPS.map(([id, label]) => {
+        const own = rules.filter((rule) => guideGroup(rule) === id)
+          .sort((a, b) => countOf.get(b) - countOf.get(a));
+        if (!own.length) return null;
+        return el("section", { class: "wgGuideGroup", "aria-labelledby": `wgGuideGroup-${id || "other"}` },
+          el("h3", { id: `wgGuideGroup-${id || "other"}`, class: "wgGuideGroupTitle" }, label, el("span", { class: "wgFilterCount" }, own.length)),
+          el("ul", { class: "wgGuideIndex", role: "list" }, own.map((rule) => el("li", {},
+            el("button", {
+              class: "wgGuideItem",
+              type: "button",
+              "aria-haspopup": "dialog",
+              onclick: (event) => viewer.open(rule, event.currentTarget),
+            },
+            el("span", { class: "wgGuideItemName" }, grammar.rules[rule]),
+            el("span", { class: "wgGuideItemSummary" }, grammar.guides[rule].summary),
+            countOf.get(rule) ? el("span", { class: "wgGuideItemCount" }, `出題 ${countOf.get(rule)}問`) : null,
+            ),
+          ))),
+        );
+      }).filter(Boolean),
+    );
+    panel.querySelector(".wgBack")?.focus();
   }
 
   const readPref = () => {
@@ -310,18 +381,20 @@ const KobunWakaGallery = (() => {
       onHome: onClose,
       onOpenPoem,
       daily: true,
+      allPoems,
       initialPicked: picked,
       persist,
     });
   }
 
-  function renderPoemLesson(panel, poem, { grammar, onClose, onHome }) {
+  function renderPoemLesson(panel, poem, { grammar, onClose, onHome, allPoems = [poem] }) {
     if (!poem || !grammar?.byKey.has(poem.key)) return;
     renderGrammarLesson(panel, [poem], {
       grammar,
       onClose,
       onHome,
       backLabel: "← 歌の間へ戻る",
+      allPoems,
     });
   }
 
@@ -334,6 +407,7 @@ const KobunWakaGallery = (() => {
     initialPicked = [],
     persist = () => {},
     backLabel = "← ホームへ戻る",
+    allPoems = poems,
   }) {
     const items = poems.flatMap((poem, p) => grammar.byKey.get(poem.key).quiz.map((item, q) => ({ poem, p, q, item })));
     // 解き直しは間違えた問題だけを並べ直して解く（保存はしない）。
@@ -350,7 +424,7 @@ const KobunWakaGallery = (() => {
     panel.closest(".wrap")?.classList.add("wakaFocus");
     panel.classList.add("wgRoom");
     const body = el("div", { class: "wdBody" });
-    const guides = guideViewer(panel, grammar);
+    const guides = guideViewer(panel, grammar, { poems: allPoems });
     panel.append(
       el("header", { class: "wgHeader wdHeader" },
         el("button", { class: "wgBack", type: "button", onclick: onClose }, backLabel),
@@ -404,7 +478,7 @@ const KobunWakaGallery = (() => {
         ))),
       ));
       return el("details", { class: "wdGrammarDetails" },
-        el("summary", {}, "詳しい文法を見る"),
+        el("summary", {}, "この歌の品詞分解・文法メモ"),
         el("div", { class: "wdGrammarBody" },
           el("p", { class: "wgDraftNote" }, el("span", { class: "wgReview" }, "試作"),
             "AIによる下書きです。解釈に確認が必要な箇所には「要確認」を付けています。"),
@@ -508,9 +582,9 @@ const KobunWakaGallery = (() => {
       return el("div", { class: `wgQuizFeedback ${ok ? "is-ok" : "is-ng"}`, role: "status", "aria-live": "polite", "aria-atomic": "true", tabindex: "-1" },
         el("p", { class: "wgQuizResult" }, ok ? "○ 正解" : `× 不正解　正解は「${item.choices[item.answer]}」`),
         el("p", {}, item.explain),
-        el("details", { class: "wgQuizRules" },
-          el("summary", {}, "文法の根拠を見る"),
-          el("p", {}, guides.ruleNodes(item.rules)),
+        el("div", { class: "wgQuizRules" },
+          el("p", { class: "wgQuizRulesLabel" }, ok ? "この問題の文法" : "この文法の解説を読んでおきましょう"),
+          guides.ruleButtons(item.rules),
         ),
       );
     }
@@ -567,13 +641,46 @@ const KobunWakaGallery = (() => {
     }
   }
 
-  // ホームに置く入口カード。
-  function teaserCard(poems, { onOpen, onDaily = null }) {
+  // ホームの「和歌」の面に置く入口。今日の10首・文法の解説・歌の間の3枚を縦に並べる。
+  // onDaily / onGuides が無ければ、その入口は出さない。
+  function teaserCard(poems, { onOpen, onDaily = null, onGuides = null }) {
     const poem = dailyPick(poems);
     if (!poem) return null;
     const open = () => onOpen(poem.key);
     const status = onDaily ? dailyStatus() : null;
-    return el("section", { class: "card wgTeaser", "aria-labelledby": "wgTeaserTitle" },
+    const daily = onDaily ? el("section", { class: "card wgTeaser wgEntry wgEntry--daily", "aria-labelledby": "wgDailyTitle" },
+      el("div", { class: "wgEntryBody" },
+        el("p", { class: "wgEyebrow" }, "和歌で文法"),
+        el("h2", { id: "wgDailyTitle", class: "wgEntryTitle" }, `今日の${DAILY_SIZE}首`),
+        el("p", { class: "wgTeaserLead" }, !status
+          ? "百人一首などの歌で、助動詞・助詞・識別の確認問題を解きます。答えると解説も読めます。"
+          : status.done ? `今日の${DAILY_SIZE}首は完了しました。${status.total}問に答えています。`
+            : `${status.total}問中 ${status.answered}問まで解答済みです。`),
+        status ? el("div", {
+          class: "wdBar",
+          role: "progressbar",
+          "aria-label": "今日の10首の進み",
+          "aria-valuemin": "0",
+          "aria-valuemax": String(status.total),
+          "aria-valuenow": String(status.answered),
+        }, el("span", { style: `width:${(status.answered / status.total) * 100}%` })) : null,
+        el("div", { class: "wgTeaserActions" },
+          el("button", { class: "wgButton wgButton--gold", type: "button", onclick: onDaily },
+            !status ? `今日の${DAILY_SIZE}首を始める` : status.done ? "今日の結果を見る" : `今日の${DAILY_SIZE}首を続ける`),
+        ),
+      ),
+    ) : null;
+    const guides = onGuides ? el("section", { class: "card wgTeaser wgEntry", "aria-labelledby": "wgGuidesTitle" },
+      el("div", { class: "wgEntryBody" },
+        el("p", { class: "wgEyebrow" }, "Grammar Notes"),
+        el("h2", { id: "wgGuidesTitle", class: "wgEntryTitle" }, "文法の解説"),
+        el("p", { class: "wgTeaserLead" }, "「に」「なり」の識別、係り結び、「らむ」「けり」の訳し分けなど。問題に出る文法を一覧で読めます。"),
+        el("div", { class: "wgTeaserActions" },
+          el("button", { class: "wgButton", type: "button", onclick: onGuides }, "解説の一覧を開く"),
+        ),
+      ),
+    ) : null;
+    const gallery = el("section", { class: "card wgTeaser", "aria-labelledby": "wgTeaserTitle" },
       el("div", { class: "wgTeaserBody" },
         el("div", { class: "wgTeaserText" },
           el("p", { class: "wgEyebrow" }, el("span", { class: "wgBadge" }, "試験公開"), "今日の一首"),
@@ -583,13 +690,8 @@ const KobunWakaGallery = (() => {
             `${poem.author}　／　${poem.collection}`,
           ),
           wordChips(poem),
-          onDaily ? el("p", { class: "wgTeaserDaily" },
-            !status ? `和歌で文法：今日の${DAILY_SIZE}首に答えましょう。`
-              : status.done ? `和歌で文法：今日の${DAILY_SIZE}首は完了しました。`
-                : `和歌で文法：${status.total}問中 ${status.answered}問まで解答済み。`) : null,
           el("div", { class: "wgTeaserActions" },
-            onDaily ? el("button", { class: "wgButton wgButton--gold", type: "button", onclick: onDaily },
-              !status ? `今日の${DAILY_SIZE}首を始める` : status.done ? "今日の結果を見る" : `今日の${DAILY_SIZE}首を続ける`) : null,
+            el("button", { class: "wgTextLink", type: "button", onclick: open }, "この歌を詳しく見る"),
             el("button", { class: `wgTextLink${onDaily ? "" : " wgTextLink--primary"}`, type: "button", onclick: () => onOpen(null) }, "和歌一覧を見る"),
           ),
         ),
@@ -598,11 +700,12 @@ const KobunWakaGallery = (() => {
         ),
       ),
     );
+    return el("div", { class: "wgEntries" }, daily, guides, gallery);
   }
 
   // 「歌の間」画面。panel に描画し、戻るときは onClose を呼ぶ。
   // grammar: { rules, byKey: Map<和歌本文, 文法解説> }。無ければ文法の層を出さない。
-  function render(panel, poems, { onClose, initialKey = null, grammar = null, onLearnPoem = null }) {
+  function render(panel, poems, { onClose, initialKey = null, grammar = null, onLearnPoem = null, onOpenGuides = null }) {
     panel.closest(".wrap")?.classList.remove("wakaFocus");
     const grammarOf = (poem) => grammar?.byKey.get(poem.key) || null;
     const grammarCount = poems.filter(grammarOf).length;
@@ -660,9 +763,10 @@ const KobunWakaGallery = (() => {
         el("button", { class: "wgBack", type: "button", onclick: onClose }, "← ホームへ戻る"),
         el("p", { class: "wgEyebrow" }, el("span", { class: "wgBadge" }, "試験公開"), "Waka Gallery"),
         el("h2", { class: "wgTitle" }, "歌の間"),
-        el("p", { class: "wgLead" }, "学習セットの例文として採っている和歌を集めました。歌を選ぶと、訳と、その歌で学ぶ語を確かめられます。",
-          poems.some((poem) => !poem.targets.length) ? "文法を学ぶための百人一首の歌も収めています。" : "",
-          grammarCount ? "文法の解説がある歌からは、その歌の確認問題にも進めます。" : ""),
+        el("p", { class: "wgLead" }, "例文の和歌と百人一首を集めました。歌を選ぶと、訳と学ぶ語、その歌に出る文法の解説が開きます。"),
+        onOpenGuides && grammarCount ? el("div", { class: "wgHeaderActions" },
+          el("button", { class: "wgButton", type: "button", onclick: onOpenGuides }, "文法の解説を一覧で見る"),
+        ) : null,
       ),
       el("div", { class: "wgToolbar" }, filterBar, readingToggle),
       count,
@@ -709,6 +813,16 @@ const KobunWakaGallery = (() => {
       card?.focus();
     });
     panel.appendChild(dialog);
+    // 文法の解説は歌の詳細の上に重ねて開く。
+    const guides = grammar ? guideViewer(panel, grammar, {
+      poems,
+      onLearnPoem: onLearnPoem ? (key) => {
+        const poem = poems.find((item) => item.key === key);
+        if (!poem) return;
+        dialog.close();
+        onLearnPoem(poem);
+      } : null,
+    }) : null;
 
     function step(delta) {
       if (!visible.length) return;
@@ -759,6 +873,10 @@ const KobunWakaGallery = (() => {
               el("h3", { id: "wgDetailTitle", class: "wgInfoTitle" }, poem.author),
               el("p", { class: "wgRef" }, refParts.join("　")),
               ...viewBlocks,
+              entry && guides ? el("section", { class: "wgBlock" },
+                el("h4", {}, "この歌に出る文法"),
+                guides.ruleButtons((entry.quiz || []).flatMap((item) => item.rules)),
+              ) : null,
               entry && onLearnPoem ? el("button", {
                 class: "wgButton wgButton--gold wgPoemGrammarStart",
                 type: "button",
@@ -781,7 +899,7 @@ const KobunWakaGallery = (() => {
     else panel.querySelector(".wgBack")?.focus();
   }
 
-  return { collect, withGrammarPoems, dailyPick, dailyPoems, dailyStatus, teaserCard, render, renderDaily, renderPoemLesson };
+  return { collect, withGrammarPoems, dailyPick, dailyPoems, dailyStatus, teaserCard, render, renderDaily, renderPoemLesson, renderGuides };
 })();
 
 if (typeof module !== "undefined") module.exports = KobunWakaGallery;

@@ -532,7 +532,7 @@ const KobunVocabApp = (() => {
     home.appendChild(writtenMission());
 
     tabStart("waka");
-    const wakaTeaser = hasWakaGallery() ? KobunWakaGallery.teaserCard(wakaPoems(), { onOpen: openWakaGallery, onDaily: () => openWakaDaily() }) : null;
+    const wakaTeaser = hasWakaGallery() ? KobunWakaGallery.teaserCard(wakaPoems(), { onOpen: openWakaGallery, onDaily: () => openWakaDaily(), onGuides: () => openWakaGuides() }) : null;
     if (wakaTeaser) home.appendChild(wakaTeaser);
 
     // セットはタブに出さず、今日の面の「学習セット・単語一覧を見る」から開く。
@@ -1164,6 +1164,7 @@ const KobunVocabApp = (() => {
       initialKey,
       grammar,
       onLearnPoem: (poem) => openWakaPoemLesson(poem.key),
+      onOpenGuides: () => openWakaGuides(true),
       onClose: () => {
         renderHome();
         selectHomeTab("waka");
@@ -1188,12 +1189,42 @@ const KobunVocabApp = (() => {
     panel.classList.remove("hide");
     KobunWakaGallery.renderPoemLesson(panel, poem, {
       grammar,
+      allPoems: wakaPoems(grammar),
       onClose: () => openWakaGallery(key, true),
       onHome: () => {
         renderHome();
         selectHomeTab("waka");
         $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
         $("#homePanel .wgTeaser .wgButton--gold")?.focus({ preventScroll: true });
+      },
+    });
+    window.scrollTo({ top: 0 });
+  }
+
+  // 文法の解説の一覧。fromGallery なら戻り先を歌の間にする。読めなければ歌の間を開く。
+  async function openWakaGuides(fromGallery = false) {
+    const grammar = await loadWakaGrammar();
+    if (!grammar) {
+      openWakaGallery();
+      return;
+    }
+    $("#homePanel").classList.add("hide");
+    $("#sessionPanel").classList.add("hide");
+    const panel = $("#wakaPanel");
+    panel.classList.remove("hide");
+    KobunWakaGallery.renderGuides(panel, grammar, {
+      poems: wakaPoems(grammar),
+      backLabel: fromGallery ? "← 歌の間へ戻る" : "← 和歌へ戻る",
+      onLearnPoem: (key) => openWakaPoemLesson(key),
+      onClose: () => {
+        if (fromGallery) {
+          openWakaGallery();
+          return;
+        }
+        renderHome();
+        selectHomeTab("waka");
+        $("#homePanel .wgEntries")?.scrollIntoView({ block: "start" });
+        $("#homePanel .wgEntry:not(.wgEntry--daily) .wgButton")?.focus({ preventScroll: true });
       },
     });
     window.scrollTo({ top: 0 });

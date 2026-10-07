@@ -160,6 +160,14 @@ const quiz = [
 const grammar = {
   byKey: new Map([[poem.key, { quiz, tokens: [], notes: [] }]]),
   rules: { "rule-a": "試験用の文法根拠" },
+  guides: {
+    "rule-a": {
+      summary: "試験用の解説の要約。",
+      table: [["見出し", "本文"]],
+      steps: ["手順一"],
+      examples: [{ text: "例文", note: "訳" }],
+    },
+  },
 };
 
 function createPanel() {
@@ -217,6 +225,14 @@ click(dailyPanel, ".wgChoice", "第一問の誤答");
 assert.equal(storageWrites.length, writesBeforeAnswer + 1, "通常解答1問につき1回だけ保存される");
 assert.deepEqual(JSON.parse(stored.get(dailyKey)).picked, [0]);
 assert.match(dailyPanel.querySelector(".wgQuizFeedback").textContent, /× 不正解/);
+// 文法事項は折りたたまず、解説を開くボタンとして答えの直後に見せる。
+const dailyFeedback = dailyPanel.querySelector(".wgQuizFeedback");
+assert.equal(dailyFeedback.querySelector("details"), null, "文法の根拠を折りたたまない");
+click(dailyFeedback, ".wgRuleLink", "試験用の文法根拠");
+const quizGuide = dailyPanel.querySelector(".wgGuideDialog");
+assert.equal(quizGuide.open, true, "根拠のボタンで解説を開く");
+assert.match(quizGuide.textContent, /試験用の解説の要約/);
+quizGuide.close();
 assert.equal(dailyPanel.querySelector(".wgTranslation"), null, "現代語訳は歌の最後の問題まで出さない");
 click(dailyPanel, ".wgButton", "次の問題");
 click(dailyPanel, ".wgChoice", "第二問の正答");
@@ -298,7 +314,7 @@ const standalone = {
   },
   quiz,
 };
-const mixedGrammar = { rules: grammar.rules, byKey: new Map([[poem.key, { key: poem.key, quiz }], [standalone.key, standalone]]) };
+const mixedGrammar = { rules: grammar.rules, guides: grammar.guides, byKey: new Map([[poem.key, { key: poem.key, quiz }], [standalone.key, standalone]]) };
 const merged = gallery.withGrammarPoems([poem], mixedGrammar);
 assert.deepEqual(merged.map((item) => item.key), [poem.key, standalone.key], "単独の歌を例文の歌の後ろに足す");
 assert.equal(merged[1].collection, "百人一首");
@@ -311,4 +327,26 @@ const standaloneDetail = mixedPanel.querySelector(".wgDialog");
 assert.equal(standaloneDetail.querySelectorAll("h4").some((node) => node.textContent === "この歌で学ぶ語"), false, "単独の歌の詳細に学ぶ語の見出しを出さない");
 assert.ok(standaloneDetail.querySelector(".wgPoemGrammarStart"), "単独の歌からも文法学習へ進める");
 
-console.log("waka learning UI regression: daily resume/answer/retry, single-poem result/return, focus reset, standalone poems OK");
+// 歌の詳細から、その歌に出る文法の解説を開ける。
+assert.ok(button(standaloneDetail, ".wgRuleLink", "試験用の文法根拠"), "歌の詳細に文法の解説ボタンを出す");
+
+// ホームの「和歌」の面に文法の解説の入口を置き、一覧から解説と歌の問題へ進める。
+stored.delete(dailyKey);
+assert.ok(button(gallery.teaserCard([poem], { onOpen() {}, onDaily() {}, onGuides() {} }), ".wgButton", "解説の一覧を開く"));
+assert.equal(gallery.teaserCard([poem], { onOpen() {}, onDaily() {} }).textContent.includes("解説の一覧を開く"), false, "onGuides が無ければ入口を出さない");
+const { panel: guidePanel } = createPanel();
+let learnedKey = null;
+gallery.renderGuides(guidePanel, mixedGrammar, {
+  poems: merged,
+  onClose() {},
+  onLearnPoem(key) { learnedKey = key; },
+});
+click(guidePanel, ".wgGuideItem", "試験用の文法根拠");
+const indexGuide = guidePanel.querySelector(".wgGuideDialog");
+assert.equal(indexGuide.open, true, "一覧の項目で解説を開く");
+assert.match(indexGuide.textContent, /試験作者/, "例文の歌の作者を歌の間の情報から引く");
+click(indexGuide, ".wgGuideUse", "この歌で解く");
+assert.equal(indexGuide.open, false);
+assert.equal(learnedKey, poem.key, "解説の歌からその歌の問題へ進む");
+
+console.log("waka learning UI regression: daily resume/answer/retry, single-poem result/return, focus reset, standalone poems, grammar guides OK");

@@ -553,11 +553,31 @@
 .wgQuizResult { font-weight: 700; }
 .wgQuizFeedback.is-ok .wgQuizResult { color: #7fd19a; }
 .wgQuizFeedback.is-ng .wgQuizResult { color: #f08a7e; }
-.wgQuizRules { color: var(--wg-text-muted); font-size: 12px; margin: 0 !important; }
-.wgQuizRules summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; }
-.wgQuizRules p { margin: 0; }
-.wgRuleLink { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; color: var(--wg-text); font: inherit; font-size: 13px; text-decoration: underline; text-decoration-color: var(--wg-gold-line); text-underline-offset: 3px; cursor: pointer; }
-.wgRuleLink:hover { color: var(--wg-gold); }
+/* 文法事項は折りたたまず、解説を開くボタンとして常に見せる */
+.wgQuizRules { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(217, 183, 110, .25); }
+.wgQuizFeedback .wgQuizRulesLabel { margin: 0 0 6px; color: var(--wg-gold); font-size: 12px; font-weight: 600; letter-spacing: .06em; }
+.wgRuleList { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.wgRuleList > li { display: flex; min-width: 0; }
+.wgRuleList .wgRuleName { font-family: var(--wg-mincho); font-weight: 700; }
+.wgRuleList > li > .wgRuleName { display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; color: var(--wg-text-muted); }
+.wgRuleLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 8px 14px;
+  border: 1px solid var(--wg-gold-line);
+  border-radius: 8px;
+  background: rgba(217, 183, 110, .1);
+  color: var(--wg-text);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-release) ease, border-color var(--motion-release) ease;
+}
+.wgRuleLink:hover { background: rgba(217, 183, 110, .2); border-color: var(--wg-gold); }
+.wgRuleCue { flex: none; color: var(--wg-gold-strong); font-size: 12px; font-weight: 600; white-space: nowrap; }
 
 /* ---------- 文法の解説（dialog） ---------- */
 .wgGuideDialog { width: min(640px, calc(100% - 24px)); }
@@ -569,6 +589,24 @@
 .wgGuideRow dd { margin: 0; line-height: 1.7; }
 .wgGuideSteps { margin: 0; padding-left: 1.4em; line-height: 1.8; }
 .wgGuideSteps li + li { margin-top: 4px; }
+.wgGuideUse {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid rgba(217, 183, 110, .3);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--wg-text);
+  text-align: left;
+  cursor: pointer;
+}
+.wgGuideUse:hover { border-color: var(--wg-gold); background: rgba(217, 183, 110, .1); }
+.wgGuideUse .wgGuideUseMeta { grid-column: 1; }
+.wgGuideUseCue { grid-column: 2; grid-row: 1 / span 2; color: var(--wg-gold-strong); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .wgGuideExamples, .wgGuideUses { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .wgGuideExamples li, .wgGuideUses li { display: grid; gap: 2px; }
 .wgGuideExampleText, .wgGuideUsePhrase { font-family: var(--wg-mincho); font-size: 17px; }
@@ -605,7 +643,7 @@
 .wdHeader .wgBack { margin-bottom: 4px; }
 .wdHeader .wgTitle { margin-bottom: 0; font-size: 28px; letter-spacing: .12em; }
 .wdStage { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 32px; align-items: start; }
-.wdPoem .wgTarget { text-decoration-color: var(--wg-shu); }
+.wdPoem .wgTarget { text-decoration-color: var(--wg-shu); background: rgba(184, 67, 42, .16); border-radius: 2px; }
 .wdPoemMeta { margin: 0 0 4px; color: var(--wg-text-muted); font-family: var(--wg-mincho); font-size: 13px; line-height: 1.6; }
 .wdTools { margin: 0 0 6px; }
 .wdReadingToggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 4px 2px; border: 0; background: transparent; color: var(--wg-text-muted); font-family: var(--wg-mincho); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
@@ -660,4 +698,55 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .wdBar span { transition: none; }
+}
+
+/* ---------- ホーム「和歌」の面の入口 ---------- */
+.wgEntries { display: grid; gap: 14px; }
+.wgEntries > .card { margin: 0; }
+.wgEntryBody { position: relative; z-index: 1; }
+.wgTeaser .wgEntryTitle { margin: 0 0 6px; font-size: 24px; letter-spacing: .12em; }
+.wgEntry .wgTeaserActions { margin-top: 14px; }
+.wgEntry .wdBar { margin-top: 4px; }
+.wgEntry--daily { border-color: var(--wg-gold-line); }
+
+/* ---------- 歌の間：しぼりこみ ---------- */
+@media (max-width: 640px) {
+  .wgRoom { padding: 20px 16px 32px; }
+  .wgTitle { font-size: 32px; }
+  .wgMoon { width: 64px; height: 64px; }
+  .wgToolbar { flex-direction: column; align-items: stretch; flex-wrap: nowrap; }
+  /* 歌集の数が多いので、狭い画面では横に流して縦を取らない */
+  .wgFilters { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 6px; scrollbar-width: thin; }
+  .wgFilter { flex: none; }
+}
+
+/* ---------- 文法の解説（一覧） ---------- */
+.wgTitle--sub { font-size: 32px; letter-spacing: .2em; }
+.wgGuideJump { margin-top: 16px; }
+.wgGuideGroup { scroll-margin-top: 12px; }
+.wgGuideGroup { margin-top: 24px; }
+.wgGuideGroupTitle { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(217, 183, 110, .3); color: var(--wg-gold-strong); font-family: var(--wg-mincho); font-size: 17px; font-weight: 700; letter-spacing: .1em; }
+.wgGuideIndex { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.wgGuideItem {
+  align-content: start;
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 1px solid rgba(217, 183, 110, .3);
+  border-radius: 8px;
+  background: rgba(243, 234, 214, .04);
+  color: var(--wg-text);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-release) ease, border-color var(--motion-release) ease;
+}
+.wgGuideItem:hover { border-color: var(--wg-gold); background: rgba(217, 183, 110, .1); }
+.wgGuideItemName { font-family: var(--wg-mincho); font-size: 17px; font-weight: 700; }
+.wgGuideItemSummary { color: var(--wg-text-muted); font-size: 13px; line-height: 1.6; }
+.wgGuideItemCount { color: var(--wg-gold); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; }
+@media (prefers-reduced-motion: reduce) {
+  .wgRuleLink, .wgGuideItem { transition: none; }
 }
