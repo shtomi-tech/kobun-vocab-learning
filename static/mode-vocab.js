@@ -504,6 +504,8 @@ const KobunVocabApp = (() => {
       card.appendChild(el("button", { class: "ghost secondaryCta homeTabJump", type: "button", onclick: () => selectHomeTab("review", true) },
         `今日の復習へ（${dueCount}語）`));
     }
+    card.appendChild(el("button", { class: "ghost secondaryCta homeTabJump", type: "button", onclick: () => selectHomeTab("sets", true) },
+      "学習セット・単語一覧を見る"));
 
     card.appendChild(el("div", { class: "stats" },
       stat(learned, total, "文中回答済み"),
@@ -516,8 +518,6 @@ const KobunVocabApp = (() => {
       studyTime.flush();
       home.appendChild(studyTimeCard());
     }
-    const wakaTeaser = hasWakaGallery() ? KobunWakaGallery.teaserCard(wakaPoems(), { onOpen: openWakaGallery, onDaily: () => openWakaDaily() }) : null;
-    if (wakaTeaser) home.appendChild(wakaTeaser);
 
     tabStart("review");
     home.appendChild(meaningMission());
@@ -525,7 +525,13 @@ const KobunVocabApp = (() => {
     tabStart("write");
     home.appendChild(writtenMission());
 
+    tabStart("waka");
+    const wakaTeaser = hasWakaGallery() ? KobunWakaGallery.teaserCard(wakaPoems(), { onOpen: openWakaGallery, onDaily: () => openWakaDaily() }) : null;
+    if (wakaTeaser) home.appendChild(wakaTeaser);
+
+    // セットはタブに出さず、今日の面の「学習セット・単語一覧を見る」から開く。
     tabStart("sets");
+    home.appendChild(el("button", { class: "ghost homeTabBack", type: "button", onclick: () => selectHomeTab("today", true) }, "← 今日に戻る"));
     home.appendChild(el("section", { class: "card" }, setPicker()));
     home.appendChild(learningBlockMap());
 
@@ -549,13 +555,15 @@ const KobunVocabApp = (() => {
   }
 
   /* ---- ホームのタブ ----
-     1列に積んでいたホームを「今日・復習・書く・セット」の4面に分ける。
-     描画中に tabStart で区切りを付け、最後に arrangeHomeTabs で各面へ振り分ける。 */
+     1列に積んでいたホームを「今日・復習・書く・和歌」の4面に分ける。
+     描画中に tabStart で区切りを付け、最後に arrangeHomeTabs で各面へ振り分ける。
+     inBar: false の面（セット）はタブに出さず、今日の面のボタンから開く。 */
   const HOME_TABS = [
     { id: "today", label: "今日" },
     { id: "review", label: "復習" },
     { id: "write", label: "書く" },
-    { id: "sets", label: "セット" },
+    { id: "waka", label: "和歌" },
+    { id: "sets", label: "セット", inBar: false },
   ];
 
   function storedHomeTab() {
@@ -573,15 +581,19 @@ const KobunVocabApp = (() => {
     if (!bar) return;
     try { localStorage.setItem(HOME_TAB_KEY, id); } catch (_) { /* 記憶できなくても切り替えは続ける */ }
     try { history.replaceState(null, "", `${location.pathname}${location.search}#${id}`); } catch (_) { /* file:// など */ }
-    bar.querySelectorAll("[role=tab]").forEach((button) => {
+    const buttons = Array.from(bar.querySelectorAll("[role=tab]"));
+    const inBar = buttons.some((button) => button.dataset.tab === id);
+    buttons.forEach((button, i) => {
       const selected = button.dataset.tab === id;
       button.setAttribute("aria-selected", String(selected));
-      button.tabIndex = selected ? 0 : -1;
+      // タブに無い面（セット）を開いている間も、タブ列へキーボードで戻れるようにする。
+      button.tabIndex = selected || (!inBar && i === 0) ? 0 : -1;
       if (selected && focus) button.focus();
     });
     document.querySelectorAll(".homeTabPanel").forEach((panel) => {
       panel.hidden = panel.dataset.tab !== id;
     });
+    if (!inBar && focus) $(`#homeTabPanel-${id}`)?.querySelector("button, a, [tabindex]")?.focus();
     if (bar.getBoundingClientRect().top < 0) bar.scrollIntoView({ block: "start" });
   }
 
@@ -599,10 +611,11 @@ const KobunVocabApp = (() => {
       marks.forEach((mark) => { if (index >= mark.from) id = mark.id; });
       panels[id].appendChild(node);
     });
-    const tabs = HOME_TABS.filter((tab) => panels[tab.id].children.length);
+    const filled = HOME_TABS.filter((tab) => panels[tab.id].children.length);
+    const tabs = filled.filter((tab) => tab.inBar !== false);
     if (!tabs.length) return;
     const stored = storedHomeTab();
-    const active = tabs.some((tab) => tab.id === stored) ? stored : tabs[0].id;
+    const active = filled.some((tab) => tab.id === stored) ? stored : tabs[0].id;
     const bar = el("div", { class: "homeTabs", role: "tablist", "aria-label": "ホームの表示" });
     tabs.forEach((tab, i) => {
       const badge = Number(badges[tab.id]) || 0;
@@ -626,7 +639,7 @@ const KobunVocabApp = (() => {
       bar.appendChild(button);
     });
     home.appendChild(bar);
-    tabs.forEach((tab) => home.appendChild(panels[tab.id]));
+    filled.forEach((tab) => home.appendChild(panels[tab.id]));
     selectHomeTab(active);
   }
 
@@ -988,7 +1001,7 @@ const KobunVocabApp = (() => {
       onLearnPoem: (poem) => openWakaPoemLesson(poem.key),
       onClose: () => {
         renderHome();
-        selectHomeTab("today");
+        selectHomeTab("waka");
         $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
         $("#homePanel .wgTeaser .wgButton--gold")?.focus({ preventScroll: true });
       },
@@ -1013,7 +1026,7 @@ const KobunVocabApp = (() => {
       onClose: () => openWakaGallery(key, true),
       onHome: () => {
         renderHome();
-        selectHomeTab("today");
+        selectHomeTab("waka");
         $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
         $("#homePanel .wgTeaser .wgButton--gold")?.focus({ preventScroll: true });
       },
@@ -1037,7 +1050,7 @@ const KobunVocabApp = (() => {
       onOpenPoem: (key) => openWakaGallery(key),
       onClose: () => {
         renderHome();
-        selectHomeTab("today");
+        selectHomeTab("waka");
         $("#homePanel .wgTeaser")?.scrollIntoView({ block: "center" });
         $("#homePanel .wgTeaser .wgButton--gold")?.focus({ preventScroll: true });
       },
