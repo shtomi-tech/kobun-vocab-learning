@@ -20,6 +20,7 @@ const KobunVocabApp = (() => {
   const STUDY_PLAN_KEY = `kobun_vocab_study_plan_v1${storageScope}`;
   const STUDY_TIME_KEY = `kobun_vocab_study_time_v1${storageScope}`;
   const HOME_TAB_KEY = `kobun_vocab_home_tab_v1${storageScope}`;
+  const QUOTA_OPEN_KEY = `kobun_vocab_quota_open_v1${storageScope}`;
   const WRITTEN_SIZE_KEY = `kobun_vocab_written_size_v1${storageScope}`;
   const {
     GOAL_TOTAL: VOCAB_GOAL_TOTAL,
@@ -473,7 +474,8 @@ const KobunVocabApp = (() => {
       ));
     }
 
-    home.appendChild(dailyQuotaCard());
+    const quota = dailyQuotaState();
+    home.appendChild(dailyQuotaCard(quota));
 
     const card = el("section", { class: `card${isFirstReveal ? " is-entering" : ""}` },
       el("p", { class: "label" }, cleared ? "達成状況" : "今日の学習"),
@@ -557,7 +559,7 @@ const KobunVocabApp = (() => {
     });
     list.appendChild(grid);
     home.appendChild(list);
-    arrangeHomeTabs(home, marks, { review: dueCount });
+    arrangeHomeTabs(home, marks, quotaTabBadges(quota));
   }
 
   /* ---- ホームのタブ ----
@@ -624,7 +626,7 @@ const KobunVocabApp = (() => {
     const active = filled.some((tab) => tab.id === stored) ? stored : tabs[0].id;
     const bar = el("div", { class: "homeTabs", role: "tablist", "aria-label": "ホームの表示" });
     tabs.forEach((tab, i) => {
-      const badge = Number(badges[tab.id]) || 0;
+      const badge = badges[tab.id];
       const button = el("button", {
         class: "homeTab",
         id: `homeTab-${tab.id}`,
@@ -634,7 +636,7 @@ const KobunVocabApp = (() => {
         "data-tab": tab.id,
         onclick: () => selectHomeTab(tab.id),
       }, el("span", {}, tab.label), badge
-        ? el("span", { class: "homeTabBadge", "aria-label": `復習の期限 ${badge}語` }, String(badge))
+        ? el("span", { class: `homeTabBadge${badge.done ? " is-done" : ""}`, "aria-label": badge.label }, badge.text)
         : null);
       button.addEventListener("keydown", (event) => {
         const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
@@ -782,7 +784,8 @@ const KobunVocabApp = (() => {
     return KobunWakaGallery.dailyStatus()?.poemsDone || 0;
   }
 
-  function dailyQuotaCard() {
+  // タブのバッジと「1日のノルマ」カードが同じ集計を使うよう、描画のたびに1回だけ数える。
+  function dailyQuotaState() {
     const plan = studyPlan || defaultStudyPlan();
     const summary = dailyQuotaSummary(new Date(), plan, {
       unitEntries: studyPlanUnitEntries(),
@@ -795,6 +798,28 @@ const KobunVocabApp = (() => {
     const active = items.filter((item) => item.active);
     const achieved = active.filter((item) => item.remaining === 0).length;
     const allDone = active.length > 0 && achieved === active.length;
+    return { plan, items, active, achieved, allDone };
+  }
+
+  // タブのバッジ。ノルマの残り数を出し、達成した項目は ✓。ノルマに含めていない項目には付けない。
+  function quotaTabBadges(quota) {
+    const num = (value) => Number(value).toLocaleString("ja-JP");
+    return Object.fromEntries(quota.active.map((item) => {
+      const meta = QUOTA_ITEMS[item.id];
+      const done = item.remaining === 0;
+      return [item.id, {
+        done,
+        text: done ? "✓" : num(item.remaining),
+        label: done ? `${meta.label}のノルマ達成` : `${meta.label}のノルマ あと${item.remaining}${meta.unit}`,
+      }];
+    }));
+  }
+
+  function storedQuotaOpen() {
+    try { return localStorage.getItem(QUOTA_OPEN_KEY) === "1"; } catch (_) { return false; }
+  }
+
+  function dailyQuotaCard({ plan, items, active, achieved, allDone }) {
     const num = (value) => Number(value).toLocaleString("ja-JP");
 
     const list = el("ul", { class: "quotaList" });
@@ -909,16 +934,33 @@ const KobunVocabApp = (() => {
     const headline = !active.length ? "ノルマは設定されていません"
       : allDone ? "✓ 今日のノルマ達成"
       : `${num(active.length)}項目中 ${num(achieved)}項目達成`;
+    // 中身（各項目と設定）はふだん畳んでおき、ボタンで開く。残り数はタブのバッジで見える。
+    const bodyId = "dailyQuotaBody";
+    const body = el("div", { class: "quotaBody", id: bodyId }, el("div", { class: "quotaBodyActions" }, settingsToggle), list, settings);
+    const open = storedQuotaOpen();
+    body.hidden = !open;
+    const bodyToggle = el("button", {
+      class: "ghost quotaBodyToggle",
+      type: "button",
+      "aria-expanded": String(open),
+      "aria-controls": bodyId,
+    }, open ? "閉じる" : "ノルマを表示");
+    bodyToggle.addEventListener("click", () => {
+      const next = body.hidden;
+      body.hidden = !next;
+      bodyToggle.setAttribute("aria-expanded", String(next));
+      bodyToggle.textContent = next ? "閉じる" : "ノルマを表示";
+      try { localStorage.setItem(QUOTA_OPEN_KEY, next ? "1" : "0"); } catch (_) { /* 開閉を覚えられなくても表示は続ける */ }
+    });
     return el("section", { class: `card dailyQuota${allDone ? " is-done" : ""}`, "aria-labelledby": "dailyQuotaTitle" },
       el("div", { class: "quotaHead" },
         el("div", {},
           el("p", { class: "label" }, "1日のノルマ"),
           el("h2", { id: "dailyQuotaTitle" }, headline),
         ),
-        settingsToggle,
+        bodyToggle,
       ),
-      list,
-      settings,
+      body,
     );
   }
 
