@@ -12,7 +12,7 @@ const KobunStudyPlan = (() => {
   // 1日のノルマ（今日・復習・書く・和歌）。「今日」は上の dailyWordGoal をそのまま使う。
   // 既定値は各タブの1回分の出題数（書く10語・今日の10首）。0 はその項目をノルマに含めない。
   // 復習は設定せず、その時点で期限が来ている語数から自動で決める（上限 REVIEW_AUTO_MAX）。
-  const REVIEW_AUTO_MAX = 100;
+  const REVIEW_AUTO_MAX = 120;
   const QUOTA_LIMITS = {
     write: { def: 10, max: 60 },
     waka: { def: 10, max: 10 },
@@ -92,7 +92,7 @@ const KobunStudyPlan = (() => {
   // 1日のノルマの達成状況。
   // today: 文中問題まで初めて解いた語 / review: 意味だけ復習で答えた語 /
   // write: 書く演習で出題された語（もう一度の再出題は数えない） / waka: 今日の10首で答え終えた首。
-  // 復習の目標は「今日もう答えた数 + いま期限が来ている数」（上限100）。答えるほど期限の数が減るので、
+  // 復習の目標は「今日もう答えた数 + いま期限が来ている数」（上限120）。答えるほど期限の数が減るので、
   // 目標は動かずに残りだけが減る。期限の語が無ければ目標0（達成扱い）。
   function dailyQuotaSummary(now = new Date(), plan = {}, { unitEntries = [], history = [], wakaPoemsDone = 0, reviewDue = 0 } = {}) {
     const safe = normalizeStudyPlan(plan);

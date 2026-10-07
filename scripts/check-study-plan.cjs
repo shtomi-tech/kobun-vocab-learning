@@ -165,12 +165,12 @@ assert.equal(quota.allDone, false);
 const nextDay = t.dailyQuotaSummary(localDate(2026, 9, 3, 7), {}, { history });
 assert.equal(nextDay.items.find((item) => item.id === "review").done, 0, "日付が変わると0から数え直す");
 
-// --- 復習の自動目標: 今日答えた数 + いま期限の数、上限100 ---
+// --- 復習の自動目標: 今日答えた数 + いま期限の数、上限120 ---
 const review = (opts) => t.dailyQuotaSummary(now, {}, { history, ...opts }).items.find((item) => item.id === "review");
 assert.equal(review({ reviewDue: 15 }).goal, 17, "答えた2 + 期限15 = 17");
 assert.equal(review({ reviewDue: 15 }).remaining, 15, "残りは期限の数");
-assert.equal(review({ reviewDue: 300 }).goal, 100, "上限は100語");
-assert.equal(review({ reviewDue: 300 }).remaining, 98, "上限まで答えれば達成");
+assert.equal(review({ reviewDue: 300 }).goal, 120, "上限は120語");
+assert.equal(review({ reviewDue: 300 }).remaining, 118, "上限まで答えれば達成");
 const none = t.dailyQuotaSummary(now, {}, { history: [], reviewDue: 0 }).items.find((item) => item.id === "review");
 assert.equal(none.goal, 0);
 assert.equal(none.active, true, "期限の語が無い日も復習は達成として数える");
