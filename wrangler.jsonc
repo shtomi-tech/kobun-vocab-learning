@@ -1,7 +1,7 @@
-// 試験版（next ブランチ）を Cloudflare Workers で出す。
+// main ブランチを Cloudflare Workers で出す（Cloudflare 版）。
 // ビルドは Workers Builds が `node scripts/build-site.mjs` で行い、_site を静的アセットとして配る。
 // /api/* だけ worker/index.js が処理する（思い出す復習の自動採点）。Secret `TYPESAFE_API_KEY` が必要。
-// 本番（main → GitHub Pages）はこの設定を使わない。
+// GitHub Pages 版（.github/workflows/pages.yml）はこの設定を使わない。
 {
   "name": "kobun-vocab-learning",
   "main": "worker/index.js",

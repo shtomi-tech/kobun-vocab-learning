@@ -1778,7 +1778,7 @@ const KobunVocabApp = (() => {
   }
 
   const WRITTEN_SELF_GRADE_LABELS = { correct: "合っていた", partial: "一部だけ", wrong: "違った" };
-  // 書いた答えの採点（試験版の Worker `/api/grade-recall`。無い環境では自己採点のまま）。
+  // 書いた答えの採点（Cloudflare 版の Worker `/api/grade-recall`。無い環境では自己採点のまま）。
   const RECALL_GRADE_URL = "api/grade-recall";
 
   function selfGradeButton(number, label, onclick) {

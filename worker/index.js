@@ -1,4 +1,4 @@
-// 試験版の Worker。/api/* だけをここで処理し、それ以外は静的アセット（_site）をそのまま返す。
+// Cloudflare 版の Worker。/api/* だけをここで処理し、それ以外は静的アセット（_site）をそのまま返す。
 // Jev の API キーは Worker の Secret `TYPESAFE_API_KEY`（ダッシュボードの Variables & Secrets）に置く。
 import { JEV_URL, buildJevRequest, parseJevResponse, validateGradeRequest } from "./grade-recall.js";
 
