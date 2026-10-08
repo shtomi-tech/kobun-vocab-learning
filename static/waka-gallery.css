@@ -582,7 +582,17 @@
 /* ---------- 文法の解説（dialog） ---------- */
 .wgGuideDialog { width: min(640px, calc(100% - 24px)); }
 .wgGuideTitle { margin: 4px 0 8px; font-family: var(--wg-mincho); font-size: 22px; font-weight: 700; }
-.wgGuideSummary { margin: 0 0 4px; line-height: 1.8; }
+/* PREP法の流れ。見出しの印（P・R・E・P）で、今どこを読んでいるかを示す */
+.wgPrepFlow { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0 0 4px; padding: 0; list-style: none; color: var(--wg-text-muted); font-size: 12px; }
+.wgPrepFlow li { display: inline-flex; align-items: center; gap: 4px; }
+.wgPrepFlow li + li::before { content: "→"; margin-right: 2px; color: var(--wg-gold-line); }
+.wgPrepMark { display: inline-grid; place-items: center; flex: none; width: 1.7em; height: 1.7em; border: 1px solid var(--wg-gold-line); border-radius: 50%; color: var(--wg-gold-strong); font-family: var(--mono); font-size: 11px; font-weight: 700; line-height: 1; }
+.wgPrep .wgPrepHead { display: flex; align-items: center; gap: 8px; }
+.wgPrep .wgPrepHead .wgPrepMark { width: 2em; height: 2em; background: rgba(217, 183, 110, .12); }
+.wgGuidePoint { margin: 0; font-family: var(--wg-mincho); font-size: 17px; font-weight: 700; line-height: 1.8; }
+.wgGuidePoint--recap { padding: 10px 12px; border-left: 3px solid var(--wg-gold); border-radius: 0 6px 6px 0; background: rgba(217, 183, 110, .08); font-size: 16px; }
+.wgGuideReason { margin: 0 0 10px; line-height: 1.85; }
+.wgGuideSub { margin: 14px 0 6px; color: var(--wg-text-muted); font-size: 12px; font-weight: 600; letter-spacing: .06em; }
 .wgGuideTable { display: grid; gap: 8px; margin: 0; }
 .wgGuideRow { display: grid; grid-template-columns: minmax(7em, 34%) 1fr; gap: 12px; padding: 8px 0; border-top: 1px solid rgba(217, 183, 110, .2); }
 .wgGuideRow dt { color: var(--wg-gold); font-weight: 600; }

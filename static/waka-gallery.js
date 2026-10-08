@@ -32,6 +32,13 @@ const KobunWakaGallery = (() => {
     return node;
   };
 
+  // 解説は PREP法（要点→理由→例→要点の再確認）の順に並べる。
+  const PREP_STEPS = [["P", "要点"], ["R", "理由"], ["E", "例"], ["P", "まとめ"]];
+  const prepSection = (mark, label, ...children) => el("section", { class: "wgBlock wgPrep" },
+    el("h4", { class: "wgPrepHead" }, el("span", { class: "wgPrepMark", "aria-hidden": "true" }, mark), label),
+    ...children,
+  );
+
   // 根拠カードの解説（data/grammar-guide.json）を <dialog> で開く。
   // 確認問題の途中で読むので画面は移らず、閉じると押したボタンへフォーカスを戻す。
   // onLearnPoem を渡すと、「この文法が出る歌」から、その歌の確認問題へ進める。
@@ -60,29 +67,23 @@ const KobunWakaGallery = (() => {
           el("button", { class: "wgClose", type: "button", onclick: () => dialog.close(), "aria-label": "閉じる" }, "×"),
         ),
         el("h3", { id: "wgGuideTitle", class: "wgGuideTitle" }, grammar.rules[rule] || rule),
-        el("p", { class: "wgGuideSummary" }, guide.summary),
-        el("section", { class: "wgBlock" },
-          el("h4", {}, "要点"),
-          el("dl", { class: "wgGuideTable" }, guide.table.map(([label, text]) => el("div", { class: "wgGuideRow" },
+        el("ol", { class: "wgPrepFlow", "aria-label": "解説の流れ" }, PREP_STEPS.map(([mark, label]) => el("li", {},
+          el("span", { class: "wgPrepMark", "aria-hidden": "true" }, mark), label))),
+        prepSection("P", "要点", el("p", { class: "wgGuidePoint" }, guide.point)),
+        prepSection("R", "理由",
+          el("p", { class: "wgGuideReason" }, guide.reason),
+          guide.table?.length ? el("dl", { class: "wgGuideTable" }, guide.table.map(([label, text]) => el("div", { class: "wgGuideRow" },
             el("dt", {}, label),
             el("dd", {}, text),
-          ))),
+          ))) : null,
         ),
-        el("section", { class: "wgBlock" },
-          el("h4", {}, "見分け方・訳し方"),
-          el("ol", { class: "wgGuideSteps" }, guide.steps.map((stepText) => el("li", {}, stepText))),
-        ),
-        guide.examples?.length ? el("section", { class: "wgBlock" },
-          el("h4", {}, "例"),
-          el("ul", { class: "wgGuideExamples", role: "list" }, guide.examples.map((example) => el("li", {},
+        prepSection("E", "例",
+          guide.examples?.length ? el("ul", { class: "wgGuideExamples", role: "list" }, guide.examples.map((example) => el("li", {},
             el("span", { class: "wgGuideExampleText" }, example.text),
             el("span", { class: "wgGuideExampleNote" }, example.note),
-          ))),
-        ) : null,
-        guide.caution ? el("p", { class: "wgGuideCaution" }, el("span", { class: "wgReview" }, "注意"), guide.caution) : null,
-        uses.length ? el("section", { class: "wgBlock" },
-          el("h4", {}, `この文法が出る歌（${uses.length}問）`),
-          el("ul", { class: "wgGuideUses", role: "list" }, uses.slice(0, 6).map((use) => {
+          ))) : null,
+          uses.length ? el("h5", { class: "wgGuideSub" }, `この文法が出る歌（${uses.length}問）`) : null,
+          uses.length ? el("ul", { class: "wgGuideUses", role: "list" }, uses.slice(0, 6).map((use) => {
             const parts = [
               el("span", { class: "wgGuideUsePhrase" }, use.phrase),
               el("span", { class: "wgGuideUseMeta" }, [`「${use.text}」`, use.author].filter(Boolean).join("　")),
@@ -92,8 +93,14 @@ const KobunWakaGallery = (() => {
               type: "button",
               onclick: () => { dialog.close(); onLearnPoem(use.key); },
             }, parts, el("span", { class: "wgGuideUseCue" }, "この歌で解く ›")) : parts);
-          })),
-        ) : null,
+          })) : null,
+        ),
+        prepSection("P", "まとめ",
+          el("p", { class: "wgGuidePoint wgGuidePoint--recap" }, guide.recap),
+          guide.steps?.length ? el("h5", { class: "wgGuideSub" }, "解くときの手順") : null,
+          guide.steps?.length ? el("ol", { class: "wgGuideSteps" }, guide.steps.map((stepText) => el("li", {}, stepText))) : null,
+        ),
+        guide.caution ? el("p", { class: "wgGuideCaution" }, el("span", { class: "wgReview" }, "注意"), guide.caution) : null,
         el("p", { class: "wgDraftNote" }, el("span", { class: "wgReview" }, "試作"), "AIによる下書きです。"),
       ));
       // 画面の描き直しに巻き込まれないよう、開くときに panel の末尾へ置く。
@@ -167,7 +174,7 @@ const KobunWakaGallery = (() => {
               onclick: (event) => viewer.open(rule, event.currentTarget),
             },
             el("span", { class: "wgGuideItemName" }, grammar.rules[rule]),
-            el("span", { class: "wgGuideItemSummary" }, grammar.guides[rule].summary),
+            el("span", { class: "wgGuideItemSummary" }, grammar.guides[rule].point),
             countOf.get(rule) ? el("span", { class: "wgGuideItemCount" }, `出題 ${countOf.get(rule)}問`) : null,
             ),
           ))),
