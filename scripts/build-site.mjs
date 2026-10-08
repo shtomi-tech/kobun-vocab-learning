@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// 試験版（next → Cloudflare Workers Builds）のビルド入口。
+// Cloudflare 版（main → Cloudflare Workers Builds）のビルド入口。
 // 設定生成 → 検査 → _site への配信物コピーを行い、wrangler.jsonc が _site を静的アセットとして出す。
-// 配信物は .github/workflows/pages.yml と同じ。片方だけ直すと本番と試験版で中身がずれる。
+// 配信物は .github/workflows/pages.yml と同じ。片方だけ直すと GitHub Pages 版と Cloudflare 版で中身がずれる。
 import { spawnSync } from "node:child_process";
 import { cpSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -37,7 +37,7 @@ const copyMatching = (dir, pattern) => {
 copy("index.html");
 copyMatching("static", /\.(js|css|svg)$/);
 copy("static/config.json");
-// static 直下だけを拾うので、vendor は明示する。消すと試験版だけ404になる。
+// static 直下だけを拾うので、vendor は明示する。消すと Cloudflare 版だけ404になる。
 copy("static/vendor/fsrs/index.umd.js");
 copy("static/vendor/fsrs/LICENSE");
 copyMatching("data", /\.json$/);

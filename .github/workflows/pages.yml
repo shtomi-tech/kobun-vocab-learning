@@ -39,7 +39,7 @@ jobs:
           mkdir -p _site/static _site/static/vendor/fsrs _site/data
           cp index.html .nojekyll _site/
           cp static/*.js static/*.css static/*.svg static/config.json _site/static/
-          # cp static/*.js のグロブはサブディレクトリを拾わない。消すと本番だけ404になる。
+          # cp static/*.js のグロブはサブディレクトリを拾わない。消すと GitHub Pages 版だけ404になる。
           cp static/vendor/fsrs/index.umd.js static/vendor/fsrs/LICENSE _site/static/vendor/fsrs/
           cp data/*.json _site/data/
       - uses: actions/upload-pages-artifact@v3
