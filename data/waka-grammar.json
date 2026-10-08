@@ -16,7 +16,8 @@
     "kbp.auxiliaries.ru-raru-meanings": "「る・らる」の訳し分け",
     "kbp.particles.tomo-do-domo-meanings": "「とも」「ど・ども」の判別",
     "kbp.particles.kakari-musubi-basic": "係助詞の基本的な係り結び",
-    "kbp.particles.kakari-musubi-special-constructions": "係助詞が使われる特殊な構文",
+    "kbp.particles.kakari-musubi-special-constructions/koso-gyakusetsu": "「こそ〜已然形、」の逆接",
+    "kbp.particles.kakari-musubi-special-constructions/mozo-mokoso": "「もぞ・もこそ」の懸念",
     "kbp.disambiguation.ni-identification": "「に」の識別",
     "kbp.disambiguation.shi-identification": "「し」の識別",
     "kbp.auxiliaries.keri-meanings": "「けり」の訳し分け",
@@ -865,7 +866,7 @@
           "answer": 0,
           "explain": "「もぞ」の結びが連体形「する」になっている。「もぞ〜連体形」は懸念の構文で「〜すると困る」。単なる強意「ぞ」とは、「も」を伴う点で区別する。",
           "rules": [
-            "kbp.particles.kakari-musubi-special-constructions"
+            "kbp.particles.kakari-musubi-special-constructions/mozo-mokoso"
           ]
         }
       ]
@@ -1001,7 +1002,7 @@
           "answer": 0,
           "explain": "「こそ」の結びが已然形「ね」で、形の上では言い切りながら、意味は下の「香やはかくるる」へ続いている。この「こそ〜已然形、」は逆接「〜けれど」。",
           "rules": [
-            "kbp.particles.kakari-musubi-special-constructions",
+            "kbp.particles.kakari-musubi-special-constructions/koso-gyakusetsu",
             "kbp.particles.kakari-musubi-basic"
           ]
         },
@@ -5290,7 +5291,7 @@
           "answer": 0,
           "explain": "「こそ」の結びが已然形「め」で、意味は下の「夢にさへ〜」へ続いている。この「こそ〜已然形、」は逆接「〜けれど」。",
           "rules": [
-            "kbp.particles.kakari-musubi-special-constructions"
+            "kbp.particles.kakari-musubi-special-constructions/koso-gyakusetsu"
           ]
         }
       ]
@@ -8631,7 +8632,7 @@
           "answer": 0,
           "explain": "「もこそ」の結びが已然形「すれ」になっている。「もこそ〜已然形」は懸念の構文で「〜すると困る」。",
           "rules": [
-            "kbp.particles.kakari-musubi-special-constructions"
+            "kbp.particles.kakari-musubi-special-constructions/mozo-mokoso"
           ]
         },
         {
@@ -11638,7 +11639,7 @@
           "answer": 0,
           "explain": "「こそ〜見えね（已然形）」で形の上では結んでいるが、意味は下の「秋は来にけり」へ続いている。このような「こそ〜已然形、…」は逆接で、「人は見えないけれど、秋はやって来た」となる。「もこそ」の形ではないので懸念でもない。",
           "rules": [
-            "kbp.particles.kakari-musubi-special-constructions"
+            "kbp.particles.kakari-musubi-special-constructions/koso-gyakusetsu"
           ]
         }
       ]

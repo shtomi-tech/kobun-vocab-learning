@@ -110,12 +110,14 @@ const indexUrl = new URL("../../docs/kobun-principles/INDEX.md", import.meta.url
 let cardNote = "principle index not found (skipped)";
 if (fs.existsSync(indexUrl)) {
   const index = fs.readFileSync(indexUrl, "utf8");
+  // 「カードID/小項目」の形は、1枚のカードを解説で分けたもの。原則集では元のカードを見る。
   for (const rule of Object.keys(grammar.rules)) {
-    const row = index.split("\n").find((line) => line.includes(`\`${rule}\``));
+    const card = rule.split("/")[0];
+    const row = index.split("\n").find((line) => line.includes(`\`${card}\``));
     assert.ok(row, `${rule}: not found in kobun-principles INDEX.md`);
     assert.match(row, /\|\s*active\s*\|/u, `${rule}: quiz rules must be active cards`);
   }
-  cardNote = `${Object.keys(grammar.rules).length} rule cards active`;
+  cardNote = `${new Set(Object.keys(grammar.rules).map((rule) => rule.split("/")[0])).size} rule cards active`;
 }
 
 console.log(`OK: ${grammar.poems.length} poems (${standaloneCount} standalone), ${quizCount} quiz items, ${cardNote}, ${Object.keys(guides).length} guides`);
