@@ -134,6 +134,8 @@ assert.deepEqual({ ...q }, { write: 15, waka: 10 }, "上限超えは既定へ、
 assert.equal(t.normalizeStudyPlan({ dailyQuota: { write: "" } }).dailyQuota.write, 10, "空文字は0扱いにせず既定へ");
 assert.equal(t.normalizeStudyPlan({ dailyQuota: { write: 0 } }).dailyQuota.write, 0, "0は許可");
 
+assert.equal(t.normalizeStudyPlan({ dailyQuota: { today: 0 } }).dailyQuota.today, 0, "今日を0にするとノルマから外す印を持つ");
+assert.equal("today" in t.normalizeStudyPlan({ dailyQuota: { today: 5 } }).dailyQuota, false, "今日の数は dailyWordGoal と共有し、外す印以外は持たない");
 // --- countToday / dailyQuotaSummary: ローカル日付で今日の分だけ数える ---
 const history = [
   { kind: "meaning", at: iso(localDate(2026, 9, 2, 8)) },
@@ -177,3 +179,8 @@ assert.equal(none.active, true, "期限の語が無い日も復習は達成と�
 assert.equal(none.remaining, 0);
 
 console.log("study plan logic contract: OK");
+
+// 今日を0にした日: 今日はノルマから外れ、学習目標の1日の語数は残る
+const todayOff = t.dailyQuotaSummary(now, { dailyWordGoal: 8, dailyQuota: { today: 0 } }, { history: [] });
+assert.equal(todayOff.items.find((item) => item.id === "today").active, false, "今日0ならノルマに含めない");
+assert.equal(t.normalizeStudyPlan({ dailyWordGoal: 8, dailyQuota: { today: 0 } }).dailyWordGoal, 8, "学習目標の語数は変えない");
