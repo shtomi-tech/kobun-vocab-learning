@@ -861,11 +861,12 @@ const KobunVocabApp = (() => {
       "aria-controls": settingsId,
     }, "ノルマを設定");
     const settings = el("form", { class: "quotaSettings hide", id: settingsId, "aria-labelledby": "dailyQuotaSettingsTitle" });
-    const limits = { today: { min: 1, max: STUDY_PLAN_DAILY_MAX }, ...Object.fromEntries(Object.entries(QUOTA_LIMITS).map(([id, { max }]) => [id, { min: 0, max }])) };
-    const current = { today: plan.dailyWordGoal, ...plan.dailyQuota };
+    const limits = { ...Object.fromEntries(Object.entries(QUOTA_LIMITS).map(([id, { max }]) => [id, { min: 0, max }])), today: { min: 0, max: STUDY_PLAN_DAILY_MAX } };
+    const { today: todayFlag, ...savedQuota } = plan.dailyQuota;
+    const current = { ...savedQuota, today: todayFlag === 0 ? 0 : plan.dailyWordGoal };
     const inputs = {};
     settings.appendChild(el("h4", { id: "dailyQuotaSettingsTitle" }, "1日のノルマ"));
-    settings.appendChild(el("p", { class: "hint" }, `0にした項目はノルマに含めません（今日は1以上）。復習は、その時点で期限が来ている語数から自動で決まります（最大${REVIEW_AUTO_MAX}語）。`));
+    settings.appendChild(el("p", { class: "hint" }, `0にした項目はノルマに含めません。復習は、その時点で期限が来ている語数から自動で決まります（最大${REVIEW_AUTO_MAX}語）。`));
     const fields = el("div", { class: "quotaFields" });
     Object.entries(QUOTA_ITEMS).forEach(([id, meta]) => {
       if (id === "review" || (id === "waka" && !hasWakaGallery())) return;
@@ -909,8 +910,13 @@ const KobunVocabApp = (() => {
         }
         values[id] = value;
       }
+      // 今日を0にしたときは学習目標の1日の語数を残したまま、ノルマからだけ外す。
       const { today, ...quota } = values;
-      studyPlan = normalizeStudyPlan({ ...plan, dailyWordGoal: today, dailyQuota: { ...plan.dailyQuota, ...quota } });
+      studyPlan = normalizeStudyPlan({
+        ...plan,
+        dailyWordGoal: today > 0 ? today : plan.dailyWordGoal,
+        dailyQuota: { ...savedQuota, ...quota, ...(today > 0 ? {} : { today: 0 }) },
+      });
       saveStudyPlan();
       if (cloud) cloud.queueSave({ datasetId: state.setId, progress: state.progress, meta: cloudMeta() });
       renderHome();

@@ -34,12 +34,15 @@ const KobunStudyPlan = (() => {
 
   function normalizeDailyQuota(candidate) {
     const source = isRecord(candidate) ? candidate : {};
-    return Object.fromEntries(Object.entries(QUOTA_LIMITS).map(([id, { def, max }]) => {
+    const quota = Object.fromEntries(Object.entries(QUOTA_LIMITS).map(([id, { def, max }]) => {
       // 空文字・null は Number() で 0 になるため、未設定として既定値へ戻す。
       const raw = source[id];
       const value = raw === "" || raw == null ? NaN : Number(raw);
       return [id, Number.isInteger(value) && value >= 0 && value <= max ? value : def];
     }));
+    // 今日の目標数は学習目標（dailyWordGoal）と共有する。ここにはノルマから外したときの印（today: 0）だけを持つ。
+    if (source.today === 0 || source.today === "0") quota.today = 0;
+    return quota;
   }
 
   function normalizeStudyPlan(candidate) {
@@ -104,9 +107,10 @@ const KobunStudyPlan = (() => {
     };
     const due = Math.max(0, Math.floor(Number(reviewDue) || 0));
     const goals = {
-      today: safe.dailyWordGoal,
+      today: safe.dailyQuota.today === 0 ? 0 : safe.dailyWordGoal,
       review: Math.min(REVIEW_AUTO_MAX, done.review + due),
-      ...safe.dailyQuota,
+      write: safe.dailyQuota.write,
+      waka: safe.dailyQuota.waka,
     };
     const items = ["today", "review", "write", "waka"].map((id) => ({
       id,
