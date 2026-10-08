@@ -1,6 +1,6 @@
-# 古文単語 学習アプリ
+# 古文 単語・文法アプリ
 
-古文単語を「覚える → 意味を確かめる → 文中で解く」の順に学ぶ静的Webアプリです。
+古文単語を「覚える → 意味を確かめる → 文中で解く」の順に学び、和歌を使って古典文法も学ぶ静的Webアプリです。
 
 公開版: https://kobun-vocab-learning.shtomi0913.workers.dev/ （Cloudflare 版）と https://shtomi-tech.github.io/kobun-vocab-learning/ （GitHub Pages 版）。どちらも `main` から出す。ブランチは `main` だけで、変更は `main` 向けの PR で入れる。
 
