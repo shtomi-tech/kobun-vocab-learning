@@ -162,7 +162,9 @@ const grammar = {
   rules: { "rule-a": "試験用の文法根拠" },
   guides: {
     "rule-a": {
-      summary: "試験用の解説の要約。",
+      point: "試験用の解説の要約。",
+      reason: "試験用の理由。",
+      recap: "試験用のまとめ。",
       table: [["見出し", "本文"]],
       steps: ["手順一"],
       examples: [{ text: "例文", note: "訳" }],
@@ -232,6 +234,9 @@ click(dailyFeedback, ".wgRuleLink", "試験用の文法根拠");
 const quizGuide = dailyPanel.querySelector(".wgGuideDialog");
 assert.equal(quizGuide.open, true, "根拠のボタンで解説を開く");
 assert.match(quizGuide.textContent, /試験用の解説の要約/);
+// 解説は PREP法の順（要点→理由→例→まとめ）に並ぶ。
+assert.deepEqual(quizGuide.querySelectorAll(".wgPrepHead").map((node) => node.textContent), ["P要点", "R理由", "E例", "Pまとめ"]);
+assert.match(quizGuide.textContent, /試験用の理由[\s\S]*例文[\s\S]*試験用のまとめ/);
 quizGuide.close();
 assert.equal(dailyPanel.querySelector(".wgTranslation"), null, "現代語訳は歌の最後の問題まで出さない");
 click(dailyPanel, ".wgButton", "次の問題");

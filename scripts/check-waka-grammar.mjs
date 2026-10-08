@@ -39,12 +39,18 @@ for (const word of loadWords()) {
 }
 
 assert.ok(grammar.rules && typeof grammar.rules === "object", "rules map is required");
-// 根拠カードの解説（data/grammar-guide.json）。カードごとに要点・見分け方を必ず置く。
+// 根拠カードの解説（data/grammar-guide.json）。カードごとに PREP の4段と見分けの表・手順を必ず置く。
 const guides = JSON.parse(fs.readFileSync(new URL("../data/grammar-guide.json", import.meta.url), "utf8")).guides;
 for (const rule of Object.keys(grammar.rules)) {
   const guide = guides[rule];
   assert.ok(guide, `grammar-guide: ${rule} needs a guide`);
-  assert.ok(typeof guide.summary === "string" && guide.summary, `grammar-guide: ${rule} needs a summary`);
+  // PREP法：要点（point）→理由（reason）→例（examples）→要点の再確認（recap）。
+  for (const key of ["point", "reason", "recap"]) {
+    assert.ok(typeof guide[key] === "string" && guide[key], `grammar-guide: ${rule} needs ${key}`);
+  }
+  assert.ok(Array.isArray(guide.examples) && guide.examples.length > 0, `grammar-guide: ${rule} needs examples`);
+  assert.notEqual(guide.recap, guide.point, `grammar-guide: ${rule} recap should restate the point, not copy it`);
+  assert.equal(guide.summary, undefined, `grammar-guide: ${rule} uses point instead of summary`);
   assert.ok(Array.isArray(guide.table) && guide.table.length > 0 && guide.table.every((row) => row.length === 2 && row.every(Boolean)), `grammar-guide: ${rule} table rows must be [label, text]`);
   assert.ok(Array.isArray(guide.steps) && guide.steps.length > 0 && guide.steps.every(Boolean), `grammar-guide: ${rule} needs steps`);
   assert.ok((guide.examples ?? []).every((example) => example.text && example.note), `grammar-guide: ${rule} examples need text and note`);
