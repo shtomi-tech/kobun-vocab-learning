@@ -14,7 +14,11 @@ const syntaxChecks = [
   "static/study-time.js",
   "static/example-parts.js",
   "static/choice-builder.js",
+  "static/recall-grade.js",
+  "static/written-drill.js",
   "static/waka-gallery.js",
+  "worker/index.js",
+  "worker/grade-recall.js",
 ];
 
 const scripts = [
@@ -28,9 +32,13 @@ const scripts = [
   "check-waka-candidates.mjs",
   "check-waka-display.mjs",
   "check-waka-grammar.mjs",
+  "check-waka-learning-ui.cjs",
   "check-meaning-example-ui.cjs",
   "check-example-source.mjs",
   "check-srs.cjs",
+  "check-recall-grade.cjs",
+  "check-written-drill.cjs",
+  "check-grade-recall-worker.mjs",
   "check-fsrs-vendor.cjs",
   "check-study-plan.cjs",
   "check-set-progress.cjs",

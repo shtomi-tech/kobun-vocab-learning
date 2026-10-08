@@ -88,7 +88,7 @@ button, select, input, textarea { font: inherit; }
 button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 .askWord:focus, .meaningExample:focus, .cloze:focus, .feedback:focus { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
 .wrap { width: min(var(--container-max), calc(100% - var(--page-gutter))); margin: 0 auto; padding: 40px 0 64px; }
-.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 2px solid var(--ink); padding-bottom: 12px; margin-bottom: 16px; }
+.top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 16px; }
 .brand { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
 .backlink { color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-decoration: none; text-transform: uppercase; }
 .backlink:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
@@ -307,6 +307,14 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .feedback.ng h3 { color: var(--ng); }
 .questionTranslation { margin: -4px 0 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--soft); }
 .next { display: block; }
+/* 書いた答えの入力・ヒント・採点表示（意味を書く演習） */
+.recallInputLabel { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
+.recallInput { box-sizing: border-box; width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid var(--color-control-border); border-radius: var(--radius-control); background: var(--canvas); color: var(--ink); font: inherit; }
+.recallInput:focus { outline: var(--focus-ring); outline-offset: var(--focus-ring-offset); }
+.recallHint { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--soft); }
+.recallHint .meaningExample { margin: 4px 0 0; }
+.recallAnswer { display: grid; gap: 12px; margin-top: 12px; }
+.recallAiNote { margin: 16px 0 0; color: var(--muted); font-size: 14px; }
 .quiz--answered { margin-bottom: var(--quiz-next-action-height); }
 .quizNextAction { position: fixed; left: 50%; bottom: 0; z-index: 20; display: flex; justify-content: flex-end; width: min(var(--container-max), calc(100% - var(--page-gutter))); padding: 16px 0 calc(16px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--card); transform: translateX(-50%); }
 .reviewList { display: grid; gap: 16px; }
@@ -328,7 +336,7 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 @keyframes skeletonPulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
 
 @media (max-width: 640px) {
-  :root { --page-gutter: 20px; --card-padding: 18px; --card-gap: var(--space-6); --numeric-primary: 24px; }
+  :root { --page-gutter: 32px; --card-padding: 18px; --card-gap: var(--space-6); --numeric-primary: 24px; }
   .wrap { padding-top: 24px; }
   .card, .quiz { padding: var(--card-padding); }
   .stats { grid-template-columns: repeat(2, 1fr); }
@@ -449,6 +457,47 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .studyPlanFormError:empty { display: none; }
 .studyPlanFormActions { margin-top: 16px; }
 
+/* ---- 1日のノルマ（今日の面の先頭。今日・復習・書く・和歌の残り数） ---- */
+.quotaHead { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; }
+.quotaHead h2 { margin-top: 4px; }
+.quotaSettingsToggle { flex: 0 0 auto; }
+/* 右上の「ノルマ」ボタンと、その下に開くパネル */
+.top { position: relative; }
+.quotaMenu { margin-left: auto; align-self: flex-start; }
+.quotaMenu[hidden] { display: none; }
+.quotaMenuButton { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 14px; border: 1px solid var(--color-control-border); border-radius: var(--radius-pill); background: var(--canvas); color: var(--ink); font-weight: 600; cursor: pointer; }
+.quotaMenuButton:hover, .quotaMenuButton[aria-expanded="true"] { background: var(--soft); }
+.quotaMenuCount { min-width: 20px; padding: 1px 6px; border-radius: var(--radius-pill); background: var(--clay); color: var(--canvas); font-family: var(--mono); font-size: 11px; line-height: 18px; text-align: center; }
+.quotaMenuButton.is-done .quotaMenuCount { background: var(--ok); }
+.quotaMenuPanel { position: absolute; z-index: 20; top: calc(100% + 8px); right: 0; width: min(440px, 100%); max-height: 75vh; overflow-y: auto; padding: var(--card-padding); border: 1px solid var(--line); border-radius: var(--radius-container); background: var(--card); box-shadow: 0 12px 32px rgba(0, 0, 0, .14); }
+.quotaMenuPanel[hidden] { display: none; }
+.quotaPanel.is-done .quotaHead h2 { color: var(--ok); }
+.quotaList { display: grid; gap: 14px; margin: 16px 0 0; padding: 0; list-style: none; }
+.quotaRowHead { display: flex; align-items: baseline; gap: 12px; }
+.quotaLabel { min-width: 3em; font-size: 15px; }
+.quotaCount { color: var(--muted); font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+.quotaRemain { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.quotaRow.is-done .quotaRemain { color: var(--ok); }
+.quotaTrack { position: relative; height: 8px; margin-top: 6px; border-radius: var(--radius-pill); background: var(--line); overflow: hidden; }
+.quotaFill { position: absolute; top: 0; left: 0; height: 100%; border-radius: var(--radius-pill); background: var(--ink); transition: width var(--motion-progress) var(--ease-spring-soft); }
+.quotaRow.is-done .quotaFill { background: var(--ok); }
+.quotaRowFoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 4px; }
+.quotaNote { color: var(--muted); font-size: 13px; }
+.quotaJump { min-height: 32px; padding: 4px 8px; border: 0; background: none; color: var(--ink); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.quotaSettings { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.quotaSettings.hide { display: none; }
+.quotaSettings h4 { margin: 0 0 4px; font-size: 15px; }
+.quotaFields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; margin-top: 12px; }
+.quotaField { display: block; }
+.quotaField .fieldLabel { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 600; }
+.quotaFieldInput { display: flex; align-items: center; gap: 8px; }
+.quotaFieldInput input { width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid var(--color-control-border); border-radius: var(--radius-control); background: var(--canvas); color: var(--ink); font-variant-numeric: tabular-nums; }
+.quotaFieldHint { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; }
+
+@media (max-width: 480px) {
+  .quotaFields { grid-template-columns: 1fr; }
+}
+
 /* ---- 到達予想（このペースで学べる語。既定は折りたたみ、注記文は置かない） ---- */
 .vocabForecast { margin-top: 16px; border-top: 1px solid var(--line); }
 .vocabForecastSummary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-top: 14px; cursor: pointer; list-style: none; }
@@ -465,16 +514,114 @@ button.choice:disabled:not(.correct):not(.wrong) { opacity: 1; border-color: var
 .vocabForecastRow strong { font-family: var(--mono); font-size: var(--numeric-secondary); font-variant-numeric: tabular-nums; }
 
 @media (max-width: 640px) {
-  .studyPlanSettingsToggle { flex-basis: 100%; }
   .vocabForecastGrid { grid-template-columns: repeat(2, 1fr); }
   .vocabForecastRow:nth-child(odd) { border-left: 0; }
   .vocabForecastRow:nth-child(n + 3) { border-top: 1px solid var(--line); }
 }
 
 /* 学習時間カード */
+/* 学習時間は補助の記録なので、見出しは学習目標カードの h3 と同じ大きさに抑える（英単語アプリと共通）。 */
+.studyTimeCard h2 { margin: 0; font-size: 18px; font-weight: 700; }
 .studyTimeMetrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--grid-gap); margin: var(--space-3) 0 var(--space-2); }
 .studyTimeMetric { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; padding: var(--space-3); border-radius: var(--radius-container); background: var(--soft); }
 .studyTimeMetric strong { font-family: var(--serif); font-size: var(--numeric-secondary); font-variant-numeric: tabular-nums; }
 @media (max-width: 480px) {
   .studyTimeMetrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ---- ホームのタブ（今日・復習・書く・和歌。セットはタブ外） ---- */
+.homeTabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0 0 var(--space-4);
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-container);
+  background: var(--canvas);
+}
+.homeTab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 6px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-hover), color var(--transition-hover);
+}
+.homeTab:hover { background: var(--soft); color: var(--ink); }
+.homeTab[aria-selected="true"], .homeTab[aria-selected="true"]:hover { background: var(--ink); color: var(--canvas); }
+.homeTabBadge {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--clay);
+  color: var(--canvas);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 18px;
+}
+.homeTabBadge.is-done { background: var(--ok); }
+.homeTabPanel[hidden] { display: none; }
+.homeTabJump { margin-top: var(--space-3); }
+.homeTabBack { margin: 0 0 var(--space-3); }
+.homeTabJump + .stats { margin-top: var(--space-4); }
+
+/* ---- 意味を書く演習 ---- */
+.writtenSteps {
+  list-style: none;
+  counter-reset: writtenStep;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+}
+.writtenSteps li {
+  counter-increment: writtenStep;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 13px;
+}
+.writtenSteps li strong { color: var(--ink); font-size: 14px; }
+.writtenSteps li strong::before { content: counter(writtenStep) ". "; color: var(--clay-dark); font-family: var(--mono); }
+@media (max-width: 560px) { .writtenSteps { grid-template-columns: 1fr; } }
+.writtenSizeRow { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-3); }
+.writtenSizeLabel { color: var(--muted); font-size: 14px; font-weight: 600; }
+.writtenSizeChoices { display: flex; gap: var(--space-2); }
+.writtenSizeChoice { min-height: 44px; padding: 8px 14px; border: 1px solid var(--color-control-border); border-radius: var(--radius-control); background: transparent; color: var(--ink); cursor: pointer; }
+.writtenSizeChoice:hover { background: var(--soft); }
+.writtenSizeChoice[aria-pressed="true"] { border-color: var(--ink); background: var(--card); font-weight: 700; }
+.writtenCta { width: 100%; }
+.writtenMission .hint { margin-top: var(--space-3); }
+.writtenMission .hint + .writtenCta { margin-top: var(--space-2); }
+.written .recallHeadword { margin-bottom: var(--space-3); }
+.writtenHint { margin: 0 0 var(--space-4); }
+.writtenForm { display: grid; gap: var(--space-2); }
+.writtenInputRow { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.writtenInputRow .recallInput { flex: 1 1 14rem; width: auto; }
+.writtenFormSub { display: flex; justify-content: flex-end; }
+.writtenPrevious { margin: 0 0 var(--space-3); color: var(--muted); }
+.writtenReaskBadge { display: inline-block; margin: 0 0 var(--space-2); padding: 2px 10px; border-radius: var(--radius-pill); background: var(--clay); color: var(--canvas); font-size: 12px; font-weight: 700; }
+.writtenSelfGrade { margin-top: var(--space-3); }
+.writtenResultList ul { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.writtenResult { display: grid; gap: 2px; padding: 10px 12px; border-left: 4px solid var(--line); border-radius: var(--radius-small); background: var(--canvas); }
+.writtenResult--learned { border-left-color: var(--ok); }
+.writtenResult--shaky { border-left-color: var(--color-warn); }
+.writtenResult--notLearned { border-left-color: var(--ng); }
+.writtenResult span { color: var(--muted); font-size: 14px; }

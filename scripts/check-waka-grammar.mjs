@@ -7,6 +7,29 @@ import { loadWords } from "./lib/data.mjs";
 const grammar = JSON.parse(fs.readFileSync(new URL("../data/waka-grammar.json", import.meta.url), "utf8"));
 const POS = new Set(["名詞", "動詞", "形容詞", "形容動詞", "副詞", "連体詞", "接続詞", "感動詞", "助動詞", "助詞", "連語", "接頭語", "接尾語"]);
 const REVIEW = new Set(["needs-check"]);
+const MORA_TARGETS = [5, 7, 5, 7, 7];
+const SMALL_KANA = /[ゃゅょぁぃぅぇぉ]/u;
+// 単語の例文ではない、文法演習のためだけに収める歌の歌集。底本は docs/SOURCE_EDITIONS.md に記録する。
+const STANDALONE_COLLECTIONS = new Map([["百人一首", { min: 1, max: 100 }]]);
+
+// 単独の歌（waka を自前で持つ歌）の本文・よみ・出典を、data/set-*.json の和歌と同じ基準で確かめる。
+function checkStandalone(label, poem) {
+  const { waka } = poem;
+  assert.ok(Array.isArray(waka.phrases) && waka.phrases.length === 5 && waka.phrases.every((p) => typeof p === "string" && p.length > 0), `${label}: waka.phrases must be five strings`);
+  assert.equal(waka.phrases.join(""), poem.key, `${label}: waka.phrases must reconstruct key`);
+  assert.doesNotMatch(poem.key, /[、。]/u, `${label}: waka text must not contain punctuation`);
+  assert.ok(Array.isArray(waka.reading) && waka.reading.length === 5 && waka.reading.every((r) => /^[ぁ-んー]+$/u.test(r)), `${label}: waka.reading must be five hiragana readings`);
+  assert.ok(!waka.reading.some((r) => SMALL_KANA.test(r)), `${label}: waka.reading must use historical kana without small kana`);
+  const moras = waka.reading.map((r) => r.length);
+  assert.ok(moras.every((n, i) => Math.abs(n - MORA_TARGETS[i]) <= 1), `${label}: invalid mora counts ${moras.join("/")}`);
+  assert.ok(typeof poem.author === "string" && poem.author.trim(), `${label}: author is required`);
+  assert.ok(typeof waka.translation === "string" && waka.translation.trim(), `${label}: waka.translation is required`);
+  const range = STANDALONE_COLLECTIONS.get(waka.ref?.collection);
+  assert.ok(range, `${label}: waka.ref.collection must be one of ${[...STANDALONE_COLLECTIONS.keys()].join(", ")}`);
+  assert.ok(Number.isInteger(waka.ref.number) && waka.ref.number >= range.min && waka.ref.number <= range.max, `${label}: waka.ref.number out of range`);
+  assert.ok(typeof waka.ref.origin === "string" && waka.ref.origin.includes("・"), `${label}: waka.ref.origin must name the source anthology and section`);
+  return waka.phrases;
+}
 
 const wakaByExample = new Map();
 for (const word of loadWords()) {
@@ -16,23 +39,39 @@ for (const word of loadWords()) {
 }
 
 assert.ok(grammar.rules && typeof grammar.rules === "object", "rules map is required");
-// 根拠カードから開く解説（古典文法演習の予習資料）。行き先の無いカードは名前だけを表示する。
-const explanations = grammar.explanations ?? {};
-for (const [rule, target] of Object.entries(explanations)) {
-  assert.ok(grammar.rules[rule], `explanations: ${rule} must be listed in rules`);
-  assert.match(target.prep ?? "", /^kobun-\d{2}-[a-z0-9-]+$/u, `explanations: ${rule} needs a preparation name like kobun-05-ba`);
-  assert.ok(target.sec === undefined || (Number.isInteger(target.sec) && target.sec > 0), `explanations: ${rule} sec must be a positive integer`);
+// 根拠カードの解説（data/grammar-guide.json）。カードごとに要点・見分け方を必ず置く。
+const guides = JSON.parse(fs.readFileSync(new URL("../data/grammar-guide.json", import.meta.url), "utf8")).guides;
+for (const rule of Object.keys(grammar.rules)) {
+  const guide = guides[rule];
+  assert.ok(guide, `grammar-guide: ${rule} needs a guide`);
+  assert.ok(typeof guide.summary === "string" && guide.summary, `grammar-guide: ${rule} needs a summary`);
+  assert.ok(Array.isArray(guide.table) && guide.table.length > 0 && guide.table.every((row) => row.length === 2 && row.every(Boolean)), `grammar-guide: ${rule} table rows must be [label, text]`);
+  assert.ok(Array.isArray(guide.steps) && guide.steps.length > 0 && guide.steps.every(Boolean), `grammar-guide: ${rule} needs steps`);
+  assert.ok((guide.examples ?? []).every((example) => example.text && example.note), `grammar-guide: ${rule} examples need text and note`);
 }
-const unlinked = Object.keys(grammar.rules).filter((rule) => !explanations[rule]);
+for (const rule of Object.keys(guides)) assert.ok(grammar.rules[rule], `grammar-guide: ${rule} is not a rule in waka-grammar.json`);
 
 const keys = new Set();
+const standaloneNumbers = new Set();
 let quizCount = 0;
+let standaloneCount = 0;
 for (const poem of grammar.poems) {
   const label = poem.key.slice(0, 10);
   assert.ok(!keys.has(poem.key), `${label}: duplicate poem key`);
   keys.add(poem.key);
-  const phrases = wakaByExample.get(poem.key);
-  assert.ok(phrases, `${label}: key must match a waka example in data/set-*.json`);
+  let phrases;
+  if (poem.waka !== undefined) {
+    // 例文に使っている歌は例文側のデータが正本なので、単独の歌として二重に持たない。
+    assert.ok(!wakaByExample.has(poem.key), `${label}: already a waka example in data/set-*.json; drop the waka field`);
+    phrases = checkStandalone(label, poem);
+    const id = `${poem.waka.ref.collection}:${poem.waka.ref.number}`;
+    assert.ok(!standaloneNumbers.has(id), `${label}: duplicate ${id}`);
+    standaloneNumbers.add(id);
+    standaloneCount++;
+  } else {
+    phrases = wakaByExample.get(poem.key);
+    assert.ok(phrases, `${label}: key must match a waka example in data/set-*.json, or carry its own waka`);
+  }
   assert.equal(poem.tokens.length, 5, `${label}: tokens must have 5 phrases`);
   poem.tokens.forEach((tokens, index) => {
     assert.equal(tokens.map((token) => token.t).join(""), phrases[index], `${label}: tokens of phrase ${index + 1} must join to the phrase`);
@@ -73,4 +112,4 @@ if (fs.existsSync(indexUrl)) {
   cardNote = `${Object.keys(grammar.rules).length} rule cards active`;
 }
 
-console.log(`OK: ${grammar.poems.length} poems, ${quizCount} quiz items, ${cardNote}, ${Object.keys(explanations).length} explanation links${unlinked.length ? ` (unlinked: ${unlinked.join(", ")})` : ""}`);
+console.log(`OK: ${grammar.poems.length} poems (${standaloneCount} standalone), ${quizCount} quiz items, ${cardNote}, ${Object.keys(guides).length} guides`);

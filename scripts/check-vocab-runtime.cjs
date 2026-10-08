@@ -22,6 +22,8 @@ function loadModeApp(exposedNames, sandboxOverrides = {}) {
     KobunStudyPlan: require("../static/study-plan.js"),
     KobunExampleParts: require("../static/example-parts.js"),
     KobunChoiceBuilder: require("../static/choice-builder.js"),
+    KobunRecallGrade: require("../static/recall-grade.js"),
+    KobunWrittenDrill: require("../static/written-drill.js"),
     ...sandboxOverrides,
   };
   vm.runInNewContext(`${source}\nglobalThis.__app = KobunVocabApp;`, sandbox);
@@ -283,4 +285,109 @@ const fetchStub = async (url, init = {}) => {
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;
+});
+
+// --- 意味を書く演習（writtenDrill）: 段階・再出題・Jev 採点・記録の置き場所 ---
+(async () => {
+  globalThis.FSRS = require("../static/vendor/fsrs/index.umd.js");
+  const dom = createDomStub();
+  const storage = new Map();
+  const replies = [];
+  const requests = [];
+  const fakeFetch = async (url, init) => {
+    requests.push({ url, body: JSON.parse(init.body) });
+    const reply = replies.shift();
+    return { ok: Boolean(reply), json: async () => reply };
+  };
+  const test = loadModeApp(
+    ["startWrittenDrill", "submitWrittenAnswer", "applyWrittenGrade", "advanceWritten", "renderHome", "state", "getSession: () => session"],
+    {
+      document: dom.document,
+      localStorage: {
+        getItem: (key) => storage.has(key) ? storage.get(key) : null,
+        setItem: (key, value) => storage.set(key, String(value)),
+      },
+      fetch: fakeFetch,
+      KobunSrs: require("../static/srs.js"),
+      KobunRecallGrade: require("../static/recall-grade.js"),
+      KobunWrittenDrill: require("../static/written-drill.js"),
+      KobunMeaningGuard: require("../static/meaning-guard.js"),
+      KobunSetProgress: require("../static/set-progress.js"),
+      requestAnimationFrame: (fn) => fn(),
+      Date,
+    },
+  );
+  const set = JSON.parse(read("data/set-01.json"));
+  const words = set.words.filter((word) => word.headword !== "ゐる").slice(0, 4);
+  test.state.set = { meta: set.meta, words };
+  test.state.setId = "kobun-set-01";
+  test.state.manifest = { sets: { "kobun-set-01": { label: "第1セット" } } };
+  test.state.reviewPool = [];
+  const learnResume = { mode: "learn", stage: "flash", order: words.map((word) => word.id), index: 0, batchIndex: 0, batchCount: 1 };
+  test.state.progress = {
+    units: Object.fromEntries(words.map((word) => [word.id, { learned: true }])),
+    finalCheck: {},
+    items: {},
+    history: [],
+    resume: learnResume,
+  };
+  const flush = () => new Promise((resolve) => setImmediate(resolve));
+  const session = () => test.getSession();
+  const currentWord = () => {
+    const key = String(session().writtenQueue[session().writtenPos].key).split("::").pop();
+    return words.find((word) => word.id === key);
+  };
+  const lastHistory = () => test.state.progress.history.at(-1);
+
+  test.startWrittenDrill(4);
+  assert.equal(session().mode, "writtenDrill");
+  assert.equal(session().writtenQueue.length, 4);
+
+  // 1. 意味と表記ゆれ程度で一致すれば Jev に送らず「見出し語だけで正解」
+  await test.submitWrittenAnswer(currentWord().meanings[0].split(/[。、]/)[0]);
+  assert.equal(requests.length, 0, "ローカル一致は Jev に送らない");
+  assert.equal(session().writtenPhase, "result");
+  assert.equal(lastHistory().kind, "written");
+  assert.equal(lastHistory().result, "learned");
+  test.advanceWritten();
+
+  // 2. わからない → 例文の段階 → Jev 自動採点で正解＝あやふや（最後に再出題）
+  await test.submitWrittenAnswer("わからない");
+  assert.equal(session().writtenStep, "example", "わからないは例文ヒントへ");
+  let wordId = currentWord().id;
+  replies.push({ grade: "correct", confidence: 0.95, probabilities: {}, model: "jev-1.13.0" });
+  await test.submitWrittenAnswer("なんとなくの意味");
+  await flush();
+  assert.deepEqual(requests.at(-1).body, { wordId, answer: "なんとなくの意味" }, "送るのは語IDと答えだけ");
+  assert.equal(session().writtenPhase, "result");
+  assert.equal(lastHistory().result, "shaky");
+  assert.equal(lastHistory().gradedBy, "ai");
+  assert.equal(session().writtenQueue.at(-1).reask, true, "あやふやは最後に再出題");
+  test.advanceWritten();
+
+  // 3. 確信度が低い → 自己採点。違った → 例文 → 通信失敗で自己採点 → 違った＝答えを確認
+  replies.push({ grade: "partial", confidence: 0.4, probabilities: {}, model: "jev-1.13.0" });
+  await test.submitWrittenAnswer("なにか");
+  await flush();
+  assert.equal(session().writtenPhase, "self", "確信度が低ければ自己採点");
+  test.applyWrittenGrade("wrong", "self");
+  assert.equal(session().writtenStep, "example");
+  await test.submitWrittenAnswer("べつのなにか");
+  await flush();
+  assert.equal(session().writtenPhase, "self", "通信に失敗したら自己採点");
+  test.applyWrittenGrade("wrong", "self");
+  assert.equal(session().writtenPhase, "answer");
+  assert.equal(lastHistory().result, "notLearned");
+  const pos = session().writtenPos;
+  assert.equal(session().writtenQueue[Math.min(pos + 4, session().writtenQueue.length - 1)].reask || session().writtenQueue.slice(pos + 1).some((entry) => entry.reask), true, "答えを見た語は再出題する");
+
+  // 記録の置き場所: FSRS・思い出す問題の記録・別の学習の途中保存には触れない
+  assert.deepEqual(test.state.progress.items, {}, "FSRS には触れない");
+  assert.equal(test.state.progress.recall, undefined, "思い出す問題の記録は作らない");
+  test.renderHome();
+  assert.deepEqual(test.state.progress.resume, learnResume, "別の学習の途中保存を消さない");
+  console.log("vocabulary runtime contract: written drill OK");
+})().catch((error) => {
+  console.error(error);
+  process.exit(1);
 });
