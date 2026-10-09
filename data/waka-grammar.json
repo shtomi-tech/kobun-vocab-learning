@@ -29,7 +29,12 @@
     "kbp.particles.de-meaning": "「で」の訳し方",
     "kbp.auxiliaries.mu-muzu-ji-meanings": "「む・むず・じ」の訳し分け",
     "kbp.adjectives.keiyoushi-gokan-mi": "「体言（を）＋形容詞語幹＋み」の理由表現",
-    "kbp.particles.final-particles-meanings": "終助詞の接続と意味",
+    "kbp.particles.final-particles-meanings/baya": "終助詞「ばや」（自分の願望）",
+    "kbp.particles.final-particles-meanings/namu": "終助詞「なむ」（相手への願望）",
+    "kbp.particles.final-particles-meanings/teshiga": "終助詞「てしが（な）・にしが（な）」（自分の願望）",
+    "kbp.particles.final-particles-meanings/mogana": "終助詞「もがな・がな」（願望）",
+    "kbp.particles.final-particles-meanings/na-so": "禁止の「な」と「な〜そ」",
+    "kbp.particles.final-particles-meanings/kana": "詠嘆の終助詞「かな・かも」",
     "kbp.disambiguation.namu-identification": "「なむ」の識別",
     "kbp.particles.nagara-meanings": "「ながら」の訳し方",
     "kbp.particles.mono-no-wo-yue-meanings": "「ものの・ものを・ものゆゑ」の訳し方",
@@ -3756,7 +3761,7 @@
           "answer": 0,
           "explain": "「もがな」は願望の終助詞で、「今日を最後とする命であってほしい」。",
           "rules": [
-            "kbp.particles.final-particles-meanings"
+            "kbp.particles.final-particles-meanings/mogana"
           ]
         },
         {
@@ -7930,7 +7935,7 @@
           "explain": "直前の「あら」はラ変「あり」の未然形。未然形に付く「なむ」は他への願望の終助詞で、「山の端が月を入れないでいてほしい」。",
           "rules": [
             "kbp.disambiguation.namu-identification",
-            "kbp.particles.final-particles-meanings"
+            "kbp.particles.final-particles-meanings/namu"
           ]
         },
         {
@@ -10183,7 +10188,7 @@
           "explain": "「死ぬ・往ぬ」のようなナ行変格動詞ではない。直前の「また」はタ行四段「まつ」の未然形（連用形なら「まち」）。未然形に付く「なむ」は願望の終助詞で、「待っていてほしい」。連用形に付く確述用法ではなく、文中にあって連体形で結ぶ係助詞でもない。",
           "rules": [
             "kbp.disambiguation.namu-identification",
-            "kbp.particles.final-particles-meanings"
+            "kbp.particles.final-particles-meanings/namu"
           ]
         }
       ]
@@ -13665,7 +13670,7 @@
           "answer": 0,
           "explain": "体言「よし（方法）」に付く「もがな」は願望の終助詞で、「来る方法があればなあ」と訳す。「な〜そ」の禁止、「かし」の念押し、未然形に付く「ばや」の自己の願望とは形が違う。",
           "rules": [
-            "kbp.particles.final-particles-meanings"
+            "kbp.particles.final-particles-meanings/mogana"
           ]
         }
       ]
@@ -13967,7 +13972,7 @@
           "explain": "直前の「折ら」はラ行四段「折る」の未然形なので、未然形＋ばの順接仮定条件「折るならば」。「ばや」が願望の終助詞になるのは文末に来る場合で、ここは下に「折らん」が続き、「や」はその「ん」を連体形で結ぶ係助詞なので、願望の「ばや」ではない。",
           "rules": [
             "kbp.particles.ba-meanings",
-            "kbp.particles.final-particles-meanings"
+            "kbp.particles.final-particles-meanings/baya"
           ]
         },
         {
@@ -15039,7 +15044,7 @@
           "explain": "直前の「あら」はラ行変格「あり」の未然形（連用形なら「あり」）。未然形に付く「なむ」は他に対する願望の終助詞で、霞に向かって「立たないでいてほしい」と願っている。ナ変動詞でも、連体形で結ぶ係助詞でもない。",
           "rules": [
             "kbp.disambiguation.namu-identification",
-            "kbp.particles.final-particles-meanings"
+            "kbp.particles.final-particles-meanings/namu"
           ]
         },
         {
