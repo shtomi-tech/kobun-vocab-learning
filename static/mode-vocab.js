@@ -2050,6 +2050,7 @@ const KobunVocabApp = (() => {
 
   function handleQuizKeydown(event) {
     if (!session) return;
+    if (session.stage === "written") return handleWrittenKeydown(event);
     if (session.stage !== "meaning" && session.stage !== "context") return;
     if (event.repeat || event.isComposing || event.keyCode === 229) return;
     if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
@@ -2070,6 +2071,21 @@ const KobunVocabApp = (() => {
       event.preventDefault();
       pressFlash(next, () => next.click());
     }
+  }
+
+  // 書く演習は採点結果（○ / × の確認）が出ているときだけ Enter で次へ進む。
+  // 答えを送る Enter は入力欄で起きるので拾わない。
+  function handleWrittenKeydown(event) {
+    if (event.key !== "Enter" || !["result", "answer"].includes(session.writtenPhase)) return;
+    if (event.repeat || event.isComposing || event.keyCode === 229) return;
+    if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+    if (event.target instanceof Element && event.target.closest("input, textarea, select, button, a, [contenteditable]")) return;
+    const sessionPanel = $("#sessionPanel");
+    if (!sessionPanel || sessionPanel.classList.contains("hide")) return;
+    const next = $(".written .next");
+    if (!next || next.disabled) return;
+    event.preventDefault();
+    pressFlash(next, () => next.click());
   }
 
   function renderWrongReview(panel) {
