@@ -26,6 +26,7 @@
     "kbp.auxiliaries.rashi-meaning": "「らし」の基本意味",
     "kbp.disambiguation.nari-identification": "「なり」の識別",
     "kbp.auxiliaries.nari-meanings": "断定・存在の「なり」の訳し分け",
+    "kbp.auxiliaries.zu-nakuni": "「なくに」の訳し方",
     "kbp.particles.de-meaning": "「で」の訳し方",
     "kbp.auxiliaries.mu-muzu-ji-meanings": "「む・むず・じ」の訳し分け",
     "kbp.adjectives.keiyoushi-gokan-mi": "「体言（を）＋形容詞語幹＋み」の理由表現",
@@ -3108,6 +3109,24 @@
           "rules": [
             "kbp.disambiguation.nari-identification",
             "kbp.auxiliaries.nari-meanings"
+          ]
+        },
+        {
+          "target": {
+            "ku": 4,
+            "text": "なくに"
+          },
+          "question": "「我ならなくに」の訳として最も適当なものはどれか。",
+          "choices": [
+            "私のせいではないのに",
+            "私のせいがなくて",
+            "私ではなくなってしまったのに",
+            "私のせいではないだろうに"
+          ],
+          "answer": 0,
+          "explain": "「なく」は打消「ず」の古い名詞形（ク語法）で、断定「なり」の未然形「なら」に付いている。「なくに」は一つの塊で逆接「〜ないのに」。形容詞「なし」（〜がない）や動詞「なる」と取り違えない。",
+          "rules": [
+            "kbp.auxiliaries.zu-nakuni"
           ]
         }
       ]
