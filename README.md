@@ -56,6 +56,8 @@ py -3 -m http.server 8062 --bind 127.0.0.1
 
 ## データ
 
+「歌の間」の鑑賞用追加歌は `data/waka-gallery.json` に収録します。単語セットとは独立し、読み・作者・巻と歌番号・現代語訳・鑑賞メモを表示します。追加歌には文法問題を付けていません。各 `sourceUrl` の本文・訓読と照合し、訳とメモは本アプリで作成しています。NDL版面照合は未実施です。検査は `node scripts/check-waka-gallery.cjs` です。
+
 - `data/manifest.json`: セット一覧
 - `data/set-01.json`: 第1セット「基本語彙」12語
 - `data/set-02.json`: 第2セット「ことば・人間関係」12語

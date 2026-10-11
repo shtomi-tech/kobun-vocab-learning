@@ -3,6 +3,7 @@
 const KobunVocabApp = (() => {
   const MANIFEST_URL = "data/manifest.json";
   const WAKA_GRAMMAR_URL = "data/waka-grammar.json";
+  let additionalWaka = [];
   const GRAMMAR_GUIDE_URL = "data/grammar-guide.json";
   const sharedStudentId = (() => {
     const params = new URLSearchParams(location.search);
@@ -1217,7 +1218,7 @@ const KobunVocabApp = (() => {
   function wakaPoems(grammar = null) {
     return KobunWakaGallery.withGrammarPoems(KobunWakaGallery.collect(setSources()
       .filter((source) => source.set)
-      .map((source) => ({ setId: source.setId, set: source.set, label: source.entry.label }))), grammar);
+      .map((source) => ({ setId: source.setId, set: source.set, label: source.entry.label })), additionalWaka), grammar);
   }
 
   // 文法解説（試作）は歌の間を開いたときに一度だけ読む。読めなければ文法の層を出さずに開く。
@@ -2213,6 +2214,15 @@ const KobunVocabApp = (() => {
       const savedSetId = localStorage.getItem(SET_KEY);
       await loadSet(state.manifest.sets[savedSetId] ? savedSetId : state.manifest.defaultSetId);
       await loadReviewPool();
+      try {
+        const response = await fetch("data/waka-gallery.json", { cache: "no-store" });
+        if (!response.ok) throw new Error(`waka gallery: HTTP ${response.status}`);
+        const data = await response.json();
+        if (!Array.isArray(data.poems)) throw new Error("waka gallery: invalid poems");
+        additionalWaka = data.poems;
+      } catch (error) {
+        console.warn("鑑賞用の追加和歌を読み込めませんでした。", error);
+      }
       migrateStudyPlanFirstAnswers();
       loadStudyPlan();
       renderHome();
