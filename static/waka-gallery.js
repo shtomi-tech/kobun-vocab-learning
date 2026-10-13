@@ -193,7 +193,7 @@ const KobunWakaGallery = (() => {
 
   // sources: [{ setId, set, label }]。例文として表示される（優先順位適用後の）和歌だけを集め、
   // 同じ歌を複数の語が使っていれば1首にまとめる。
-  function collect(sources) {
+  function collect(sources, additional = []) {
     const poems = new Map();
     sources.forEach(({ setId, set, label }, setIndex) => {
       if (!set?.words) return;
@@ -224,6 +224,11 @@ const KobunWakaGallery = (() => {
           part: wakaBlankPart(word),
         });
       });
+    });
+    additional.forEach((poem, index) => {
+      const key = poem.phrases.join("");
+      if (poems.has(key)) return;
+      poems.set(key, { ...poem, key, order: sources.length + index, targets: [] });
     });
     return [...poems.values()].sort((a, b) => a.order - b.order);
   }
@@ -692,7 +697,7 @@ const KobunWakaGallery = (() => {
         el("div", { class: "wgTeaserText" },
           el("p", { class: "wgEyebrow" }, el("span", { class: "wgBadge" }, "試験公開"), "今日の一首"),
           el("h2", { id: "wgTeaserTitle" }, "歌の間"),
-          el("p", { class: "wgTeaserLead" }, `例文で出会う和歌 ${poems.length}首を、縦書きで味わえます。`),
+          el("p", { class: "wgTeaserLead" }, `収録した和歌 ${poems.length}首を、縦書きで味わえます。`),
           el("p", { class: "wgTeaserMeta" },
             `${poem.author}　／　${poem.collection}`,
           ),
@@ -770,7 +775,7 @@ const KobunWakaGallery = (() => {
         el("button", { class: "wgBack", type: "button", onclick: onClose }, "← ホームへ戻る"),
         el("p", { class: "wgEyebrow" }, el("span", { class: "wgBadge" }, "試験公開"), "Waka Gallery"),
         el("h2", { class: "wgTitle" }, "歌の間"),
-        el("p", { class: "wgLead" }, "例文の和歌と百人一首を集めました。歌を選ぶと、訳と学ぶ語、その歌に出る文法の解説が開きます。"),
+        el("p", { class: "wgLead" }, "例文の和歌、百人一首と鑑賞用の代表歌を集めました。歌を選ぶと、よみと現代語訳を確かめられます。"),
         onOpenGuides && grammarCount ? el("div", { class: "wgHeaderActions" },
           el("button", { class: "wgButton", type: "button", onclick: onOpenGuides }, "文法の解説を一覧で見る"),
         ) : null,
@@ -862,6 +867,8 @@ const KobunWakaGallery = (() => {
             el("span", { class: "wgWordMeaning" }, target.meaning),
             el("span", { class: "wgWordSet" }, target.setLabel),
           ))),
+        ) : poem.note ? el("section", { class: "wgBlock" },
+          el("h4", {}, "鑑賞の手掛かり"), el("p", {}, poem.note),
         ) : null,
       ];
       // 縦書きは右から左へ読むので、「次の歌」を左側に置く。
