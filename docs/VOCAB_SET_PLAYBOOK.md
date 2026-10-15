@@ -137,7 +137,7 @@ CI（`.github/workflows/pages.yml`）は `check-data.mjs`・`check-set-choices.m
 
 ### 6. デプロイ（依頼されたときだけ）
 
-main へ push すると GitHub Actions が Pages へ配信する。**コミットだけでなく、公開URLの配信物を確かめる**（`AGENTS.md` の要求）。デプロイを依頼されたら、push 前に `git status --short --branch` と対象ファイルの staged 差分を確認し、既存の未関係変更を含めない。Actions の検査一覧は毎回 `.github/workflows/pages.yml` と突き合わせる。
+main へ push すると Cloudflare Workers Builds が配信する（GitHub Pages 版は 2026-10-15 から更新停止）。**コミットだけでなく、公開URLの配信物を確かめる**（`AGENTS.md` の要求）。デプロイを依頼されたら、push 前に `git status --short --branch` と対象ファイルの staged 差分を確認し、既存の未関係変更を含めない。Actions の検査一覧は毎回 `.github/workflows/pages.yml` と突き合わせる。
 
 ```powershell
 # 今回変更した、存在する対象ファイルだけを明示して stage する

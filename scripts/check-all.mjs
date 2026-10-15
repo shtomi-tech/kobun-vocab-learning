@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 手元とCI（.github/workflows/pages.yml）で同じ検査一覧を実行する入口。
+// 手元とビルド（scripts/build-site.mjs、手動実行の .github/workflows/pages.yml）で同じ検査一覧を実行する入口。
 // 検査を追加したら、ここに1行足す。最初の失敗で止まる。
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
