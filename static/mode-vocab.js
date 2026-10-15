@@ -1277,7 +1277,6 @@ const KobunVocabApp = (() => {
     panel.classList.remove("hide");
     KobunWakaGallery.renderPoemLesson(panel, poem, {
       grammar,
-      allPoems: wakaPoems(grammar),
       onClose: () => openWakaGallery(key, true),
       onHome: () => {
         renderHome();
@@ -1301,9 +1300,7 @@ const KobunVocabApp = (() => {
     const panel = $("#wakaPanel");
     panel.classList.remove("hide");
     KobunWakaGallery.renderGuides(panel, grammar, {
-      poems: wakaPoems(grammar),
       backLabel: fromGallery ? "← 歌の間へ戻る" : "← 和歌へ戻る",
-      onLearnPoem: (key) => openWakaPoemLesson(key),
       onClose: () => {
         if (fromGallery) {
           openWakaGallery();

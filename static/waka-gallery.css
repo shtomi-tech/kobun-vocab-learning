@@ -599,28 +599,10 @@
 .wgGuideRow dd { margin: 0; line-height: 1.7; }
 .wgGuideSteps { margin: 0; padding-left: 1.4em; line-height: 1.8; }
 .wgGuideSteps li + li { margin-top: 4px; }
-.wgGuideUse {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 2px 12px;
-  align-items: center;
-  width: 100%;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 1px solid rgba(217, 183, 110, .3);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--wg-text);
-  text-align: left;
-  cursor: pointer;
-}
-.wgGuideUse:hover { border-color: var(--wg-gold); background: rgba(217, 183, 110, .1); }
-.wgGuideUse .wgGuideUseMeta { grid-column: 1; }
-.wgGuideUseCue { grid-column: 2; grid-row: 1 / span 2; color: var(--wg-gold-strong); font-size: 12px; font-weight: 600; white-space: nowrap; }
-.wgGuideExamples, .wgGuideUses { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.wgGuideExamples li, .wgGuideUses li { display: grid; gap: 2px; }
-.wgGuideExampleText, .wgGuideUsePhrase { font-family: var(--wg-mincho); font-size: 17px; }
-.wgGuideExampleNote, .wgGuideUseMeta { color: var(--wg-text-muted); font-size: 13px; line-height: 1.7; }
+.wgGuideExamples { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.wgGuideExamples li { display: grid; gap: 2px; }
+.wgGuideExampleText { font-family: var(--wg-mincho); font-size: 17px; }
+.wgGuideExampleNote { color: var(--wg-text-muted); font-size: 13px; line-height: 1.7; }
 .wgGuideCaution { display: flex; gap: 8px; align-items: baseline; margin: 16px 0 0; color: var(--wg-text-muted); font-size: 13px; line-height: 1.7; }
 @media (max-width: 640px) {
   .wgGuideRow { grid-template-columns: 1fr; gap: 2px; }

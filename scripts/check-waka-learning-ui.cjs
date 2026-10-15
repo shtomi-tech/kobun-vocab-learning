@@ -340,18 +340,10 @@ stored.delete(dailyKey);
 assert.ok(button(gallery.teaserCard([poem], { onOpen() {}, onDaily() {}, onGuides() {} }), ".wgButton", "解説の一覧を開く"));
 assert.equal(gallery.teaserCard([poem], { onOpen() {}, onDaily() {} }).textContent.includes("解説の一覧を開く"), false, "onGuides が無ければ入口を出さない");
 const { panel: guidePanel } = createPanel();
-let learnedKey = null;
-gallery.renderGuides(guidePanel, mixedGrammar, {
-  poems: merged,
-  onClose() {},
-  onLearnPoem(key) { learnedKey = key; },
-});
+gallery.renderGuides(guidePanel, mixedGrammar, { onClose() {} });
 click(guidePanel, ".wgGuideItem", "試験用の文法根拠");
 const indexGuide = guidePanel.querySelector(".wgGuideDialog");
 assert.equal(indexGuide.open, true, "一覧の項目で解説を開く");
-assert.match(indexGuide.textContent, /試験作者/, "例文の歌の作者を歌の間の情報から引く");
-click(indexGuide, ".wgGuideUse", "この歌で解く");
-assert.equal(indexGuide.open, false);
-assert.equal(learnedKey, poem.key, "解説の歌からその歌の問題へ進む");
+assert.equal(indexGuide.textContent.includes("この文法が出る歌"), false, "解説の例に歌の一覧を出さない");
 
 console.log("waka learning UI regression: daily resume/answer/retry, single-poem result/return, focus reset, standalone poems, grammar guides OK");
