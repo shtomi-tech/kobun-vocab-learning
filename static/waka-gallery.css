@@ -599,6 +599,9 @@
 .wgGuideRow dd { margin: 0; line-height: 1.7; }
 .wgGuideSteps { margin: 0; padding-left: 1.4em; line-height: 1.8; }
 .wgGuideSteps li + li { margin-top: 4px; }
+.wgGuideSteps .wgGuideStepBlock { padding: 10px 0; border-bottom: 1px solid rgba(217, 183, 110, .2); }
+.wgGuideStepTitle { display: block; color: var(--wg-gold); }
+.wgGuideStepBlock p { margin: 4px 0 0; }
 .wgGuideExamples { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .wgGuideExamples li { display: grid; gap: 2px; }
 .wgGuideExampleText { font-family: var(--wg-mincho); font-size: 17px; }
