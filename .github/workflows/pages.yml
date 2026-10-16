@@ -1,8 +1,8 @@
 name: Deploy to GitHub Pages
 
+# 2026-10-15 から GitHub Pages 版は更新しない。公開は Cloudflare 版（main への push で Workers Builds）だけ。
+# main への push では動かない。Pages を出し直すときだけ Actions から手動で実行する。
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
