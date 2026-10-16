@@ -602,6 +602,22 @@
 .wgGuideSteps .wgGuideStepBlock { padding: 10px 0; border-bottom: 1px solid rgba(217, 183, 110, .2); }
 .wgGuideStepTitle { display: block; color: var(--wg-gold); }
 .wgGuideStepBlock p { margin: 4px 0 0; }
+/* 識別の見分ける手順。番号の縦線でつなぎ、各手順に「はい→結論／いいえ→次へ」を置く */
+.wgFlow { margin: 4px 0 12px; }
+.wgFlowList { display: grid; margin: 0; padding: 0; list-style: none; }
+.wgFlowStep { position: relative; display: grid; grid-template-columns: 2em 1fr; gap: 10px; padding-bottom: 14px; }
+.wgFlowStep:not(:last-child)::before { content: ""; position: absolute; top: 2em; bottom: 0; left: calc(1em - 1px); width: 2px; background: var(--wg-gold-line); opacity: .5; }
+.wgFlowNum { display: inline-grid; place-items: center; width: 2em; height: 2em; border: 1px solid var(--wg-gold-line); border-radius: 50%; background: rgba(217, 183, 110, .12); color: var(--wg-gold-strong); font-family: var(--mono); font-size: 13px; font-weight: 700; }
+.wgFlowBody { display: grid; gap: 4px; padding-top: 2px; }
+.wgFlowAsk { margin: 0; font-weight: 700; line-height: 1.7; }
+.wgFlowHint { margin: 0; color: var(--wg-text-muted); font-size: 13px; line-height: 1.7; }
+.wgFlowBranch { display: flex; gap: 8px; align-items: baseline; margin: 0; line-height: 1.7; }
+.wgFlowTag { flex: none; min-width: 3.4em; padding: 0 6px; border: 1px solid var(--wg-gold-line); border-radius: 4px; color: var(--wg-text-muted); font-size: 11px; text-align: center; }
+.wgFlowBranch--yes strong { color: var(--wg-gold); }
+.wgFlowBranch--next { color: var(--wg-text-muted); font-size: 13px; }
+.wgGuideTableFold { margin-top: 4px; }
+.wgGuideTableFold summary { color: var(--wg-gold-strong); font-size: 13px; cursor: pointer; }
+.wgGuideTableFold[open] summary { margin-bottom: 8px; }
 .wgGuideExamples { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .wgGuideExamples li { display: grid; gap: 2px; }
 .wgGuideExampleText { font-family: var(--wg-mincho); font-size: 17px; }

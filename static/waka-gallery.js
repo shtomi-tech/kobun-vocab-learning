@@ -39,6 +39,27 @@ const KobunWakaGallery = (() => {
     ...children,
   );
 
+  const guideTable = (table) => el("dl", { class: "wgGuideTable" }, table.map(([label, text]) => el("div", { class: "wgGuideRow" },
+    el("dt", {}, label),
+    el("dd", {}, text),
+  )));
+  // 識別の見分け方を、上から順に問いを当てていく手順で示す（grammar-guide.json の flow）。
+  // 「はい」なら結論、「いいえ」なら次の手順へ。最後の手順だけは「いいえ」にも結論を持つ。
+  const flowSteps = (flow) => el("div", { class: "wgFlow" },
+    el("h5", { class: "wgGuideSub" }, "見分ける手順"),
+    el("ol", { class: "wgFlowList" }, flow.map((step, index) => el("li", { class: "wgFlowStep" },
+      el("span", { class: "wgFlowNum", "aria-hidden": "true" }, index + 1),
+      el("div", { class: "wgFlowBody" },
+        el("p", { class: "wgFlowAsk" }, step.ask),
+        step.hint ? el("p", { class: "wgFlowHint" }, step.hint) : null,
+        el("p", { class: "wgFlowBranch wgFlowBranch--yes" }, el("span", { class: "wgFlowTag" }, "はい"), el("strong", {}, step.yes)),
+        step.no
+          ? el("p", { class: "wgFlowBranch wgFlowBranch--yes" }, el("span", { class: "wgFlowTag" }, "いいえ"), el("strong", {}, step.no))
+          : el("p", { class: "wgFlowBranch wgFlowBranch--next" }, el("span", { class: "wgFlowTag" }, "いいえ"), `手順${index + 2}へ`),
+      ),
+    ))),
+  );
+
   // 根拠カードの解説（data/grammar-guide.json）を <dialog> で開く。
   // 確認問題の途中で読むので画面は移らず、閉じると押したボタンへフォーカスを戻す。
   function guideViewer(panel, grammar) {
@@ -67,10 +88,10 @@ const KobunWakaGallery = (() => {
         prepSection("P", "要点", el("p", { class: "wgGuidePoint" }, guide.point)),
         prepSection("R", "理由",
           ...guide.reason.split(/\n\s*\n/).map((paragraph) => el("p", { class: "wgGuideReason" }, paragraph)),
-          guide.table?.length ? el("dl", { class: "wgGuideTable" }, guide.table.map(([label, text]) => el("div", { class: "wgGuideRow" },
-            el("dt", {}, label),
-            el("dd", {}, text),
-          ))) : null,
+          guide.flow?.length ? flowSteps(guide.flow) : null,
+          guide.table?.length ? (guide.flow?.length
+            ? el("details", { class: "wgGuideTableFold" }, el("summary", {}, "見分けの表で確かめる"), guideTable(guide.table))
+            : guideTable(guide.table)) : null,
         ),
         prepSection("E", "例",
           guide.examples?.length ? el("ul", { class: "wgGuideExamples", role: "list" }, guide.examples.map((example) => el("li", {},
