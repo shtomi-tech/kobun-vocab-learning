@@ -66,7 +66,7 @@ const KobunWakaGallery = (() => {
           el("span", { class: "wgPrepMark", "aria-hidden": "true" }, mark), label))),
         prepSection("P", "要点", el("p", { class: "wgGuidePoint" }, guide.point)),
         prepSection("R", "理由",
-          el("p", { class: "wgGuideReason" }, guide.reason),
+          ...guide.reason.split(/\n\s*\n/).map((paragraph) => el("p", { class: "wgGuideReason" }, paragraph)),
           guide.table?.length ? el("dl", { class: "wgGuideTable" }, guide.table.map(([label, text]) => el("div", { class: "wgGuideRow" },
             el("dt", {}, label),
             el("dd", {}, text),
@@ -81,7 +81,12 @@ const KobunWakaGallery = (() => {
         prepSection("P", "まとめ",
           el("p", { class: "wgGuidePoint wgGuidePoint--recap" }, guide.recap),
           guide.steps?.length ? el("h5", { class: "wgGuideSub" }, "解くときの手順") : null,
-          guide.steps?.length ? el("ol", { class: "wgGuideSteps" }, guide.steps.map((stepText) => el("li", {}, stepText))) : null,
+          guide.steps?.length ? el("ol", { class: "wgGuideSteps" }, guide.steps.map((stepText) => {
+            const [heading, ...body] = stepText.split("\n");
+            return el("li", { class: body.length ? "wgGuideStepBlock" : "" }, body.length
+              ? [el("strong", { class: "wgGuideStepTitle" }, heading), el("p", {}, body.join("\n"))]
+              : stepText);
+          })) : null,
         ),
         guide.caution ? el("p", { class: "wgGuideCaution" }, el("span", { class: "wgReview" }, "注意"), guide.caution) : null,
         el("p", { class: "wgDraftNote" }, el("span", { class: "wgReview" }, "試作"), "AIによる下書きです。"),
