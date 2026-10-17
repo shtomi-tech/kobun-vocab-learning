@@ -534,7 +534,7 @@ const KobunVocabApp = (() => {
     home.appendChild(writtenMission());
 
     tabStart("waka");
-    const wakaTeaser = hasWakaGallery() ? KobunWakaGallery.teaserCard(wakaPoems(), { onOpen: openWakaGallery, onDaily: () => openWakaDaily(), onGuides: () => openWakaGuides() }) : null;
+    const wakaTeaser = hasWakaGallery() ? KobunWakaGallery.teaserCard(wakaPoems(), { onOpen: openWakaGallery, onDaily: () => openWakaDaily(), onGuides: () => openWakaGuides(), onMastery: () => openWakaMastery() }) : null;
     if (wakaTeaser) home.appendChild(wakaTeaser);
 
     // セットはタブに出さず、今日の面の「学習セット・単語一覧を見る」から開く。
@@ -1310,6 +1310,30 @@ const KobunVocabApp = (() => {
         selectHomeTab("waka");
         $("#homePanel .wgEntries")?.scrollIntoView({ block: "start" });
         $("#homePanel .wgEntry:not(.wgEntry--daily) .wgButton")?.focus({ preventScroll: true });
+      },
+    });
+    window.scrollTo({ top: 0 });
+  }
+
+  // 文法の習熟（文法事項ごとの習熟度と練習）。文法解説が読めなければ歌の間をそのまま開く。
+  async function openWakaMastery() {
+    const grammar = await loadWakaGrammar();
+    if (!grammar || typeof KobunGrammarMastery === "undefined") {
+      openWakaGallery();
+      return;
+    }
+    $("#homePanel").classList.add("hide");
+    $("#sessionPanel").classList.add("hide");
+    const panel = $("#wakaPanel");
+    panel.classList.remove("hide");
+    KobunWakaGallery.renderMastery(panel, wakaPoems(grammar), {
+      grammar,
+      onOpenPoem: (key) => openWakaGallery(key),
+      onClose: () => {
+        renderHome();
+        selectHomeTab("waka");
+        $("#homePanel .wgEntry--mastery")?.scrollIntoView({ block: "center" });
+        $("#homePanel .wgEntry--mastery .wgButton")?.focus({ preventScroll: true });
       },
     });
     window.scrollTo({ top: 0 });

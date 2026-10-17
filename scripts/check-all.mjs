@@ -17,6 +17,7 @@ const syntaxChecks = [
   "static/recall-grade.js",
   "static/written-drill.js",
   "static/waka-gallery.js",
+  "static/grammar-mastery.js",
   "worker/index.js",
   "worker/grade-recall.js",
 ];
@@ -34,6 +35,7 @@ const scripts = [
   "check-waka-gallery.cjs",
   "check-waka-grammar.mjs",
   "check-waka-learning-ui.cjs",
+  "check-grammar-mastery.cjs",
   "check-meaning-example-ui.cjs",
   "check-example-source.mjs",
   "check-srs.cjs",

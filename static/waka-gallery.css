@@ -761,3 +761,44 @@
 @media (prefers-reduced-motion: reduce) {
   .wgRuleLink, .wgGuideItem { transition: none; }
 }
+
+/* ---------- 文法の習熟 ---------- */
+.wgEntry--mastery { border-color: rgba(217, 183, 110, .4); }
+.wmSummary { margin-top: 16px; max-width: 520px; }
+.wmCounts { margin: 8px 0 0; color: var(--wg-text-muted); font-family: var(--mono); font-size: 12px; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+.wmNote { margin: 10px 0 0; color: var(--wg-text-muted); font-size: 13px; line-height: 1.7; }
+.wmRules { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.wmRule {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid rgba(217, 183, 110, .3);
+  border-radius: 8px;
+  background: rgba(243, 234, 214, .04);
+  color: var(--wg-text);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-release) ease, border-color var(--motion-release) ease;
+}
+.wmRule:hover:not(:disabled) { border-color: var(--wg-gold); background: rgba(217, 183, 110, .1); }
+.wmRule:disabled { cursor: default; }
+.wmRule--mastered { border-color: var(--wg-gold-line); }
+.wmRule--review { border-style: dashed; }
+.wmRuleName { font-family: var(--wg-mincho); font-size: 15px; font-weight: 700; }
+.wmRuleState { display: inline-flex; flex: none; align-items: center; gap: 6px; color: var(--wg-text-muted); font-size: 12px; }
+.wmRule--mastered .wmRuleState { color: var(--wg-gold-strong); }
+.wmDots { display: inline-flex; gap: 3px; }
+.wmDot { width: 8px; height: 8px; border: 1px solid currentColor; border-radius: 50%; opacity: .7; }
+.wmDot.is-on { background: var(--wg-gold); border-color: var(--wg-gold); opacity: 1; }
+.wmChanges { display: grid; gap: 4px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 13px; }
+.wmChange { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.wmChangeName { font-weight: 700; }
+.wmChangeWord { opacity: .8; }
+.wmChange.is-up .wmChangeWord { opacity: 1; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) {
+  .wmRule { transition: none; }
+}
