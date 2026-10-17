@@ -52,8 +52,14 @@ for (const rule of Object.keys(grammar.rules)) {
   assert.notEqual(guide.recap, guide.point, `grammar-guide: ${rule} recap should restate the point, not copy it`);
   assert.equal(guide.summary, undefined, `grammar-guide: ${rule} uses point instead of summary`);
   assert.ok(Array.isArray(guide.table) && guide.table.length > 0 && guide.table.every((row) => row.length === 2 && row.every(Boolean)), `grammar-guide: ${rule} table rows must be [label, text]`);
-  assert.ok(Array.isArray(guide.steps) && guide.steps.length > 0 && guide.steps.every(Boolean), `grammar-guide: ${rule} needs steps`);
+  // 見分ける手順（flow）を持つ解説は、まとめの「解くときの手順」（steps）を置かない。
+  if (guide.flow === undefined) assert.ok(Array.isArray(guide.steps) && guide.steps.length > 0 && guide.steps.every(Boolean), `grammar-guide: ${rule} needs steps`);
+  else assert.equal(guide.steps, undefined, `grammar-guide: ${rule} has flow, so drop steps`);
   assert.ok((guide.examples ?? []).every((example) => example.text && example.note), `grammar-guide: ${rule} examples need text and note`);
+  if (guide.flow !== undefined) {
+    assert.ok(Array.isArray(guide.flow) && guide.flow.length > 1 && guide.flow.every((step) => step.ask && step.yes), `grammar-guide: ${rule} flow steps need ask and yes`);
+    assert.ok(guide.flow.at(-1).no, `grammar-guide: ${rule} flow must end with a no branch`);
+  }
 }
 for (const rule of Object.keys(guides)) assert.ok(grammar.rules[rule], `grammar-guide: ${rule} is not a rule in waka-grammar.json`);
 
