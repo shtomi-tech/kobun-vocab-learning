@@ -116,17 +116,23 @@ const documentStub = {
   addEventListener() {},
 };
 const stored = new Map();
-const storageWrites = [];
+const allWrites = [];
+// Daily の保存回数だけを数える（文法の習熟の記録は別のキーに書く）。
+const storageWrites = {
+  get length() { return allWrites.filter(([key]) => key === dailyKey).length; },
+  set length(value) { allWrites.length = value; },
+};
 global.document = documentStub;
 global.localStorage = {
   getItem(key) { return stored.get(key) ?? null; },
   setItem(key, value) {
     stored.set(key, String(value));
-    storageWrites.push([key, String(value)]);
+    allWrites.push([key, String(value)]);
   },
 };
 global.window = { addEventListener() {}, removeEventListener() {} };
 global.KobunExampleParts = require("../static/example-parts.js");
+global.KobunGrammarMastery = require("../static/grammar-mastery.js");
 const gallery = require("../static/waka-gallery.js");
 
 const poem = {
@@ -345,5 +351,33 @@ click(guidePanel, ".wgGuideItem", "試験用の文法根拠");
 const indexGuide = guidePanel.querySelector(".wgGuideDialog");
 assert.equal(indexGuide.open, true, "一覧の項目で解説を開く");
 assert.equal(indexGuide.textContent.includes("この文法が出る歌"), false, "解説の例に歌の一覧を出さない");
+
+// 文法の習熟：ホームの入口 → 一覧 → 練習 → 結果 → 一覧へ戻る。答えると習熟度の変化を出す。
+stored.delete(KobunGrammarMastery.STORE_KEY);
+stored.delete(KobunGrammarMastery.SESSION_KEY);
+assert.ok(button(gallery.teaserCard([poem], { onOpen() {}, onDaily() {}, onMastery() {} }), ".wgButton", "習熟を始める"));
+assert.equal(gallery.teaserCard([poem], { onOpen() {}, onDaily() {} }).textContent.includes("文法の習熟"), false, "onMastery が無ければ入口を出さない");
+const { panel: masteryPanel } = createPanel();
+gallery.renderMastery(masteryPanel, [poem], { grammar, onClose() {} });
+assert.match(masteryPanel.textContent, /文法1項目/);
+assert.match(button(masteryPanel, ".wmRule", "試験用の文法根拠").textContent, /未学習/);
+click(masteryPanel, ".wmStart", "練習を始める");
+assert.match(masteryPanel.querySelector(".wgTitle").textContent, /文法の習熟/);
+assert.equal(masteryPanel.querySelectorAll(".wgChoice").length, 4, "1項目につき1問を出す");
+assert.ok(stored.get(KobunGrammarMastery.SESSION_KEY), "練習の問題を保存して途中から続けられる");
+click(masteryPanel, ".wgChoice", "第一問の正答");
+assert.match(masteryPanel.querySelector(".wmChanges").textContent, /試験用の文法根拠1段上がりました/);
+click(masteryPanel, ".wgButton", "結果を見る");
+assert.equal(masteryPanel.querySelector(".wgQuizDone").textContent, "1問中 1問 正解");
+click(masteryPanel, ".wgButton", "習熟の一覧へ戻る");
+assert.match(button(masteryPanel, ".wmRule", "試験用の文法根拠").textContent, /学習中/);
+assert.match(masteryPanel.querySelector(".wmStart").textContent, /練習を始める/, "終えた練習は続きにしない");
+assert.ok(button(gallery.teaserCard([poem], { onOpen() {}, onDaily() {}, onMastery() {} }), ".wgButton", "習熟の一覧を開く"));
+// 今日の10首・一首学習の解答も習熟度に数える。
+stored.delete(KobunGrammarMastery.STORE_KEY);
+const { panel: countedPanel } = createPanel();
+gallery.renderPoemLesson(countedPanel, poem, { grammar, onClose() {}, onHome() {} });
+click(countedPanel, ".wgChoice", "第一問の誤答");
+assert.equal(KobunGrammarMastery.load().rules["rule-a"].wrong, 1);
 
 console.log("waka learning UI regression: daily resume/answer/retry, single-poem result/return, focus reset, standalone poems, grammar guides OK");
